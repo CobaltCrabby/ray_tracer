@@ -1037,26 +1037,29 @@ src/CMakeFiles/vulkan_guide.dir/main.cpp.o: \
   /Users/cobalt/src/vkguide/third_party/glm/glm/vector_relational.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/integer.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/detail/func_integer.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/matrix_transform.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../mat4x4.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../vec2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../vec3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../vec4.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../ext/matrix_projection.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/transform.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../glm.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/matrix_transform.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../mat4x4.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../vec2.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../vec3.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../vec4.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../ext/matrix_projection.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../gtc/constants.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../ext/scalar_constants.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../ext/scalar_constants.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/scalar_constants.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/constants.inl \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/constants.inl \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../geometric.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../trigonometric.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../matrix.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/matrix_projection.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../ext/matrix_clip_space.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../ext/matrix_clip_space.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../ext/scalar_constants.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/matrix_clip_space.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../ext/matrix_transform.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../ext/matrix_transform.hpp \
   /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/matrix_transform.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/matrix_transform.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../geometric.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../trigonometric.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/gtc/../matrix.hpp
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/matrix_transform.inl \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../geometric.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../trigonometric.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/../gtc/../matrix.hpp \
+  /Users/cobalt/src/vkguide/third_party/glm/glm/gtx/transform.inl

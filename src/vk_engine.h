@@ -7,12 +7,13 @@
 #include <vector>
 #include <deque>
 #include <functional>
+#include <unordered_map>
 
 #include <vk_mem_alloc.h>
 #include <vk_mesh.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 
 struct MeshPushConstants {
 	glm::vec4 data;
@@ -35,6 +36,17 @@ struct DeletionQueue {
 	}
 };
 
+struct Material {
+	VkPipeline pipeline;
+	VkPipelineLayout pipelineLayout;
+};
+
+struct RenderObject {
+	Mesh* mesh;
+	Material* material;
+	glm::mat4 transformMatrix;
+};
+
 class VulkanEngine {
 private:
 	void init_vulkan();
@@ -44,10 +56,16 @@ private:
 	void init_framebuffers();
 	void init_sync_structures();
 	void init_pipelines();
+	void init_scene();
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void load_meshes();
 	void upload_mesh(Mesh& mesh);
+
+	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
+	Material* get_material(const std::string& name);
+	Mesh* get_mesh(const std::string& name);
+	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
 
 public:
 	DeletionQueue deletionQueue;
@@ -78,21 +96,14 @@ public:
 	VkSemaphore presentSemaphore, renderSemaphore;
 	VkFence renderFence;
 
-	VkPipelineLayout trianglePipelineLayout;
-	VkPipelineLayout meshPipelineLayout;
-	VkPipeline trianglePipeline;
-	VkPipeline redTrianglePipeline;
-	VkPipeline meshPipeline;
-
-	VkPipeline* pipelineLUT[3] = {&redTrianglePipeline, &trianglePipeline, &meshPipeline}; 
-
-	Mesh triangleMesh;
-	Mesh monkeyMesh;
 	VmaAllocator allocator;
+
+	std::vector<RenderObject> renderables;
+	std::unordered_map<std::string, Material> materials;
+	std::unordered_map<std::string, Mesh> meshes;
 
 	bool _isInitialized{false};
 	int _frameNumber{0};
-	int _selectedShader{0};
 
 	VkExtent2D _windowExtent{1280, 720};
 

@@ -1018,6 +1018,7 @@ src/CMakeFiles/vulkan_guide.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/fwd.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/glm.hpp \
   third_party/glm/glm/ext/matrix_clip_space.hpp \
   third_party/glm/glm/ext/matrix_projection.hpp \
   third_party/glm/glm/ext/matrix_transform.hpp \
@@ -1032,6 +1033,8 @@ src/CMakeFiles/vulkan_guide.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/gtc/constants.inl \
   third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/gtc/matrix_transform.inl \
+  third_party/glm/glm/gtx/transform.hpp \
+  third_party/glm/glm/gtx/transform.inl \
   third_party/glm/glm/integer.hpp \
   third_party/glm/glm/mat2x2.hpp \
   third_party/glm/glm/mat2x3.hpp \
@@ -2114,6 +2117,7 @@ src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/fwd.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/glm.hpp \
   third_party/glm/glm/ext/matrix_clip_space.hpp \
   third_party/glm/glm/ext/matrix_projection.hpp \
   third_party/glm/glm/ext/matrix_transform.hpp \
@@ -2128,6 +2132,8 @@ src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/gtc/constants.inl \
   third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/gtc/matrix_transform.inl \
+  third_party/glm/glm/gtx/transform.hpp \
+  third_party/glm/glm/gtx/transform.inl \
   third_party/glm/glm/integer.hpp \
   third_party/glm/glm/mat2x2.hpp \
   third_party/glm/glm/mat2x3.hpp \
@@ -3299,6 +3305,8 @@ third_party/glm/glm/mat3x4.hpp:
 third_party/glm/glm/mat3x2.hpp:
 
 third_party/glm/glm/mat2x2.hpp:
+
+third_party/glm/glm/gtx/transform.inl:
 
 third_party/glm/glm/gtc/constants.inl:
 
@@ -5099,6 +5107,8 @@ third_party/glm/glm/detail/type_vec4.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_fill_n.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__iterator/common_iterator.h:
+
+third_party/glm/glm/gtx/transform.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/shuffle.h:
 
