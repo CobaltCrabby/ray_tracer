@@ -47,6 +47,16 @@ struct RenderObject {
 	glm::mat4 transformMatrix;
 };
 
+struct FrameData {
+	VkSemaphore presentSemaphore, renderSemaphore;
+	VkFence renderFence;
+
+	VkCommandPool commandPool;
+	VkCommandBuffer commandBuffer;
+};
+
+constexpr unsigned int FRAME_OVERLAP = 2;
+
 class VulkanEngine {
 private:
 	void init_vulkan();
@@ -62,10 +72,14 @@ private:
 	void load_meshes();
 	void upload_mesh(Mesh& mesh);
 
+	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memory);
+
 	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
 	Material* get_material(const std::string& name);
 	Mesh* get_mesh(const std::string& name);
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
+
+	FrameData& get_current_frame();
 
 public:
 	DeletionQueue deletionQueue;
@@ -87,21 +101,17 @@ public:
 
 	VkQueue graphicsQueue;
 	uint32_t graphicsQueueFamily;
-	VkCommandBuffer commandBuffer;
-	VkCommandPool commandPool;
 
 	VkRenderPass renderPass;
 	std::vector<VkFramebuffer> framebuffers;
 
-	VkSemaphore presentSemaphore, renderSemaphore;
-	VkFence renderFence;
+	FrameData frames[FRAME_OVERLAP];
 
 	VmaAllocator allocator;
 
 	std::vector<RenderObject> renderables;
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
-
 
 	glm::vec3 cameraPos = {0.f, -4.f, -10.f};
 	float cameraSpeed = 0.3f;
