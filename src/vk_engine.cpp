@@ -439,9 +439,9 @@ void VulkanEngine::load_meshes() {
 	triangleMesh.vertices[1].position = {-1.f, 1.f, 0.f};
 	triangleMesh.vertices[2].position = {0.f, -1.f, 0.f};
 
-	triangleMesh.vertices[0].color = {12.f/255.f, 170.f/255.f, 28.f/255.f};
-	triangleMesh.vertices[1].color = {12.f/255.f, 170.f/255.f, 28.f/255.f};
-	triangleMesh.vertices[2].color = {12.f/255.f, 170.f/255.f, 28.f/255.f};
+	triangleMesh.vertices[0].color = {1.f, 0.f, 0.f};
+	triangleMesh.vertices[1].color = {0.f, 1.f, 0.f};
+	triangleMesh.vertices[2].color = {0.f, 0.f, 1.f};
 
 	Mesh monkeyMesh;
 	monkeyMesh.load_from_obj("../assets/monkey_smooth.obj");
@@ -494,8 +494,8 @@ Mesh* VulkanEngine::get_mesh(const std::string& name) {
 }
 
 void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int count) {
-	glm::vec3 camPos = {0.f, -4.f, -10.f};
-	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
+	//glm::vec3 camPos = {0.f, -4.f, -10.f};
+	glm::mat4 view = glm::translate(glm::mat4(1.f), cameraPos);
 	glm::mat4 projection = glm::perspective(glm::radians(70.f), (float) _windowExtent.width / _windowExtent.height, 0.1f, 200.f);
 	glm::mat4 spin = glm::rotate(glm::mat4{1.f}, glm::radians(_frameNumber * 0.4f), glm::vec3(1, 0, 0));
 
@@ -623,13 +623,45 @@ void VulkanEngine::run() {
 
 	// main loop
 	while (!bQuit) {
+		const Uint8* keyState;
+
 		// Handle events on queue
 		while (SDL_PollEvent(&e) != 0) {
 			// close the window when user alt-f4s or clicks the X button
 			if (e.type == SDL_QUIT) {
 				bQuit = true;
 			}
+
+			keyState = SDL_GetKeyboardState(NULL);
 		}
+
+		double deltaTime = (SDL_GetTicks() - _lastTime) * (60.f/1000.f);
+
+		if (keyState[SDL_SCANCODE_W]) {
+			cameraPos.z += cameraSpeed * deltaTime;
+		}
+
+		if (keyState[SDL_SCANCODE_S]) {
+			cameraPos.z -= cameraSpeed * deltaTime;
+		}
+
+		if (keyState[SDL_SCANCODE_A]) {
+			cameraPos.x += cameraSpeed * deltaTime;
+		}
+
+		if (keyState[SDL_SCANCODE_D]) {
+			cameraPos.x -= cameraSpeed * deltaTime;
+		}
+
+		if (keyState[SDL_SCANCODE_LSHIFT]) {
+			cameraPos.y += cameraSpeed * deltaTime;
+		}
+
+		if (keyState[SDL_SCANCODE_SPACE]) {
+			cameraPos.y -= cameraSpeed * deltaTime;
+		}
+
+		_lastTime = SDL_GetTicks();
 
 		draw();
 	}

@@ -102,8 +102,13 @@ public:
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
 
+
+	glm::vec3 cameraPos = {0.f, -4.f, -10.f};
+	float cameraSpeed = 0.3f;
+
 	bool _isInitialized{false};
 	int _frameNumber{0};
+	uint64_t _lastTime;
 
 	VkExtent2D _windowExtent{1280, 720};
 
