@@ -1,0 +1,11 @@
+/Users/cobalt/src/vkguide/CMakeFiles/Shaders.dir
+/Users/cobalt/src/vkguide/CMakeFiles/edit_cache.dir
+/Users/cobalt/src/vkguide/CMakeFiles/rebuild_cache.dir
+/Users/cobalt/src/vkguide/third_party/CMakeFiles/vkbootstrap.dir
+/Users/cobalt/src/vkguide/third_party/CMakeFiles/tinyobjloader.dir
+/Users/cobalt/src/vkguide/third_party/CMakeFiles/imgui.dir
+/Users/cobalt/src/vkguide/third_party/CMakeFiles/edit_cache.dir
+/Users/cobalt/src/vkguide/third_party/CMakeFiles/rebuild_cache.dir
+/Users/cobalt/src/vkguide/src/CMakeFiles/vulkan_guide.dir
+/Users/cobalt/src/vkguide/src/CMakeFiles/edit_cache.dir
+/Users/cobalt/src/vkguide/src/CMakeFiles/rebuild_cache.dir
