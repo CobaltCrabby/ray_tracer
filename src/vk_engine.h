@@ -47,12 +47,21 @@ struct RenderObject {
 	glm::mat4 transformMatrix;
 };
 
+struct GPUCameraData {
+	glm::mat4 proj;
+	glm::mat4 view;
+	glm::mat4 viewProj;
+};
+
 struct FrameData {
 	VkSemaphore presentSemaphore, renderSemaphore;
 	VkFence renderFence;
 
 	VkCommandPool commandPool;
 	VkCommandBuffer commandBuffer;
+
+	AllocatedBuffer cameraBuffer;
+	VkDescriptorSet globalDescriptor;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -67,6 +76,7 @@ private:
 	void init_sync_structures();
 	void init_pipelines();
 	void init_scene();
+	void init_descriptors();
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void load_meshes();
@@ -106,6 +116,9 @@ public:
 	std::vector<VkFramebuffer> framebuffers;
 
 	FrameData frames[FRAME_OVERLAP];
+
+	VkDescriptorSetLayout globalSetLayout;
+	VkDescriptorPool descriptorPool;
 
 	VmaAllocator allocator;
 
