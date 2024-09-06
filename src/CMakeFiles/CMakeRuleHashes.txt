@@ -1,6 +1,8 @@
 # Hashes of file build rules.
 47c2f21301e5dc4e3c38e0b8f80ef65a /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.frag.spv
 c41f51cb1571917b8902d063324eec8d /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.vert.spv
+9b6b91473f398fa0db0d08e3751bf387 /Users/cobalt/src/vkguide/shaders/bin/default_lit.frag.spv
+460cf9b15bf82104fa278c45bb656a5f /Users/cobalt/src/vkguide/shaders/bin/tri_mesh.vert.spv
 c6b5172825b5237d746d001697ffcbeb /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv
 7b9648b4a2212b3c173e6078214d5e47 /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv
 ba6ff058975880bc23d108fde6329376 CMakeFiles/Shaders

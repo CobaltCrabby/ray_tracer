@@ -64,6 +64,14 @@ struct FrameData {
 	VkDescriptorSet globalDescriptor;
 };
 
+struct GPUSceneData {
+	glm::vec4 fogColor; // w is for exponent
+	glm::vec4 fogDistances; //x for min, y for max, zw unused.
+	glm::vec4 ambientColor;
+	glm::vec4 sunlightDirection; //w for sun power
+	glm::vec4 sunlightColor;
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine {
@@ -83,6 +91,7 @@ private:
 	void upload_mesh(Mesh& mesh);
 
 	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memory);
+	size_t pad_uniform_buffer_size(size_t originalSize);
 
 	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
 	Material* get_material(const std::string& name);
@@ -97,6 +106,7 @@ public:
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice;
+	VkPhysicalDeviceProperties gpuProperties;
 	VkDevice device;
 	VkSurfaceKHR surface;
 
@@ -125,6 +135,9 @@ public:
 	std::vector<RenderObject> renderables;
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
+
+	GPUSceneData sceneParameters;
+	AllocatedBuffer sceneParameterBuffer;
 
 	glm::vec3 cameraPos = {0.f, -4.f, -10.f};
 	float cameraSpeed = 0.3f;

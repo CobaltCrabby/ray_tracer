@@ -202,6 +202,30 @@ vk_initializers.cpp.s:
 	cd /Users/cobalt/src/vkguide/src && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.s
 .PHONY : vk_initializers.cpp.s
 
+vk_mesh.o: vk_mesh.cpp.o
+.PHONY : vk_mesh.o
+
+# target to build an object file
+vk_mesh.cpp.o:
+	cd /Users/cobalt/src/vkguide/src && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o
+.PHONY : vk_mesh.cpp.o
+
+vk_mesh.i: vk_mesh.cpp.i
+.PHONY : vk_mesh.i
+
+# target to preprocess a source file
+vk_mesh.cpp.i:
+	cd /Users/cobalt/src/vkguide/src && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.i
+.PHONY : vk_mesh.cpp.i
+
+vk_mesh.s: vk_mesh.cpp.s
+.PHONY : vk_mesh.s
+
+# target to generate assembly for a file
+vk_mesh.cpp.s:
+	cd /Users/cobalt/src/vkguide/src && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s
+.PHONY : vk_mesh.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -220,6 +244,9 @@ help:
 	@echo "... vk_initializers.o"
 	@echo "... vk_initializers.i"
 	@echo "... vk_initializers.s"
+	@echo "... vk_mesh.o"
+	@echo "... vk_mesh.i"
+	@echo "... vk_mesh.s"
 .PHONY : help
 
 

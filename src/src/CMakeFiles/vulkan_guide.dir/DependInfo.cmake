@@ -11,6 +11,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/cobalt/src/vkguide/src/main.cpp" "src/CMakeFiles/vulkan_guide.dir/main.cpp.o" "gcc" "src/CMakeFiles/vulkan_guide.dir/main.cpp.o.d"
   "/Users/cobalt/src/vkguide/src/vk_engine.cpp" "src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o" "gcc" "src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o.d"
   "/Users/cobalt/src/vkguide/src/vk_initializers.cpp" "src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o" "gcc" "src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o.d"
+  "/Users/cobalt/src/vkguide/src/vk_mesh.cpp" "src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o" "gcc" "src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

@@ -60,7 +60,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = /Users/cobalt/src/vkguide
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/cobalt/src/vkguide
+CMAKE_BINARY_DIR = /Users/cobalt/src/vkguide/src
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles /Users/cobalt/src/vkguide/src//CMakeFiles/progress.marks
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/src/CMakeFiles /Users/cobalt/src/vkguide/src//CMakeFiles/progress.marks
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/src/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/clean
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clean
 .PHONY : clean
 
 # The main clean target
@@ -103,128 +103,83 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-# Convenience name for target.
-src/CMakeFiles/vulkan_guide.dir/rule:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/vulkan_guide.dir/rule
-.PHONY : src/CMakeFiles/vulkan_guide.dir/rule
+#=============================================================================
+# Target rules for targets named Shaders
 
-# Convenience name for target.
-vulkan_guide: src/CMakeFiles/vulkan_guide.dir/rule
+# Build rule for target.
+Shaders: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Shaders
+.PHONY : Shaders
+
+# fast build rule for target.
+Shaders/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Shaders.dir/build.make CMakeFiles/Shaders.dir/build
+.PHONY : Shaders/fast
+
+#=============================================================================
+# Target rules for targets named vkbootstrap
+
+# Build rule for target.
+vkbootstrap: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vkbootstrap
+.PHONY : vkbootstrap
+
+# fast build rule for target.
+vkbootstrap/fast:
+	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/build
+.PHONY : vkbootstrap/fast
+
+#=============================================================================
+# Target rules for targets named tinyobjloader
+
+# Build rule for target.
+tinyobjloader: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tinyobjloader
+.PHONY : tinyobjloader
+
+# fast build rule for target.
+tinyobjloader/fast:
+	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/build
+.PHONY : tinyobjloader/fast
+
+#=============================================================================
+# Target rules for targets named imgui
+
+# Build rule for target.
+imgui: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 imgui
+.PHONY : imgui
+
+# fast build rule for target.
+imgui/fast:
+	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/build
+.PHONY : imgui/fast
+
+#=============================================================================
+# Target rules for targets named vulkan_guide
+
+# Build rule for target.
+vulkan_guide: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vulkan_guide
 .PHONY : vulkan_guide
 
 # fast build rule for target.
 vulkan_guide/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/build
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/build
 .PHONY : vulkan_guide/fast
-
-main.o: main.cpp.o
-.PHONY : main.o
-
-# target to build an object file
-main.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/main.cpp.o
-.PHONY : main.cpp.o
-
-main.i: main.cpp.i
-.PHONY : main.i
-
-# target to preprocess a source file
-main.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/main.cpp.i
-.PHONY : main.cpp.i
-
-main.s: main.cpp.s
-.PHONY : main.s
-
-# target to generate assembly for a file
-main.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/main.cpp.s
-.PHONY : main.cpp.s
-
-vk_engine.o: vk_engine.cpp.o
-.PHONY : vk_engine.o
-
-# target to build an object file
-vk_engine.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o
-.PHONY : vk_engine.cpp.o
-
-vk_engine.i: vk_engine.cpp.i
-.PHONY : vk_engine.i
-
-# target to preprocess a source file
-vk_engine.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.i
-.PHONY : vk_engine.cpp.i
-
-vk_engine.s: vk_engine.cpp.s
-.PHONY : vk_engine.s
-
-# target to generate assembly for a file
-vk_engine.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.s
-.PHONY : vk_engine.cpp.s
-
-vk_initializers.o: vk_initializers.cpp.o
-.PHONY : vk_initializers.o
-
-# target to build an object file
-vk_initializers.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o
-.PHONY : vk_initializers.cpp.o
-
-vk_initializers.i: vk_initializers.cpp.i
-.PHONY : vk_initializers.i
-
-# target to preprocess a source file
-vk_initializers.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.i
-.PHONY : vk_initializers.cpp.i
-
-vk_initializers.s: vk_initializers.cpp.s
-.PHONY : vk_initializers.s
-
-# target to generate assembly for a file
-vk_initializers.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.s
-.PHONY : vk_initializers.cpp.s
-
-vk_mesh.o: vk_mesh.cpp.o
-.PHONY : vk_mesh.o
-
-# target to build an object file
-vk_mesh.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o
-.PHONY : vk_mesh.cpp.o
-
-vk_mesh.i: vk_mesh.cpp.i
-.PHONY : vk_mesh.i
-
-# target to preprocess a source file
-vk_mesh.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.i
-.PHONY : vk_mesh.cpp.i
-
-vk_mesh.s: vk_mesh.cpp.s
-.PHONY : vk_mesh.s
-
-# target to generate assembly for a file
-vk_mesh.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s
-.PHONY : vk_mesh.cpp.s
 
 # Help Target
 help:
@@ -234,19 +189,11 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... Shaders"
+	@echo "... imgui"
+	@echo "... tinyobjloader"
+	@echo "... vkbootstrap"
 	@echo "... vulkan_guide"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
-	@echo "... vk_engine.o"
-	@echo "... vk_engine.i"
-	@echo "... vk_engine.s"
-	@echo "... vk_initializers.o"
-	@echo "... vk_initializers.i"
-	@echo "... vk_initializers.s"
-	@echo "... vk_mesh.o"
-	@echo "... vk_mesh.i"
-	@echo "... vk_mesh.s"
 .PHONY : help
 
 
@@ -258,6 +205,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

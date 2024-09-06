@@ -232,7 +232,7 @@ Vulkan_LIBRARY:FILEPATH=/usr/local/lib/libvulkan.dylib
 imgui_LIB_DEPENDS:STATIC=general;Vulkan::Vulkan;
 
 //Path to SDL2
-sdl2_DIR:PATH=SDL_PATH
+sdl2_DIR:PATH=/opt/homebrew/Cellar/sdl2/2.30.5
 
 //Dependencies for the target
 vkbootstrap_LIB_DEPENDS:STATIC=general;Vulkan::Vulkan;

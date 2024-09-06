@@ -68,6 +68,8 @@ include CMakeFiles/Shaders.dir/progress.make
 
 CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.frag.spv
 CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.vert.spv
+CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/default_lit.frag.spv
+CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/tri_mesh.vert.spv
 CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv
 CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv
 
@@ -79,16 +81,26 @@ CMakeFiles/Shaders: /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.vert.spv"
 	/usr/local/bin/glslangValidator -V /Users/cobalt/src/vkguide/shaders/colored_triangle.vert -o /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.vert.spv
 
+/Users/cobalt/src/vkguide/shaders/bin/default_lit.frag.spv: /Users/cobalt/src/vkguide/shaders/default_lit.frag
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating /Users/cobalt/src/vkguide/shaders/bin/default_lit.frag.spv"
+	/usr/local/bin/glslangValidator -V /Users/cobalt/src/vkguide/shaders/default_lit.frag -o /Users/cobalt/src/vkguide/shaders/bin/default_lit.frag.spv
+
+/Users/cobalt/src/vkguide/shaders/bin/tri_mesh.vert.spv: /Users/cobalt/src/vkguide/shaders/tri_mesh.vert
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating /Users/cobalt/src/vkguide/shaders/bin/tri_mesh.vert.spv"
+	/usr/local/bin/glslangValidator -V /Users/cobalt/src/vkguide/shaders/tri_mesh.vert -o /Users/cobalt/src/vkguide/shaders/bin/tri_mesh.vert.spv
+
 /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv: /Users/cobalt/src/vkguide/shaders/triangle.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Generating /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv"
 	/usr/local/bin/glslangValidator -V /Users/cobalt/src/vkguide/shaders/triangle.frag -o /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv
 
 /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv: /Users/cobalt/src/vkguide/shaders/triangle.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Generating /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv"
 	/usr/local/bin/glslangValidator -V /Users/cobalt/src/vkguide/shaders/triangle.vert -o /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv
 
 Shaders: /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.frag.spv
 Shaders: /Users/cobalt/src/vkguide/shaders/bin/colored_triangle.vert.spv
+Shaders: /Users/cobalt/src/vkguide/shaders/bin/default_lit.frag.spv
+Shaders: /Users/cobalt/src/vkguide/shaders/bin/tri_mesh.vert.spv
 Shaders: /Users/cobalt/src/vkguide/shaders/bin/triangle.frag.spv
 Shaders: /Users/cobalt/src/vkguide/shaders/bin/triangle.vert.spv
 Shaders: CMakeFiles/Shaders

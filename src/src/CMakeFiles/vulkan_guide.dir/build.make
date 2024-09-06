@@ -97,10 +97,24 @@ src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vulkan_guide.dir/vk_engine.cpp.s"
 	cd /Users/cobalt/src/vkguide/src/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/vk_engine.cpp -o CMakeFiles/vulkan_guide.dir/vk_engine.cpp.s
 
+src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o: src/CMakeFiles/vulkan_guide.dir/flags.make
+src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o: vk_mesh.cpp
+src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o: src/CMakeFiles/vulkan_guide.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o"
+	cd /Users/cobalt/src/vkguide/src/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o -MF CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o.d -o CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o -c /Users/cobalt/src/vkguide/src/vk_mesh.cpp
+
+src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.i"
+	cd /Users/cobalt/src/vkguide/src/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/src/vk_mesh.cpp > CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.i
+
+src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s"
+	cd /Users/cobalt/src/vkguide/src/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/vk_mesh.cpp -o CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s
+
 src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o: src/CMakeFiles/vulkan_guide.dir/flags.make
 src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o: vk_initializers.cpp
 src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o: src/CMakeFiles/vulkan_guide.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o"
 	cd /Users/cobalt/src/vkguide/src/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o -MF CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o.d -o CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o -c /Users/cobalt/src/vkguide/src/vk_initializers.cpp
 
 src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.i: cmake_force
@@ -115,6 +129,7 @@ src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.s: cmake_force
 vulkan_guide_OBJECTS = \
 "CMakeFiles/vulkan_guide.dir/main.cpp.o" \
 "CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o" \
+"CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o" \
 "CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o"
 
 # External object files for target vulkan_guide
@@ -122,6 +137,7 @@ vulkan_guide_EXTERNAL_OBJECTS =
 
 /Users/cobalt/src/vkguide/bin/vulkan_guide: src/CMakeFiles/vulkan_guide.dir/main.cpp.o
 /Users/cobalt/src/vkguide/bin/vulkan_guide: src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o
+/Users/cobalt/src/vkguide/bin/vulkan_guide: src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.o
 /Users/cobalt/src/vkguide/bin/vulkan_guide: src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.o
 /Users/cobalt/src/vkguide/bin/vulkan_guide: src/CMakeFiles/vulkan_guide.dir/build.make
 /Users/cobalt/src/vkguide/bin/vulkan_guide: third_party/libvkbootstrap.a
@@ -129,7 +145,7 @@ vulkan_guide_EXTERNAL_OBJECTS =
 /Users/cobalt/src/vkguide/bin/vulkan_guide: third_party/libimgui.a
 /Users/cobalt/src/vkguide/bin/vulkan_guide: /usr/local/lib/libvulkan.dylib
 /Users/cobalt/src/vkguide/bin/vulkan_guide: src/CMakeFiles/vulkan_guide.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable /Users/cobalt/src/vkguide/bin/vulkan_guide"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/cobalt/src/vkguide/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable /Users/cobalt/src/vkguide/bin/vulkan_guide"
 	cd /Users/cobalt/src/vkguide/src/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vulkan_guide.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
