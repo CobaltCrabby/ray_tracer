@@ -45,6 +45,7 @@ struct RenderObject {
 	Mesh* mesh;
 	Material* material;
 	glm::mat4 transformMatrix;
+	glm::vec3 color;
 };
 
 struct GPUCameraData {
@@ -65,6 +66,10 @@ struct GPUSceneData {
 	glm::vec4 sunlightColor;
 };
 
+struct GPUColorData {
+	alignas(16) glm::vec3 color;
+};
+
 struct CamSceneData {
 	GPUCameraData camera;
 	GPUSceneData scene;
@@ -78,10 +83,16 @@ struct FrameData {
 	VkCommandBuffer commandBuffer;
 
 	AllocatedBuffer objectBuffer;
-	VkDescriptorSet objectDescriptor;
+	AllocatedBuffer colorBuffer;
+	VkDescriptorSet storageDescriptor;
+
 };
 
-
+struct UploadContext {
+	VkFence uploadFence;
+	VkCommandPool uploadPool;
+	VkCommandBuffer uploadBuffer;
+};
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
@@ -108,6 +119,8 @@ private:
 	Material* get_material(const std::string& name);
 	Mesh* get_mesh(const std::string& name);
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
+
+	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
 
 	FrameData& get_current_frame();
 
@@ -138,7 +151,7 @@ public:
 
 	FrameData frames[FRAME_OVERLAP];
 
-	VkDescriptorSetLayout objectSetLayout;
+	VkDescriptorSetLayout storageSetLayout;
 	VkDescriptorSetLayout globalSetLayout;
 	VkDescriptorPool descriptorPool;
 
@@ -147,6 +160,7 @@ public:
 	GPUSceneData sceneParameters;
 
 	VmaAllocator allocator;
+	UploadContext uploadContext;
 
 	std::vector<RenderObject> renderables;
 	std::unordered_map<std::string, Material> materials;

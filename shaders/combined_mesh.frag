@@ -23,5 +23,5 @@ layout (set = 0, binding = 0) uniform CamSceneBuffer {
 } camSceneData;
 
 void main() {
-    fragColor = vec4(inColor + camSceneData.scene.ambientColor.xyz, 1.f);
+    fragColor = vec4(inColor, 1.f);
 }

@@ -147,20 +147,37 @@ VkDescriptorSetLayoutBinding vkinit::descriptorSetLayoutBinding(VkDescriptorType
 	setbind.descriptorType = type;
 	setbind.pImmutableSamplers = nullptr;
 	setbind.stageFlags = stageFlags;
-
 	return setbind;
 }
 
 VkWriteDescriptorSet vkinit::writeDescriptorBuffer(VkDescriptorType type, VkDescriptorSet dstSet, VkDescriptorBufferInfo* bufferInfo , uint32_t binding) {
 	VkWriteDescriptorSet write = {};
 	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.pNext = nullptr;
-
 	write.dstBinding = binding;
 	write.dstSet = dstSet;
 	write.descriptorCount = 1;
 	write.descriptorType = type;
 	write.pBufferInfo = bufferInfo;
-
 	return write;
+}
+
+VkCommandBufferBeginInfo vkinit::commandBufferBeginInfo(VkCommandBufferUsageFlags flags) {
+	VkCommandBufferBeginInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	info.pInheritanceInfo = nullptr;
+	info.flags = flags;
+	return info;
+}
+
+VkSubmitInfo vkinit::submitInfo(VkCommandBuffer* cmd) {
+	VkSubmitInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	info.waitSemaphoreCount = 0;
+	info.pWaitSemaphores = nullptr;
+	info.pWaitDstStageMask = nullptr;
+	info.commandBufferCount = 1;
+	info.pCommandBuffers = cmd;
+	info.signalSemaphoreCount = 0;
+	info.pSignalSemaphores = nullptr;
+	return info;
 }

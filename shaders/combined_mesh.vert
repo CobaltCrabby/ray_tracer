@@ -2,7 +2,7 @@
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
-layout (location = 2) in vec3 color;
+layout (location = 2) in vec3 vColor;
 
 layout (location = 0) out vec3 outColor;
 
@@ -34,13 +34,21 @@ struct ObjectData {
     mat4 model;
 };
 
+struct colorData {
+    vec3 color;
+};
+
 layout (std140, set = 1, binding = 0) readonly buffer ObjectBuffer {
     ObjectData objects[];
 } objectBuffer;
+
+layout (std140, set = 1, binding = 1) readonly buffer ColorBuffer {
+    colorData colors[];
+} colorBuffer;
 
 void main() {
     mat4 modelMatrix = objectBuffer.objects[gl_BaseInstance].model;
     mat4 transformMatrix = camSceneData.camera.viewProj * modelMatrix;
     gl_Position = transformMatrix * vec4(position, 1.f);
-    outColor = color;
+    outColor = dot(vColor, normalize(vec3(0.2f, 1.f, 0.2f))) + colorBuffer.colors[gl_BaseInstance].color;
 }
