@@ -11,11 +11,24 @@ layout(push_constant) uniform constants {
 	mat4 render_matrix;
 } PushConstants;
 
-layout (set = 0, binding = 0) uniform CameraBuffer {
+struct CameraData {
     mat4 proj;
     mat4 view;
     mat4 viewProj;
-} cameraData;
+};
+
+struct SceneData {
+    vec4 fogColor; // w is for exponent
+	vec4 fogDistances; //x for min, y for max, zw unused.
+	vec4 ambientColor;
+	vec4 sunlightDirection; //w for sun power
+	vec4 sunlightColor;
+};
+
+layout (set = 0, binding = 0) uniform CamSceneBuffer {
+    CameraData camera;
+    SceneData scene;
+} camSceneData;
 
 struct ObjectData {
     mat4 model;
@@ -27,7 +40,7 @@ layout (std140, set = 1, binding = 0) readonly buffer ObjectBuffer {
 
 void main() {
     mat4 modelMatrix = objectBuffer.objects[gl_BaseInstance].model;
-    mat4 transformMatrix = cameraData.viewProj * modelMatrix;
-    gl_Position = transformMatrix * vec4(position, 1.0f);
+    mat4 transformMatrix = camSceneData.camera.viewProj * modelMatrix;
+    gl_Position = transformMatrix * vec4(position, 1.f);
     outColor = color;
 }

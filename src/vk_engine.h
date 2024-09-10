@@ -53,15 +53,8 @@ struct GPUCameraData {
 	glm::mat4 viewProj;
 };
 
-struct FrameData {
-	VkSemaphore presentSemaphore, renderSemaphore;
-	VkFence renderFence;
-
-	VkCommandPool commandPool;
-	VkCommandBuffer commandBuffer;
-
-	AllocatedBuffer cameraBuffer;
-	VkDescriptorSet globalDescriptor;
+struct GPUObjectData {
+	glm::mat4 modelMatrix;
 };
 
 struct GPUSceneData {
@@ -71,6 +64,24 @@ struct GPUSceneData {
 	glm::vec4 sunlightDirection; //w for sun power
 	glm::vec4 sunlightColor;
 };
+
+struct CamSceneData {
+	GPUCameraData camera;
+	GPUSceneData scene;
+};
+
+struct FrameData {
+	VkSemaphore presentSemaphore, renderSemaphore;
+	VkFence renderFence;
+
+	VkCommandPool commandPool;
+	VkCommandBuffer commandBuffer;
+
+	AllocatedBuffer objectBuffer;
+	VkDescriptorSet objectDescriptor;
+};
+
+
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 
@@ -127,17 +138,19 @@ public:
 
 	FrameData frames[FRAME_OVERLAP];
 
+	VkDescriptorSetLayout objectSetLayout;
 	VkDescriptorSetLayout globalSetLayout;
 	VkDescriptorPool descriptorPool;
+
+	VkDescriptorSet camSceneDescriptor;
+	AllocatedBuffer camSceneBuffer;
+	GPUSceneData sceneParameters;
 
 	VmaAllocator allocator;
 
 	std::vector<RenderObject> renderables;
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
-
-	GPUSceneData sceneParameters;
-	AllocatedBuffer sceneParameterBuffer;
 
 	glm::vec3 cameraPos = {0.f, -4.f, -10.f};
 	float cameraSpeed = 0.3f;

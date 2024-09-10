@@ -80,7 +80,10 @@ void VulkanEngine::init_vulkan() {
 
 	// build logical device
 	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
-	vkb::Device vkbDevice = deviceBuilder.build().value();
+	VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features{};
+	shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES;
+	shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+	vkb::Device vkbDevice = deviceBuilder.add_pNext(&shader_draw_parameters_features).build().value();
 
 	device = vkbDevice.device;
 	this->physicalDevice = physicalDevice.physical_device;
@@ -315,16 +318,30 @@ void VulkanEngine::init_pipelines() {
 
 	VkShaderModule meshVertex;
 	if (!load_shader_module((bin + "tri_mesh.vert.spv").c_str(), &meshVertex)) {
-		std::cout << "error when building the triangle vertex shader module" << std::endl;
+		std::cout << "error loading triangle vertex shader module" << std::endl;
 	} else {
-		std::cout << "red triangle vertex shader successfully loaded" << std::endl;
+		std::cout << "successfully loaded red triangle vertex shader" << std::endl;
 	}
 
 	VkShaderModule litFrag;
 	if (!load_shader_module((bin + "default_lit.frag.spv").c_str(), &litFrag)) {
-		std::cout << "error when building the lit frag shader module" << std::endl;
+		std::cout << "error loading lit frag shader module" << std::endl;
 	} else {
-		std::cout << "lit frag shader successfully loaded" << std::endl;
+		std::cout << "successfully loaded lit frag shader" << std::endl;
+	}
+
+	VkShaderModule combinedMeshVert;
+	if (!load_shader_module((bin + "combined_mesh.vert.spv").c_str(), &combinedMeshVert)) {
+		std::cout << "error loading combined mesh vert shader module" << std::endl;
+	} else {
+		std::cout << "successfully loaded combined mesh vert shader" << std::endl;
+	}
+
+	VkShaderModule combinedMeshFrag;
+	if (!load_shader_module((bin + "combined_mesh.frag.spv").c_str(), &combinedMeshFrag)) {
+		std::cout << "error loading combined mesh frag shader module" << std::endl;
+	} else {
+		std::cout << "successfully loaded combined mesh frag shader" << std::endl;
 	}
 
 	//create graphics pipeline
@@ -356,7 +373,6 @@ void VulkanEngine::init_pipelines() {
 	builder._vertexInputInfo.pVertexBindingDescriptions = vertexDescription.bindings.data();
 	builder._vertexInputInfo.vertexBindingDescriptionCount = vertexDescription.bindings.size();
 
-
 	VkPipelineLayoutCreateInfo meshPipelineLayoutInfo = vkinit::pipelineLayoutCreateInfo();
 
 	VkPushConstantRange pushConstant;
@@ -367,15 +383,17 @@ void VulkanEngine::init_pipelines() {
 	meshPipelineLayoutInfo.pPushConstantRanges = &pushConstant;
 	meshPipelineLayoutInfo.pushConstantRangeCount = 1;
 
-	meshPipelineLayoutInfo.pSetLayouts = &globalSetLayout;
-	meshPipelineLayoutInfo.setLayoutCount = 1;
+	VkDescriptorSetLayout setLayouts[] = {globalSetLayout, objectSetLayout};
+
+	meshPipelineLayoutInfo.pSetLayouts = setLayouts;
+	meshPipelineLayoutInfo.setLayoutCount = 2;
 
 	VkPipelineLayout meshPipelineLayout;
 
 	VK_CHECK(vkCreatePipelineLayout(device, &meshPipelineLayoutInfo, nullptr, &meshPipelineLayout));
 
-	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, meshVertex));
-	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, litFrag));
+	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, combinedMeshVert));
+	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, combinedMeshFrag));
 	builder._pipelineLayout = meshPipelineLayout;
 
 	create_material(builder.build_pipeline(device, renderPass), meshPipelineLayout, "defaultmesh");
@@ -387,6 +405,8 @@ void VulkanEngine::init_pipelines() {
 	vkDestroyShaderModule(device, redVertex, nullptr);
 	vkDestroyShaderModule(device, meshVertex, nullptr);
 	vkDestroyShaderModule(device, litFrag, nullptr);
+	vkDestroyShaderModule(device, combinedMeshVert, nullptr);
+	vkDestroyShaderModule(device, combinedMeshFrag, nullptr);
 
 	deletionQueue.push_function([=]() {
 		VkPipelineLayout lastLayout;
@@ -411,7 +431,7 @@ void VulkanEngine::init_scene() {
 	for (int x = -20; x <= 20; x++) {
 		for (int y = -20; y <= 20; y++) {
 			RenderObject tri;
-			tri.mesh = get_mesh("triangle");
+			tri.mesh = get_mesh("monkey");
 			tri.material = get_material("defaultmesh");
 			
 			glm::mat4 translation = glm::translate(glm::mat4(1.f), glm::vec3(x, 0, y));
@@ -424,12 +444,12 @@ void VulkanEngine::init_scene() {
 }
 
 void VulkanEngine::init_descriptors() {
-	const size_t sceneParameterBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
-	sceneParameterBuffer = create_buffer(sceneParameterBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	const size_t camSceneBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(CamSceneData));
 
 	std::vector<VkDescriptorPoolSize> sizes = {
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
-		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10}	
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10}
 	};
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -440,56 +460,78 @@ void VulkanEngine::init_descriptors() {
 
 	vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool);
 
-	VkDescriptorSetLayoutBinding camBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
-	VkDescriptorSetLayoutBinding sceneBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
-
-	VkDescriptorSetLayoutBinding bindings[] = {camBufferBinding, sceneBinding};
+	VkDescriptorSetLayoutBinding camSceneBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0);
 
 	VkDescriptorSetLayoutCreateInfo setInfo{};
 	setInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	setInfo.bindingCount = 2;
-	setInfo.pBindings = bindings;
+	setInfo.bindingCount = 1;
+	setInfo.pBindings = &camSceneBinding;
+
+	VkDescriptorSetLayoutBinding objectBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
+
+	VkDescriptorSetLayoutCreateInfo set2Info{};
+	set2Info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	set2Info.bindingCount = 1;
+	set2Info.pBindings = &objectBinding;
 
 	vkCreateDescriptorSetLayout(device, &setInfo, nullptr, &globalSetLayout);
+	vkCreateDescriptorSetLayout(device, &set2Info, nullptr, &objectSetLayout);
 
 	for (int i = 0; i < FRAME_OVERLAP; i++) {
-		frames[i].cameraBuffer = create_buffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		const int MAX_OBJECTS = 10000;
 
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = &globalSetLayout;
+		frames[i].objectBuffer = create_buffer(sizeof(GPUObjectData) * MAX_OBJECTS, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-		vkAllocateDescriptorSets(device, &allocInfo, &frames[i].globalDescriptor);
+		VkDescriptorSetAllocateInfo objectAllocInfo{};
+		objectAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		objectAllocInfo.descriptorPool = descriptorPool;
+		objectAllocInfo.descriptorSetCount = 1;
+		objectAllocInfo.pSetLayouts = &objectSetLayout;
+
+		vkAllocateDescriptorSets(device, &objectAllocInfo, &frames[i].objectDescriptor);
 
 		//point to buffers
-		VkDescriptorBufferInfo camInfo{};
-		camInfo.buffer = frames[i].cameraBuffer.buffer;
-		camInfo.offset = 0;
-		camInfo.range = sizeof(GPUCameraData);
+		VkDescriptorBufferInfo objectInfo{};
+		objectInfo.buffer = frames[i].objectBuffer.buffer;
+		objectInfo.offset = 0;
+		objectInfo.range = sizeof(GPUObjectData) * MAX_OBJECTS;
 
-		VkDescriptorBufferInfo sceneInfo{};
-		sceneInfo.buffer = sceneParameterBuffer.buffer;
-		sceneInfo.offset = 0;
-		sceneInfo.range = sizeof(GPUSceneData);
+		VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, frames[i].objectDescriptor, &objectInfo, 0);
+		VkWriteDescriptorSet writes[] = {objectWrite};
 
-		VkWriteDescriptorSet cameraWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, frames[i].globalDescriptor, &camInfo, 0);
-		VkWriteDescriptorSet sceneWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, frames[i].globalDescriptor, &sceneInfo, 1);
-		VkWriteDescriptorSet writes[] = {cameraWrite, sceneWrite};
-
-		vkUpdateDescriptorSets(device, 2, writes, 0, nullptr);
+		vkUpdateDescriptorSets(device, 1, writes, 0, nullptr);
 	}
+
+	//combined frame buffer setup
+	camSceneBuffer = create_buffer(camSceneBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &globalSetLayout;
+
+	vkAllocateDescriptorSets(device, &allocInfo, &camSceneDescriptor);
+
+	VkDescriptorBufferInfo camSceneInfo{};
+	camSceneInfo.buffer = camSceneBuffer.buffer;
+	camSceneInfo.offset = 0;
+	camSceneInfo.range = sizeof(CamSceneData);
+
+	VkWriteDescriptorSet camSceneWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, camSceneDescriptor, &camSceneInfo, 0);
+
+	vkUpdateDescriptorSets(device, 1, &camSceneWrite, 0, nullptr);
 
 	for (int i = 0; i < FRAME_OVERLAP; i++) {
 		deletionQueue.push_function([=]() {
-			vmaDestroyBuffer(allocator, frames[i].cameraBuffer.buffer, frames[i].cameraBuffer.allocation);
+			vmaDestroyBuffer(allocator, frames[i].objectBuffer.buffer, frames[i].objectBuffer.allocation);
 		});
 	}
 
 	deletionQueue.push_function([=]() {
-		vmaDestroyBuffer(allocator, sceneParameterBuffer.buffer, sceneParameterBuffer.allocation);
+		vmaDestroyBuffer(allocator, camSceneBuffer.buffer, camSceneBuffer.allocation);
 		vkDestroyDescriptorSetLayout(device, globalSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(device, objectSetLayout, nullptr);
 		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 	});
 }
@@ -531,7 +573,7 @@ void VulkanEngine::load_meshes() {
 	triangleMesh.vertices[2].color = {0.f, 0.f, 1.f};
 
 	Mesh monkeyMesh;
-	monkeyMesh.load_from_obj("../assets/monkey_smooth.obj");
+	monkeyMesh.load_from_obj("../assets/monkey_flat.obj");
 
 	//puts into buffer
 	upload_mesh(triangleMesh);
@@ -608,7 +650,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int co
 	//glm::vec3 camPos = {0.f, -4.f, -10.f};
 	glm::mat4 view = glm::translate(glm::mat4(1.f), cameraPos);
 	glm::mat4 projection = glm::perspective(glm::radians(70.f), (float) _windowExtent.width / _windowExtent.height, 0.1f, 200.f);
-	glm::mat4 spin = glm::rotate(glm::mat4{1.f}, glm::radians(_frameNumber * 0.4f), glm::vec3(1, 0, 0));
+	glm::mat4 spin = glm::rotate(glm::mat4{1.f}, glm::radians(0.6f), glm::vec3(1, 0, 0));
 
 	projection[1][1] *= -1;
 
@@ -617,34 +659,41 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int co
 	camData.view = view;
 	camData.viewProj = projection * view;
 
-	//copy camera data into uniform buffer
-	void* data;
-	vmaMapMemory(allocator, get_current_frame().cameraBuffer.allocation, &data);
-	memcpy(data, &camData, sizeof(GPUCameraData));
-	vmaUnmapMemory(allocator, get_current_frame().cameraBuffer.allocation);
-
 	//copy scene data into uniform buffer
+	int frameIndex = _frameNumber % FRAME_OVERLAP;
 	float framed = (_frameNumber / 120.f);
 	sceneParameters.ambientColor = {sin(framed), 0.f, cos(framed), 1.f};
 
-	char* sceneData;
-	vmaMapMemory(allocator, sceneParameterBuffer.allocation, (void**)&sceneData);
-	int frameIndex = _frameNumber % FRAME_OVERLAP;
-	sceneData += pad_uniform_buffer_size(sizeof(GPUSceneData)) * frameIndex; //evil pointer math idk
-	memcpy(sceneData, &sceneParameters, sizeof(GPUSceneData));
-	vmaUnmapMemory(allocator, sceneParameterBuffer.allocation);
+	void* camSceneData;
+	vmaMapMemory(allocator, camSceneBuffer.allocation, &camSceneData);
+	CamSceneData* pCamScene = (CamSceneData*) camSceneData;
+	pCamScene[frameIndex].camera = camData;
+	pCamScene[frameIndex].scene = sceneParameters;
+	vmaUnmapMemory(allocator, camSceneBuffer.allocation);
+
+	//copy object data into storage buffer
+	void* objectData;
+	vmaMapMemory(allocator, get_current_frame().objectBuffer.allocation, &objectData);
+	GPUObjectData* objectSSBO = (GPUObjectData*) objectData;
+	for (int i = 0; i < count; i++) {
+		RenderObject& object = first[i];
+		objectSSBO[i].modelMatrix = object.transformMatrix;
+	}
+	vmaUnmapMemory(allocator, get_current_frame().objectBuffer.allocation);
 
 	Mesh* lastMesh;
 	Material* lastMaterial;
 	for (int i = 0; i < count; i++) {
 		RenderObject& object = first[i];
+		object.transformMatrix *= spin;
 
 		if (object.material != lastMaterial) {
 			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipeline);
 			lastMaterial = object.material;
 
-			uint32_t uniform_offset = pad_uniform_buffer_size(sizeof(GPUSceneData)) * frameIndex;
-			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipelineLayout, 0, 1, &get_current_frame().globalDescriptor, 1, &uniform_offset);
+			uint32_t uniform_offset = pad_uniform_buffer_size(sizeof(CamSceneData)) * frameIndex;
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipelineLayout, 0, 1, &camSceneDescriptor, 1, &uniform_offset);
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipelineLayout, 1, 1, &get_current_frame().objectDescriptor, 0, nullptr);
 		}
 
 		MeshPushConstants constants;
@@ -658,7 +707,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int co
 			lastMesh = object.mesh;
 		}
 
-		vkCmdDraw(cmd, object.mesh->vertices.size(), 1, 0, 0);
+		vkCmdDraw(cmd, object.mesh->vertices.size(), 1, 0, i);
 	}
 }
 
