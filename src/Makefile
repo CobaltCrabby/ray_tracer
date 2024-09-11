@@ -226,6 +226,30 @@ vk_mesh.cpp.s:
 	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s
 .PHONY : vk_mesh.cpp.s
 
+vk_textures.o: vk_textures.cpp.o
+.PHONY : vk_textures.o
+
+# target to build an object file
+vk_textures.cpp.o:
+	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.o
+.PHONY : vk_textures.cpp.o
+
+vk_textures.i: vk_textures.cpp.i
+.PHONY : vk_textures.i
+
+# target to preprocess a source file
+vk_textures.cpp.i:
+	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.i
+.PHONY : vk_textures.cpp.i
+
+vk_textures.s: vk_textures.cpp.s
+.PHONY : vk_textures.s
+
+# target to generate assembly for a file
+vk_textures.cpp.s:
+	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.s
+.PHONY : vk_textures.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -247,6 +271,9 @@ help:
 	@echo "... vk_mesh.o"
 	@echo "... vk_mesh.i"
 	@echo "... vk_mesh.s"
+	@echo "... vk_textures.o"
+	@echo "... vk_textures.i"
+	@echo "... vk_textures.s"
 .PHONY : help
 
 

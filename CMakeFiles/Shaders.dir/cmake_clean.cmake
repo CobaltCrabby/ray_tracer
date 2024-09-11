@@ -5,6 +5,7 @@ file(REMOVE_RECURSE
   "shaders/bin/combined_mesh.frag.spv"
   "shaders/bin/combined_mesh.vert.spv"
   "shaders/bin/default_lit.frag.spv"
+  "shaders/bin/textured_mesh.frag.spv"
   "shaders/bin/tri_mesh.vert.spv"
   "shaders/bin/triangle.frag.spv"
   "shaders/bin/triangle.vert.spv"

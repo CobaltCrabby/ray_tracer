@@ -3,8 +3,10 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec3 vColor;
+layout (location = 3) in vec2 vTexCoord;
 
 layout (location = 0) out vec3 outColor;
+layout (location = 1) out vec2 texCoord;
 
 layout(push_constant) uniform constants {
 	vec4 data;
@@ -50,5 +52,6 @@ void main() {
     mat4 modelMatrix = objectBuffer.objects[gl_BaseInstance].model;
     mat4 transformMatrix = camSceneData.camera.viewProj * modelMatrix;
     gl_Position = transformMatrix * vec4(position, 1.f);
+    texCoord = vTexCoord;
     outColor = dot(vColor, normalize(vec3(0.2f, 1.f, 0.2f))) + colorBuffer.colors[gl_BaseInstance].color;
 }

@@ -37,6 +37,7 @@ struct DeletionQueue {
 };
 
 struct Material {
+	VkDescriptorSet textureSet{VK_NULL_HANDLE};
 	VkPipeline pipeline;
 	VkPipelineLayout pipelineLayout;
 };
@@ -94,6 +95,11 @@ struct UploadContext {
 	VkCommandBuffer uploadBuffer;
 };
 
+struct Texture {
+	AllocatedImage image;
+	VkImageView imageView;
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine {
@@ -110,17 +116,15 @@ private:
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void load_meshes();
+	void load_images();
 	void upload_mesh(Mesh& mesh);
 
-	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memory);
 	size_t pad_uniform_buffer_size(size_t originalSize);
 
 	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
 	Material* get_material(const std::string& name);
 	Mesh* get_mesh(const std::string& name);
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
-
-	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
 
 	FrameData& get_current_frame();
 
@@ -153,6 +157,7 @@ public:
 
 	VkDescriptorSetLayout storageSetLayout;
 	VkDescriptorSetLayout globalSetLayout;
+	VkDescriptorSetLayout singleTextureLayout;
 	VkDescriptorPool descriptorPool;
 
 	VkDescriptorSet camSceneDescriptor;
@@ -165,6 +170,7 @@ public:
 	std::vector<RenderObject> renderables;
 	std::unordered_map<std::string, Material> materials;
 	std::unordered_map<std::string, Mesh> meshes;
+	std::unordered_map<std::string, Texture> textures;
 
 	glm::vec3 cameraPos = {0.f, -4.f, -10.f};
 	float cameraSpeed = 0.3f;
@@ -188,6 +194,9 @@ public:
 
 	//run main loop
 	void run();
+
+	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memory);
+	void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
 };
 
 class PipelineBuilder {
