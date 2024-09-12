@@ -18,27 +18,13 @@ VertexInputDescription Vertex::get_vertex_description() {
 	positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
 	positionAttribute.offset = offsetof(Vertex, position);
 
-	VkVertexInputAttributeDescription normalAttribute = {};
-	normalAttribute.binding = 0;
-	normalAttribute.location = 1;
-	normalAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-	normalAttribute.offset = offsetof(Vertex, normal);
-
-	VkVertexInputAttributeDescription colorAttribute = {};
-	colorAttribute.binding = 0;
-	colorAttribute.location = 2;
-	colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-	colorAttribute.offset = offsetof(Vertex, color);
-
 	VkVertexInputAttributeDescription uvAttribute = {};
 	uvAttribute.binding = 0;
-	uvAttribute.location = 3;
+	uvAttribute.location = 1;
 	uvAttribute.format = VK_FORMAT_R32G32_SFLOAT;
 	uvAttribute.offset = offsetof(Vertex, uv);
 
 	description.attributes.push_back(positionAttribute);
-	description.attributes.push_back(normalAttribute);
-	description.attributes.push_back(colorAttribute);
 	description.attributes.push_back(uvAttribute);
 	return description;
 }
@@ -90,15 +76,15 @@ bool Mesh::load_from_obj(char* filePath) {
 				new_vert.position.y = vy;
 				new_vert.position.z = vz;
 
-				new_vert.normal.x = nx;
-				new_vert.normal.y = ny;
-                new_vert.normal.z = nz;
+				// new_vert.normal.x = nx;
+				// new_vert.normal.y = ny;
+                // new_vert.normal.z = nz;
 
 				new_vert.uv.x = ux;
 				new_vert.uv.y = 1 - uy;
 
                 // we are setting the vertex color as the vertex normal. This is just for display purposes
-                new_vert.color = new_vert.normal;
+                //new_vert.color = new_vert.normal;
 
 				vertices.push_back(new_vert);
 			}

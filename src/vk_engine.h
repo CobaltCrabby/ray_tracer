@@ -155,14 +155,8 @@ public:
 
 	FrameData frames[FRAME_OVERLAP];
 
-	VkDescriptorSetLayout storageSetLayout;
-	VkDescriptorSetLayout globalSetLayout;
 	VkDescriptorSetLayout singleTextureLayout;
 	VkDescriptorPool descriptorPool;
-
-	VkDescriptorSet camSceneDescriptor;
-	AllocatedBuffer camSceneBuffer;
-	GPUSceneData sceneParameters;
 
 	VmaAllocator allocator;
 	UploadContext uploadContext;
