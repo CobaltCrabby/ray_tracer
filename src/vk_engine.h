@@ -143,10 +143,6 @@ public:
 	std::vector<VkImage> swapchainImages;
 	std::vector<VkImageView> swapchainImageViews;
 
-	VkImageView depthImageView;
-	AllocatedImage depthImage;
-	VkFormat depthFormat;
-
 	VkQueue graphicsQueue;
 	uint32_t graphicsQueueFamily;
 

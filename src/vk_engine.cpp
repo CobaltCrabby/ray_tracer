@@ -131,22 +131,8 @@ void VulkanEngine::init_swapchain() {
 		1
 	};
 
-	depthFormat = VK_FORMAT_D32_SFLOAT;
-	VkImageCreateInfo dimgInfo = vkinit::imageCreateInfo(depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
-	
-	VmaAllocationCreateInfo dimgAllocInfo{};
-	dimgAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	dimgAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	vmaCreateImage(allocator, &dimgInfo, &dimgAllocInfo, &depthImage.image, &depthImage.allocation, nullptr);
-
-	VkImageViewCreateInfo dimgViewInfo = vkinit::imageViewCreateInfo(depthFormat, depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
-	VK_CHECK(vkCreateImageView(device, &dimgViewInfo, nullptr, &depthImageView));
-
 	deletionQueue.push_function([=]() {
 		vkDestroySwapchainKHR(device, swapchain, nullptr);
-		vkDestroyImageView(device, depthImageView, nullptr);
-		vmaDestroyImage(allocator, depthImage.image, depthImage.allocation);
 	});
 }
 
@@ -194,26 +180,9 @@ void VulkanEngine::init_default_renderpass() {
 
 	attachments.push_back(colorAttachment);
 
-	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = depthFormat;
-	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	attachments.push_back(depthAttachment);
-
 	VkSubpassDescription subpass = {};
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 	VkSubpassDependency dependency = {};
@@ -266,7 +235,6 @@ void VulkanEngine::init_framebuffers() {
 	for (int i = 0; i < imageCount; i++) {
 		std::vector<VkImageView> attachments;
 		attachments.push_back(swapchainImageViews[i]);
-		attachments.push_back(depthImageView);
 
 		framebufferInfo.attachmentCount = attachments.size();
 		framebufferInfo.pAttachments = attachments.data();
@@ -386,37 +354,6 @@ void VulkanEngine::init_pipelines() {
 }
 
 void VulkanEngine::init_scene() {
-	RenderObject monkey;
-	monkey.mesh = get_mesh("monkey");
-	monkey.material = get_material("defaultmesh");
-	monkey.transformMatrix = glm::mat4(1.f);
-	monkey.color = glm::vec3(0.f);
-
-	renderables.push_back(monkey);
-
-	for (int x = -20; x <= 20; x++) {
-		for (int y = -20; y <= 20; y++) {
-			RenderObject tri;
-			tri.mesh = get_mesh("monkey");
-			tri.material = get_material("defaultmesh");
-			
-			glm::mat4 translation = glm::translate(glm::mat4(1.f), glm::vec3(x, 0, y));
-			glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.2f));
-			tri.transformMatrix = translation * scale;
-			tri.color = glm::vec3(0.f, (float(x)) / 20.f, (float(y)) / 20.f);
-
-			//renderables.push_back(tri);
-		}
-	}
-
-	RenderObject map;
-	map.mesh = get_mesh("empire");
-	map.material = get_material("texturedmesh");
-	map.transformMatrix = glm::translate(glm::vec3{5, -10, 0});
-	map.color = glm::vec3(0.f);
-	
-	//renderables.push_back(map);
-
 	RenderObject quad;
 	quad.transformMatrix = glm::mat4();
 	quad.material = get_material("defaultmesh");
@@ -463,7 +400,8 @@ void VulkanEngine::init_descriptors() {
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
 		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10},
-		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10},
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10}
 	};
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -665,45 +603,14 @@ Mesh* VulkanEngine::get_mesh(const std::string& name) {
 }
 
 void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int count) {
-	glm::mat4 view = glm::translate(glm::mat4(1.f), cameraPos);
-	glm::mat4 projection = glm::perspective(glm::radians(70.f), (float) _windowExtent.width / _windowExtent.height, 0.1f, 200.f);
-	glm::mat4 spin = glm::rotate(glm::mat4{1.f}, glm::radians(0.6f), glm::vec3(1, 0, 0));
-
-	//vulkan y up lol
-	projection[1][1] *= -1;
-
-	GPUCameraData camData;
-	camData.proj = projection;
-	camData.view = view;
-	camData.viewProj = projection * view;
-
 	//copy scene data into uniform buffer
-	int frameIndex = _frameNumber % FRAME_OVERLAP;
-	float framed = (_frameNumber / 120.f);
+	RenderObject& object = *first;
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipeline);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipelineLayout, 0, 1, &object.material->textureSet, 0, nullptr);
 
-	Mesh* lastMesh;
-	Material* lastMaterial = nullptr;
-	for (int i = 0; i < count; i++) {
-		RenderObject& object = first[i];
-		//object.transformMatrix *= spin;
-
-		if (object.material != lastMaterial) {
-			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipeline);
-			lastMaterial = object.material;
-
-			if (object.material->textureSet != VK_NULL_HANDLE) {
-				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipelineLayout, 0, 1, &object.material->textureSet, 0, nullptr);
-			}
-		}
-		
-		if (object.mesh != lastMesh) {
-			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(cmd, 0, 1, &object.mesh->vertexBuffer.buffer, &offset);
-			lastMesh = object.mesh;
-		}
-
-		vkCmdDraw(cmd, object.mesh->vertices.size(), 1, 0, i);
-	}
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &object.mesh->vertexBuffer.buffer, &offset);
+	vkCmdDraw(cmd, object.mesh->vertices.size(), 1, 0, 0);
 }
 
 void VulkanEngine::immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function) {
