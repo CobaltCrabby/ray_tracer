@@ -5,6 +5,7 @@ d3acb23de8c79c122fa6ff8cac1700a9 shaders/bin/colored_triangle.frag.spv
 8908b636805f6df1442b4e71ba944866 shaders/bin/combined_mesh.frag.spv
 6fd96034563135a56bc1f78a35424d2a shaders/bin/combined_mesh.vert.spv
 141657a40ea4c395cf2977e8a51e8cfd shaders/bin/default_lit.frag.spv
+33105df3c6a303c1c0411b3e89193b25 shaders/bin/raytrace.comp.spv
 e0b636bf7dfdad957ec5107dbd3d836a shaders/bin/raytrace.frag.spv
 dd31a448c65939730d490adf0d65b09a shaders/bin/raytrace.vert.spv
 350cf6a187f9f1aeefb52d33a74ebe6b shaders/bin/textured_mesh.frag.spv

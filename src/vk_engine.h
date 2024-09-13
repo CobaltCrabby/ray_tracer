@@ -77,11 +77,14 @@ struct CamSceneData {
 };
 
 struct FrameData {
-	VkSemaphore presentSemaphore, renderSemaphore;
-	VkFence renderFence;
+	VkSemaphore presentSemaphore, renderSemaphore, computeSemaphore;
+	VkFence renderFence, computeFence;
 
 	VkCommandPool commandPool;
 	VkCommandBuffer commandBuffer;
+
+	VkCommandPool computeCmdPool;
+	VkCommandBuffer computeCmdBuffer;
 
 	AllocatedBuffer objectBuffer;
 	AllocatedBuffer colorBuffer;
@@ -124,6 +127,7 @@ private:
 	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
 	Material* get_material(const std::string& name);
 	Mesh* get_mesh(const std::string& name);
+	void dispatch_compute(VkQueue queue, VkCommandBuffer cmd, VkDescriptorSet* descriptorSet);
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
 
 	FrameData& get_current_frame();
@@ -145,14 +149,21 @@ public:
 
 	VkQueue graphicsQueue;
 	uint32_t graphicsQueueFamily;
+	VkQueue computeQueue;
+	uint32_t computeQueueFamily;
 
 	VkRenderPass renderPass;
 	std::vector<VkFramebuffer> framebuffers;
 
 	FrameData frames[FRAME_OVERLAP];
 
+	VkDescriptorSet computeSet;
 	VkDescriptorSetLayout singleTextureLayout;
+	VkDescriptorSetLayout computeLayout;
 	VkDescriptorPool descriptorPool;
+
+	VkPipelineLayout computePipeLayout;
+	VkPipeline computePipeline;
 
 	VmaAllocator allocator;
 	UploadContext uploadContext;

@@ -21,6 +21,8 @@ namespace vkinit {
 	VkPipelineColorBlendAttachmentState pipelineColorBlendAttachmentState();
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo();
 
+	VkComputePipelineCreateInfo computePipelineCreateInfo(VkPipelineLayout layout, VkPipelineCreateFlags flags = 0);
+
 	VkImageCreateInfo imageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
 	VkImageViewCreateInfo imageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
 

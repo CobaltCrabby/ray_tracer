@@ -99,6 +99,17 @@ void VulkanEngine::init_vulkan() {
 	graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 	graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
+	//vulkan is lying to me there is only 1 queue so they are the same
+	computeQueue = graphicsQueue;
+	computeQueueFamily = graphicsQueueFamily;
+
+	auto queueFamilies = physicalDevice.get_queue_families();
+	for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilies.size ()); i++) {
+		if (queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+			cout << "YAHOO!!" << endl;
+		}
+	}
+
 	// create memory allocator
 	VmaAllocatorCreateInfo allocatorInfo{};
 	allocatorInfo.device = device;
@@ -138,14 +149,19 @@ void VulkanEngine::init_swapchain() {
 
 void VulkanEngine::init_commands() {
 	VkCommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	VkCommandPoolCreateInfo computeCmdPoolInfo = vkinit::commandPoolCreateInfo(computeQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 	for (int i = 0; i < FRAME_OVERLAP; i++) {
 		VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &frames[i].commandPool));
+		VK_CHECK(vkCreateCommandPool(device, &computeCmdPoolInfo, nullptr, &frames[i].computeCmdPool));
 
 		VkCommandBufferAllocateInfo commandBufferInfo = vkinit::commandBufferAllocateInfo(frames[i].commandPool);
+		VkCommandBufferAllocateInfo computeCmdBufferInfo = vkinit::commandBufferAllocateInfo(frames[i].computeCmdPool);
 		VK_CHECK(vkAllocateCommandBuffers(device, &commandBufferInfo, &frames[i].commandBuffer));
+		VK_CHECK(vkAllocateCommandBuffers(device, &computeCmdBufferInfo, &frames[i].computeCmdBuffer));
 
 		deletionQueue.push_function([=]() {
 			vkDestroyCommandPool(device, frames[i].commandPool, nullptr);
+			vkDestroyCommandPool(device, frames[i].computeCmdPool, nullptr);
 		});
 	}
 
@@ -259,17 +275,21 @@ void VulkanEngine::init_sync_structures() {
 
 	for (int i = 0; i < FRAME_OVERLAP; i++) {
 		VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &frames[i].renderFence));
+		VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &frames[i].computeFence));
 
 		deletionQueue.push_function([=]() {
 			vkDestroyFence(device, frames[i].renderFence, nullptr);
+			vkDestroyFence(device, frames[i].computeFence, nullptr);
 		});
 
 		VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frames[i].renderSemaphore));
 		VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frames[i].presentSemaphore));
+		VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frames[i].computeSemaphore));
 
 		deletionQueue.push_function([=]() {
-			vkDestroySemaphore(device, frames[i].presentSemaphore, nullptr);
 			vkDestroySemaphore(device, frames[i].renderSemaphore, nullptr);
+			vkDestroySemaphore(device, frames[i].presentSemaphore, nullptr);
+			vkDestroySemaphore(device, frames[i].computeSemaphore, nullptr);
 		});
 	}
 }
@@ -288,7 +308,14 @@ void VulkanEngine::init_pipelines() {
 	if (!load_shader_module((bin + "raytrace.vert.spv").c_str(), &vertex)) {
 		cout << "error loading vertex shader" << endl;
 	} else {
-		cout << "successfully colored vertex shader" << endl;
+		cout << "successfully loaded vertex shader" << endl;
+	}
+
+	VkShaderModule compute;
+	if (!load_shader_module((bin + "raytrace.comp.spv").c_str(), &compute)) {
+		cout << "error loading compute shader" << endl;
+	} else {
+		cout << "successfully loaded compute shader" << endl;
 	}
 
 	//create graphics pipeline
@@ -329,7 +356,12 @@ void VulkanEngine::init_pipelines() {
 
 	VkPipelineLayout texturedPipeLayout;
 
+	VkPipelineLayoutCreateInfo computePipelineLayoutInfo = vkinit::pipelineLayoutCreateInfo();
+	computePipelineLayoutInfo.pSetLayouts = &computeLayout;
+	computePipelineLayoutInfo.setLayoutCount = 1;
+
 	VK_CHECK(vkCreatePipelineLayout(device, &texturedPipelineLayoutInfo, nullptr, &texturedPipeLayout));
+	VK_CHECK(vkCreatePipelineLayout(device, &computePipelineLayoutInfo, nullptr, &computePipeLayout));
 
 	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertex));
 	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragment));
@@ -337,9 +369,19 @@ void VulkanEngine::init_pipelines() {
 
 	create_material(builder.build_pipeline(device, renderPass), texturedPipeLayout, "defaultmesh");
 
+	VkComputePipelineCreateInfo computePipelineInfo = vkinit::computePipelineCreateInfo(computePipeLayout);
+	computePipelineInfo.stage = vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, compute);
+	VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineInfo, nullptr, &computePipeline));
+
 	//can delete after pipeline creation
 	vkDestroyShaderModule(device, fragment, nullptr);
 	vkDestroyShaderModule(device, vertex, nullptr);
+	vkDestroyShaderModule(device, compute, nullptr);
+
+	deletionQueue.push_function([=]() {
+		vkDestroyPipelineLayout(device, computePipeLayout, nullptr);
+		vkDestroyPipeline(device, computePipeline, nullptr);
+	});
 
 	deletionQueue.push_function([=]() {
 		VkPipelineLayout lastLayout;
@@ -381,21 +423,37 @@ void VulkanEngine::init_scene() {
 	//write to the descriptor set so that it points to our empire_diffuse texture
 	VkDescriptorImageInfo imageBufferInfo;
 	imageBufferInfo.sampler = blockySampler;
-	imageBufferInfo.imageView = textures["empire_diffuse"].imageView;
-	imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageBufferInfo.imageView = textures["compute"].imageView;
+	imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	VkWriteDescriptorSet texture1 = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, mat->textureSet, &imageBufferInfo, 0);
 
 	vkUpdateDescriptorSets(device, 1, &texture1, 0, nullptr);
+
+	//allocate the descriptor set for compute
+	VkDescriptorSetAllocateInfo compAllocInfo = {};
+	compAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	compAllocInfo.descriptorPool = descriptorPool;
+	compAllocInfo.descriptorSetCount = 1;
+	compAllocInfo.pSetLayouts = &computeLayout;
+
+	vkAllocateDescriptorSets(device, &compAllocInfo, &computeSet);
+
+	VkDescriptorImageInfo compImageInfo;
+	compImageInfo.sampler = blockySampler;
+	compImageInfo.imageView = textures["compute"].imageView;
+	compImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
+	
+	vkUpdateDescriptorSets(device, 1, &compTex, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, blockySampler, nullptr);
 	});
 }
 
-void VulkanEngine::init_descriptors() {
-	const size_t camSceneBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(CamSceneData));
-
+void VulkanEngine:: init_descriptors() {
 	std::vector<VkDescriptorPoolSize> sizes = {
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
@@ -421,8 +479,19 @@ void VulkanEngine::init_descriptors() {
 
 	vkCreateDescriptorSetLayout(device, &setInfo, nullptr, &singleTextureLayout);
 
+	//compute descriptors
+	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+
+	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
+	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	computeSetInfo.bindingCount = 1;
+	computeSetInfo.pBindings = &computeBinding;
+
+	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
+
 	deletionQueue.push_function([=]() {
 		vkDestroyDescriptorSetLayout(device, singleTextureLayout, nullptr);
+		vkDestroyDescriptorSetLayout(device, computeLayout, nullptr);
 		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 	});
 }
@@ -498,17 +567,17 @@ void VulkanEngine::load_meshes() {
 }
 
 void VulkanEngine::load_images() {
-	Texture lostEmpire;
+	Texture computeResult;
 
-	vkutil::load_image_from_file(*this, "../assets/lost_empire-RGBA.png", lostEmpire.image);
+	vkutil::create_empty_image(*this, computeResult.image, _windowExtent);
 
-	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, lostEmpire.image.image, VK_IMAGE_ASPECT_COLOR_BIT);
-	vkCreateImageView(device, &viewInfo, nullptr, &lostEmpire.imageView);
+	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, computeResult.image.image, VK_IMAGE_ASPECT_COLOR_BIT);
+	VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &computeResult.imageView));
 
-	textures["empire_diffuse"] = lostEmpire;
+	textures["compute"] = computeResult;
 
 	deletionQueue.push_function([=]() {
-		vkDestroyImageView(device, lostEmpire.imageView, nullptr);
+		vkDestroyImageView(device, computeResult.imageView, nullptr);
 	});
 }
 
@@ -602,6 +671,15 @@ Mesh* VulkanEngine::get_mesh(const std::string& name) {
 	return it == meshes.end() ? nullptr : &it->second;
 }
 
+void VulkanEngine::dispatch_compute(VkQueue queue, VkCommandBuffer cmd, VkDescriptorSet* descriptorSet) {
+	VkCommandBufferBeginInfo beginInfo = vkinit::commandBufferBeginInfo();
+	vkBeginCommandBuffer(cmd, &beginInfo);
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeLayout, 0, 1, descriptorSet, 0, nullptr);
+	vkCmdDispatch(cmd, ceil(_windowExtent.width / 8.0), ceil(_windowExtent.height / 8.0), 1);
+	vkEndCommandBuffer(cmd);
+}
+
 void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int count) {
 	//copy scene data into uniform buffer
 	RenderObject& object = *first;
@@ -668,10 +746,28 @@ void VulkanEngine::draw() {
 
 	//prepare command buffer for commands
 	VK_CHECK(vkResetCommandBuffer(currentFrame.commandBuffer, 0));
+	VK_CHECK(vkResetCommandBuffer(currentFrame.commandBuffer, 0));
+
+	dispatch_compute(computeQueue, currentFrame.computeCmdBuffer, &computeSet);
+
 	VkCommandBufferBeginInfo cmdBeginInfo = {};
 	cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	VK_CHECK(vkBeginCommandBuffer(currentFrame.commandBuffer, &cmdBeginInfo));
+
+	//image barrier for compute result
+	VkImageMemoryBarrier barrier;
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	barrier.image = textures["compute"].image.image;
+	barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.pNext = nullptr;
+	vkCmdPipelineBarrier(currentFrame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
 	//record commands into buffer
 	VkClearValue clearValue;
@@ -700,6 +796,12 @@ void VulkanEngine::draw() {
 
 	vkCmdEndRenderPass(currentFrame.commandBuffer);
 	VK_CHECK(vkEndCommandBuffer(currentFrame.commandBuffer));
+
+	vkWaitForFences(device, 1, &currentFrame.computeFence, VK_TRUE, 9999999999);
+	vkResetFences(device, 1, &currentFrame.computeFence);
+
+	VkSubmitInfo computeSubmitInfo = vkinit::submitInfo(&currentFrame.computeCmdBuffer);
+	VK_CHECK(vkQueueSubmit(computeQueue, 1, &computeSubmitInfo, currentFrame.computeFence));
 
 	//submit to queue
 	VkSubmitInfo submitInfo = {};

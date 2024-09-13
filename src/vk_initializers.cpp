@@ -99,6 +99,15 @@ VkPipelineLayoutCreateInfo vkinit::pipelineLayoutCreateInfo() {
 	return info;
 }
 
+VkComputePipelineCreateInfo vkinit::computePipelineCreateInfo(VkPipelineLayout layout, VkPipelineCreateFlags flags) {
+	VkComputePipelineCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	info.layout = layout;
+	info.flags = flags;
+	return info;
+}
+
+
 VkImageCreateInfo vkinit::imageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent) {
 	VkImageCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
