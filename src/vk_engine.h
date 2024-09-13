@@ -103,6 +103,11 @@ struct Texture {
 	VkImageView imageView;
 };
 
+struct RenderStats {
+	float frameTime;
+	float drawTime;
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine {
@@ -130,6 +135,7 @@ private:
 	Mesh* get_mesh(const std::string& name);
 	void dispatch_compute(VkQueue queue, VkCommandBuffer cmd, VkDescriptorSet* descriptorSet);
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
+	void imgui_draw();
 
 	FrameData& get_current_frame();
 
@@ -180,6 +186,9 @@ public:
 	bool _isInitialized{false};
 	int _frameNumber{0};
 	uint64_t _lastTime;
+
+	float color[4];
+	RenderStats renderStats;
 
 	VkExtent2D _windowExtent{1280, 720};
 

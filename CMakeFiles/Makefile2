@@ -145,7 +145,7 @@ CMakeFiles/Shaders.dir/clean:
 third_party/CMakeFiles/vkbootstrap.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=22,23 "Built target vkbootstrap"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=23,24 "Built target vkbootstrap"
 .PHONY : third_party/CMakeFiles/vkbootstrap.dir/all
 
 # Build rule for subdir invocation for target.
@@ -171,7 +171,7 @@ third_party/CMakeFiles/vkbootstrap.dir/clean:
 third_party/CMakeFiles/tinyobjloader.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=20,21 "Built target tinyobjloader"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=21,22 "Built target tinyobjloader"
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/all
 
 # Build rule for subdir invocation for target.
@@ -197,12 +197,12 @@ third_party/CMakeFiles/tinyobjloader.dir/clean:
 third_party/CMakeFiles/imgui.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=13,14,15,16,17,18,19 "Built target imgui"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=13,14,15,16,17,18,19,20 "Built target imgui"
 .PHONY : third_party/CMakeFiles/imgui.dir/all
 
 # Build rule for subdir invocation for target.
 third_party/CMakeFiles/imgui.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 8
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/imgui.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
 .PHONY : third_party/CMakeFiles/imgui.dir/rule
@@ -226,12 +226,12 @@ src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/tinyobjloader.dir/al
 src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/imgui.dir/all
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=24,25,26,27,28,29 "Built target vulkan_guide"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=25,26,27,28,29,30 "Built target vulkan_guide"
 .PHONY : src/CMakeFiles/vulkan_guide.dir/all
 
 # Build rule for subdir invocation for target.
 src/CMakeFiles/vulkan_guide.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 29
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 30
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/vulkan_guide.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
 .PHONY : src/CMakeFiles/vulkan_guide.dir/rule

@@ -502,7 +502,6 @@ void VulkanEngine:: init_descriptors() {
 }
 
 void VulkanEngine::init_imgui() {
-
 	//oversized but copied from an exmaple
 	VkDescriptorPoolSize pool_sizes[] = {
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -529,6 +528,7 @@ void VulkanEngine::init_imgui() {
 	VK_CHECK(vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiPool));
 
 	//initialize library
+	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
 	ImGui_ImplSDL2_InitForVulkan(_window);
@@ -542,20 +542,26 @@ void VulkanEngine::init_imgui() {
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.RenderPass = renderPass;
+	init_info.QueueFamily = graphicsQueueFamily;
+	init_info.Subpass = 0;
 
-	ImGui_ImplVulkan_Init(&init_info, renderPass);
+
+	ImGui_ImplVulkan_Init(&init_info);	
 
 	//execute a gpu command to upload imgui font textures
 	immediate_submit([&](VkCommandBuffer cmd) {
-		ImGui_ImplVulkan_CreateFontsTexture(cmd);
+		ImGui_ImplVulkan_CreateFontsTexture();
 	});
 
 	//clear font textures from cpu data
-	ImGui_ImplVulkan_DestroyFontUploadObjects();
+	ImGui_ImplVulkan_DestroyFontsTexture();
 
 	deletionQueue.push_function([=]() {
-		vkDestroyDescriptorPool(device, imguiPool, nullptr);
 		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
+		vkDestroyDescriptorPool(device, imguiPool, nullptr);
 	});
 }
 
@@ -754,6 +760,17 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int co
 	vkCmdDraw(cmd, object.mesh->vertices.size(), 1, 0, 0);
 }
 
+void VulkanEngine::imgui_draw() {
+	ImGui::Begin("raytracer... :mydog:");
+	ImVec2 windowSize = {400, 400};
+	ImGui::SetWindowSize(windowSize);
+	ImGui::ColorEdit4("Color", color, ImGuiColorEditFlags_AlphaBar);
+	ImGui::Text("drawtime: %.3fms", renderStats.drawTime);
+	ImGui::Text("frametime: %.3fms", renderStats.frameTime);
+	ImGui::Text("fps: %.1f", 1.f / (renderStats.frameTime / 1000.f));
+	ImGui::End();
+}
+
 void VulkanEngine::immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function) {
 	VkCommandBuffer cmd = uploadContext.uploadBuffer;
 	VkCommandBufferBeginInfo beginInfo = vkinit::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -857,9 +874,14 @@ void VulkanEngine::draw() {
 
 	vkCmdBeginRenderPass(currentFrame.commandBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	draw_objects(currentFrame.commandBuffer, renderables.data(), renderables.size());
+	auto start = std::chrono::system_clock::now();
 
+	draw_objects(currentFrame.commandBuffer, renderables.data(), renderables.size());
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), currentFrame.commandBuffer);
+
+	auto end = std::chrono::system_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	renderStats.drawTime = elapsed.count() / 1000.f;
 
 	vkCmdEndRenderPass(currentFrame.commandBuffer);
 	VK_CHECK(vkEndCommandBuffer(currentFrame.commandBuffer));
@@ -907,6 +929,8 @@ void VulkanEngine::run() {
 	while (!bQuit) {
 		const Uint8* keyState;
 
+		auto start = std::chrono::system_clock::now();
+
 		// Handle events on queue
 		while (SDL_PollEvent(&e) != 0) {
 			// close the window when user alt-f4s or clicks the X button
@@ -918,10 +942,12 @@ void VulkanEngine::run() {
 			ImGui_ImplSDL2_ProcessEvent(&e);
 		}
 
+		glm::vec4 my_color;
+
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplSDL2_NewFrame(_window);
 		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
+		imgui_draw();
 
 		double deltaTime = (SDL_GetTicks() - _lastTime) * (60.f/1000.f);
 
@@ -956,6 +982,10 @@ void VulkanEngine::run() {
 		_lastTime = SDL_GetTicks();
 
 		draw();
+
+		auto end = std::chrono::system_clock::now();    
+		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+		renderStats.frameTime = elapsed.count() / 1000.f;
 	}
 }
 

@@ -111,10 +111,24 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s"
 	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/third_party/imgui/imgui_draw.cpp -o CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s
 
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o: third_party/CMakeFiles/imgui.dir/flags.make
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o: third_party/imgui/imgui_tables.cpp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o"
+	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o -MF CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o.d -o CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o -c /Users/cobalt/src/vkguide/third_party/imgui/imgui_tables.cpp
+
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i"
+	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/third_party/imgui/imgui_tables.cpp > CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i
+
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s"
+	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/third_party/imgui/imgui_tables.cpp -o CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s
+
 third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o: third_party/CMakeFiles/imgui.dir/flags.make
 third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o: third_party/imgui/imgui_widgets.cpp
 third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o"
 	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o -MF CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o.d -o CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o -c /Users/cobalt/src/vkguide/third_party/imgui/imgui_widgets.cpp
 
 third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i: cmake_force
@@ -128,7 +142,7 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s: cmake_force
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o: third_party/CMakeFiles/imgui.dir/flags.make
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o: third_party/imgui/imgui_impl_vulkan.cpp
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o"
 	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o -MF CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o.d -o CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o -c /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_vulkan.cpp
 
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.i: cmake_force
@@ -142,7 +156,7 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s: cmake_force
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o: third_party/CMakeFiles/imgui.dir/flags.make
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o: third_party/imgui/imgui_impl_sdl.cpp
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o"
 	cd /Users/cobalt/src/vkguide/third_party && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o -MF CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o.d -o CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o -c /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_sdl.cpp
 
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.i: cmake_force
@@ -158,6 +172,7 @@ imgui_OBJECTS = \
 "CMakeFiles/imgui.dir/imgui/imgui.cpp.o" \
 "CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.o" \
 "CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o" \
+"CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o" \
 "CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o" \
 "CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o" \
 "CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o"
@@ -168,12 +183,13 @@ imgui_EXTERNAL_OBJECTS =
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.o
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.o
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o
+third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/build.make
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX static library libimgui.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX static library libimgui.a"
 	cd /Users/cobalt/src/vkguide/third_party && $(CMAKE_COMMAND) -P CMakeFiles/imgui.dir/cmake_clean_target.cmake
 	cd /Users/cobalt/src/vkguide/third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/imgui.dir/link.txt --verbose=$(VERBOSE)
 
