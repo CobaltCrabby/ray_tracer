@@ -1122,6 +1122,10 @@ src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o: \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_locale.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_misc.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_vulkan.h \
+  /Users/cobalt/src/vkguide/third_party/imgui/imgui.h \
+  /Users/cobalt/src/vkguide/third_party/imgui/imconfig.h \
+  /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_sdl.h \
+  /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_vulkan.h \
   /Users/cobalt/src/vkguide/src/vk_initializers.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/iostream \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/istream \

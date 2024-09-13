@@ -116,6 +116,7 @@ private:
 	void init_pipelines();
 	void init_scene();
 	void init_descriptors();
+	void init_imgui();
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void load_meshes();

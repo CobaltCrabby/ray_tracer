@@ -2152,6 +2152,10 @@ src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/vec3.hpp \
   third_party/glm/glm/vec4.hpp \
   third_party/glm/glm/vector_relational.hpp \
+  third_party/imgui/imconfig.h \
+  third_party/imgui/imgui.h \
+  third_party/imgui/imgui_impl_sdl.h \
+  third_party/imgui/imgui_impl_vulkan.h \
   third_party/vkbootstrap/VkBootstrap.h \
   third_party/vma/vk_mem_alloc.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL.h \
@@ -4333,9 +4337,15 @@ src/vk_initializers.cpp:
 
 third_party/vkbootstrap/VkBootstrap.h:
 
+third_party/imgui/imgui_impl_vulkan.h:
+
+third_party/imgui/imgui.h:
+
 src/vk_textures.h:
 
 /Library/Developer/CommandLineTools/usr/lib/clang/15.0.0/include/arm_bf16.h:
+
+third_party/imgui/imconfig.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/iostream:
 
@@ -6520,6 +6530,8 @@ src/main.cpp:
 third_party/vma/vk_mem_alloc.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_find_if_not.h:
+
+third_party/imgui/imgui_impl_sdl.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/generate_n.h:
 

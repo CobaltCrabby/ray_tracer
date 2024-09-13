@@ -2154,6 +2154,10 @@ src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.o
  /Users/cobalt/src/vkguide/third_party/glm/glm/vec3.hpp
  /Users/cobalt/src/vkguide/third_party/glm/glm/vec4.hpp
  /Users/cobalt/src/vkguide/third_party/glm/glm/vector_relational.hpp
+ /Users/cobalt/src/vkguide/third_party/imgui/imconfig.h
+ /Users/cobalt/src/vkguide/third_party/imgui/imgui.h
+ /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_sdl.h
+ /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_vulkan.h
  /Users/cobalt/src/vkguide/third_party/vkbootstrap/VkBootstrap.h
  /Users/cobalt/src/vkguide/third_party/vma/vk_mem_alloc.h
  /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL.h
