@@ -169,17 +169,17 @@ imgui/fast:
 .PHONY : imgui/fast
 
 #=============================================================================
-# Target rules for targets named vulkan_guide
+# Target rules for targets named raytracer
 
 # Build rule for target.
-vulkan_guide: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vulkan_guide
-.PHONY : vulkan_guide
+raytracer: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 raytracer
+.PHONY : raytracer
 
 # fast build rule for target.
-vulkan_guide/fast:
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/build
-.PHONY : vulkan_guide/fast
+raytracer/fast:
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/build
+.PHONY : raytracer/fast
 
 # Help Target
 help:
@@ -191,9 +191,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... Shaders"
 	@echo "... imgui"
+	@echo "... raytracer"
 	@echo "... tinyobjloader"
 	@echo "... vkbootstrap"
-	@echo "... vulkan_guide"
 .PHONY : help
 
 

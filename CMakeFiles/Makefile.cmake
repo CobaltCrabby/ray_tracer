@@ -58,5 +58,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "third_party/CMakeFiles/vkbootstrap.dir/DependInfo.cmake"
   "third_party/CMakeFiles/tinyobjloader.dir/DependInfo.cmake"
   "third_party/CMakeFiles/imgui.dir/DependInfo.cmake"
-  "src/CMakeFiles/vulkan_guide.dir/DependInfo.cmake"
+  "src/CMakeFiles/raytracer.dir/DependInfo.cmake"
   )

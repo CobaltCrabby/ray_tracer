@@ -82,7 +82,7 @@ clean: src/clean
 # Directory level rules for directory src
 
 # Recursive "all" directory target.
-src/all: src/CMakeFiles/vulkan_guide.dir/all
+src/all: src/CMakeFiles/raytracer.dir/all
 .PHONY : src/all
 
 # Recursive "preinstall" directory target.
@@ -90,7 +90,7 @@ src/preinstall:
 .PHONY : src/preinstall
 
 # Recursive "clean" directory target.
-src/clean: src/CMakeFiles/vulkan_guide.dir/clean
+src/clean: src/CMakeFiles/raytracer.dir/clean
 .PHONY : src/clean
 
 #=============================================================================
@@ -145,7 +145,7 @@ CMakeFiles/Shaders.dir/clean:
 third_party/CMakeFiles/vkbootstrap.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=23,24 "Built target vkbootstrap"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=29,30 "Built target vkbootstrap"
 .PHONY : third_party/CMakeFiles/vkbootstrap.dir/all
 
 # Build rule for subdir invocation for target.
@@ -171,7 +171,7 @@ third_party/CMakeFiles/vkbootstrap.dir/clean:
 third_party/CMakeFiles/tinyobjloader.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=21,22 "Built target tinyobjloader"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=27,28 "Built target tinyobjloader"
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/all
 
 # Build rule for subdir invocation for target.
@@ -217,33 +217,33 @@ third_party/CMakeFiles/imgui.dir/clean:
 .PHONY : third_party/CMakeFiles/imgui.dir/clean
 
 #=============================================================================
-# Target rules for target src/CMakeFiles/vulkan_guide.dir
+# Target rules for target src/CMakeFiles/raytracer.dir
 
 # All Build rule for target.
-src/CMakeFiles/vulkan_guide.dir/all: CMakeFiles/Shaders.dir/all
-src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/vkbootstrap.dir/all
-src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/tinyobjloader.dir/all
-src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/imgui.dir/all
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/depend
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=25,26,27,28,29,30 "Built target vulkan_guide"
-.PHONY : src/CMakeFiles/vulkan_guide.dir/all
+src/CMakeFiles/raytracer.dir/all: CMakeFiles/Shaders.dir/all
+src/CMakeFiles/raytracer.dir/all: third_party/CMakeFiles/vkbootstrap.dir/all
+src/CMakeFiles/raytracer.dir/all: third_party/CMakeFiles/tinyobjloader.dir/all
+src/CMakeFiles/raytracer.dir/all: third_party/CMakeFiles/imgui.dir/all
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/depend
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=21,22,23,24,25,26 "Built target raytracer"
+.PHONY : src/CMakeFiles/raytracer.dir/all
 
 # Build rule for subdir invocation for target.
-src/CMakeFiles/vulkan_guide.dir/rule: cmake_check_build_system
+src/CMakeFiles/raytracer.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 30
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/vulkan_guide.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/raytracer.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
-.PHONY : src/CMakeFiles/vulkan_guide.dir/rule
+.PHONY : src/CMakeFiles/raytracer.dir/rule
 
 # Convenience name for target.
-vulkan_guide: src/CMakeFiles/vulkan_guide.dir/rule
-.PHONY : vulkan_guide
+raytracer: src/CMakeFiles/raytracer.dir/rule
+.PHONY : raytracer
 
 # clean rule for target.
-src/CMakeFiles/vulkan_guide.dir/clean:
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/vulkan_guide.dir/build.make src/CMakeFiles/vulkan_guide.dir/clean
-.PHONY : src/CMakeFiles/vulkan_guide.dir/clean
+src/CMakeFiles/raytracer.dir/clean:
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/clean
+.PHONY : src/CMakeFiles/raytracer.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

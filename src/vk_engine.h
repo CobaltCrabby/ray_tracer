@@ -15,11 +15,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
-struct MeshPushConstants {
-	glm::vec4 data;
-	glm::mat4 render_matrix;
-};
-
 struct DeletionQueue {
 	std::deque<std::function<void()>> deletors;
 
@@ -34,6 +29,11 @@ struct DeletionQueue {
 
 		deletors.clear();
 	}
+};
+
+struct Sphere {
+	glm::vec3 position;
+	float radius;
 };
 
 struct Material {
@@ -85,11 +85,6 @@ struct FrameData {
 
 	VkCommandPool computeCmdPool;
 	VkCommandBuffer computeCmdBuffer;
-
-	AllocatedBuffer objectBuffer;
-	AllocatedBuffer colorBuffer;
-	VkDescriptorSet storageDescriptor;
-
 };
 
 struct UploadContext {
@@ -102,6 +97,18 @@ struct Texture {
 	AllocatedImage image;
 	VkImageView imageView;
 };
+
+struct CameraInfo {
+	glm::vec3 pos;
+	float nearPlane;
+	float aspectRatio;
+	float fov;
+};
+
+struct PushConstants {
+	alignas(32) CameraInfo camInfo;
+	alignas(16) glm::mat4 cameraRotation;
+};	
 
 struct RenderStats {
 	float frameTime;
@@ -133,7 +140,7 @@ private:
 	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
 	Material* get_material(const std::string& name);
 	Mesh* get_mesh(const std::string& name);
-	void dispatch_compute(VkQueue queue, VkCommandBuffer cmd, VkDescriptorSet* descriptorSet);
+	void dispatch_compute(VkQueue queue, VkCommandBuffer cmd);
 	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
 	void imgui_draw();
 
@@ -163,11 +170,15 @@ public:
 	std::vector<VkFramebuffer> framebuffers;
 
 	FrameData frames[FRAME_OVERLAP];
+	std::vector<Sphere> spheres;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSetLayout singleTextureLayout;
 	VkDescriptorSetLayout computeLayout;
 	VkDescriptorPool descriptorPool;
+
+	AllocatedBuffer sphereBuffer;
+	VkDescriptorSet sphereDescriptor;
 
 	VkPipelineLayout computePipeLayout;
 	VkPipeline computePipeline;
@@ -187,8 +198,10 @@ public:
 	int _frameNumber{0};
 	uint64_t _lastTime;
 
-	float color[4];
+	float color[4] = {0.f, 0.f, 0.f, 0.f};
 	RenderStats renderStats;
+	bool enableRotation;
+	float fov = 50.f;
 
 	VkExtent2D _windowExtent{1280, 720};
 

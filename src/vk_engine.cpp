@@ -22,7 +22,6 @@
 
 using namespace std;
 
-
 #define VK_CHECK(x)\
 	do {\
 		VkResult err = x;\
@@ -39,7 +38,7 @@ void VulkanEngine::init() {
 	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
 
 	_window = SDL_CreateWindow(
-		"Vulkan Engine",
+		"raytracer",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		_windowExtent.width,
@@ -107,13 +106,6 @@ void VulkanEngine::init_vulkan() {
 	//vulkan is lying to me there is only 1 queue so they are the same
 	computeQueue = graphicsQueue;
 	computeQueueFamily = graphicsQueueFamily;
-
-	auto queueFamilies = physicalDevice.get_queue_families();
-	for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilies.size ()); i++) {
-		if (queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-			cout << "YAHOO!!" << endl;
-		}
-	}
 
 	// create memory allocator
 	VmaAllocatorCreateInfo allocatorInfo{};
@@ -365,6 +357,14 @@ void VulkanEngine::init_pipelines() {
 	computePipelineLayoutInfo.pSetLayouts = &computeLayout;
 	computePipelineLayoutInfo.setLayoutCount = 1;
 
+	VkPushConstantRange pushConsant;
+	pushConsant.offset = 0;
+	pushConsant.size = sizeof(PushConstants);
+	pushConsant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+	computePipelineLayoutInfo.pushConstantRangeCount = 1;
+	computePipelineLayoutInfo.pPushConstantRanges = &pushConsant;
+
 	VK_CHECK(vkCreatePipelineLayout(device, &texturedPipelineLayoutInfo, nullptr, &texturedPipeLayout));
 	VK_CHECK(vkCreatePipelineLayout(device, &computePipelineLayoutInfo, nullptr, &computePipeLayout));
 
@@ -449,9 +449,17 @@ void VulkanEngine::init_scene() {
 	compImageInfo.imageView = textures["compute"].imageView;
 	compImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
+	VkDescriptorBufferInfo sphereBufferInfo;
+	sphereBufferInfo.buffer = sphereBuffer.buffer;
+	sphereBufferInfo.offset = 0;
+	sphereBufferInfo.range = sizeof(Sphere) * spheres.size();
+
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
+	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 1);
 	
-	vkUpdateDescriptorSets(device, 1, &compTex, 0, nullptr);
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite};
+
+	vkUpdateDescriptorSets(device, 2, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, blockySampler, nullptr);
@@ -486,11 +494,14 @@ void VulkanEngine:: init_descriptors() {
 
 	//compute descriptors
 	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 1;
-	computeSetInfo.pBindings = &computeBinding;
+	computeSetInfo.bindingCount = 2;
+	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
 
@@ -591,22 +602,6 @@ bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outS
 }
 
 void VulkanEngine::load_meshes() {
-	// Mesh triangleMesh;
-	// triangleMesh.vertices.resize(3);
-	// triangleMesh.vertices[0].position = {1.f, 1.f, 0.f};
-	// triangleMesh.vertices[1].position = {-1.f, 1.f, 0.f};
-	// triangleMesh.vertices[2].position = {0.f, -1.f, 0.f};
-
-	// triangleMesh.vertices[0].color = {1.f, 0.f, 0.f};
-	// triangleMesh.vertices[1].color = {0.f, 1.f, 0.f};
-	// triangleMesh.vertices[2].color = {0.f, 0.f, 1.f};
-
-	// Mesh monkeyMesh;
-	// monkeyMesh.load_from_obj("../assets/monkey_flat.obj");
-
-	// Mesh lostEmpire;
-	// lostEmpire.load_from_obj("../assets/lost_empire.obj");
-
 	Mesh quad;
 	quad.vertices.resize(6);
 	quad.vertices[0].position = {-1.f, -1.f, 0.f};
@@ -623,16 +618,58 @@ void VulkanEngine::load_meshes() {
 	quad.vertices[4].uv = {1.f, 0.f};
 	quad.vertices[5].uv = {1.f, 1.f};
 
-	//puts into buffer
-	// upload_mesh(triangleMesh);
-	// upload_mesh(monkeyMesh);
-	// upload_mesh(lostEmpire);
 	upload_mesh(quad);
 
-	// meshes["monkey"] = monkeyMesh;
-	// meshes["triangle"] = triangleMesh;
-	// meshes["empire"] = lostEmpire;
 	meshes["quad"] = quad;
+
+	//spheres
+	spheres.push_back({glm::vec3(0.f, 0.f, 4.f), 1.f});
+	spheres.push_back({glm::vec3(2.f, 0.f, 0.f), 0.1f});
+
+	const size_t bufferSize = spheres.size() * sizeof(Sphere);
+
+	VkBufferCreateInfo stagingInfo{};
+	stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	stagingInfo.size = bufferSize;
+	stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+	AllocatedBuffer stagingBuffer;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer.buffer, &stagingBuffer.allocation, nullptr));
+
+	//copy data to staging buffer
+	void* data;
+	vmaMapMemory(allocator, stagingBuffer.allocation, &data);
+	memcpy(data, spheres.data(), spheres.size() * sizeof(Sphere));
+	vmaUnmapMemory(allocator, stagingBuffer.allocation);
+
+	//allocate sphere buffer
+	VkBufferCreateInfo sphereBufferInfo = {};
+	sphereBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	sphereBufferInfo.size = bufferSize;
+	sphereBufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &sphereBufferInfo, &vmaAllocInfo, &sphereBuffer.buffer, &sphereBuffer.allocation, nullptr));
+
+	//copy buffer
+	immediate_submit([=](VkCommandBuffer cmd) {
+		VkBufferCopy copy;
+		copy.size = bufferSize;
+		copy.srcOffset = 0;
+		copy.dstOffset = 0;
+		vkCmdCopyBuffer(cmd, stagingBuffer.buffer, sphereBuffer.buffer, 1, &copy);
+	});
+
+	deletionQueue.push_function([=]() {
+		vmaDestroyBuffer(allocator, sphereBuffer.buffer, sphereBuffer.allocation);
+	});
+
+	vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
 void VulkanEngine::load_images() {
@@ -740,11 +777,26 @@ Mesh* VulkanEngine::get_mesh(const std::string& name) {
 	return it == meshes.end() ? nullptr : &it->second;
 }
 
-void VulkanEngine::dispatch_compute(VkQueue queue, VkCommandBuffer cmd, VkDescriptorSet* descriptorSet) {
+void VulkanEngine::dispatch_compute(VkQueue queue, VkCommandBuffer cmd) {
 	VkCommandBufferBeginInfo beginInfo = vkinit::commandBufferBeginInfo();
 	vkBeginCommandBuffer(cmd, &beginInfo);
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeLayout, 0, 1, descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeLayout, 0, 1, &computeSet, 0, nullptr);
+
+	PushConstants constants;
+
+	glm::mat4 rotate = glm::rotate(glm::mat4(1.f), _frameNumber / 120.f, glm::vec3(0, 1, 0));
+	constants.cameraRotation = enableRotation ? rotate : glm::mat4(1.f);
+
+	CameraInfo camInfo;
+	camInfo.aspectRatio = _windowExtent.width / (float) _windowExtent.height;
+	camInfo.fov = fov;
+	camInfo.nearPlane = 0.1f;
+	camInfo.pos = glm::vec3(0.f);
+	constants.camInfo = camInfo;
+
+	vkCmdPushConstants(cmd, computePipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants), &constants);
+	
 	vkCmdDispatch(cmd, ceil(_windowExtent.width / 8.0), ceil(_windowExtent.height / 8.0), 1);
 	vkEndCommandBuffer(cmd);
 }
@@ -768,6 +820,8 @@ void VulkanEngine::imgui_draw() {
 	ImGui::Text("drawtime: %.3fms", renderStats.drawTime);
 	ImGui::Text("frametime: %.3fms", renderStats.frameTime);
 	ImGui::Text("fps: %.1f", 1.f / (renderStats.frameTime / 1000.f));
+	ImGui::Checkbox("Rotate Enable", &enableRotation);
+	ImGui::DragFloat("Fov", &fov, 1.f, 30.f, 120.f, "%.1f", 0);
 	ImGui::End();
 }
 
@@ -829,8 +883,10 @@ void VulkanEngine::draw() {
 	//prepare command buffer for commands
 	VK_CHECK(vkResetCommandBuffer(currentFrame.commandBuffer, 0));
 	VK_CHECK(vkResetCommandBuffer(currentFrame.commandBuffer, 0));
+	
+	auto start = std::chrono::system_clock::now();
 
-	dispatch_compute(computeQueue, currentFrame.computeCmdBuffer, &computeSet);
+	dispatch_compute(computeQueue, currentFrame.computeCmdBuffer);
 
 	VkCommandBufferBeginInfo cmdBeginInfo = {};
 	cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -873,8 +929,6 @@ void VulkanEngine::draw() {
 	rpBeginInfo.renderArea.extent = _windowExtent;
 
 	vkCmdBeginRenderPass(currentFrame.commandBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	auto start = std::chrono::system_clock::now();
 
 	draw_objects(currentFrame.commandBuffer, renderables.data(), renderables.size());
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), currentFrame.commandBuffer);
