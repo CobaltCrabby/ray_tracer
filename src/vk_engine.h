@@ -32,8 +32,15 @@ struct DeletionQueue {
 };
 
 struct Sphere {
-	glm::vec3 position;
-	float radius;
+	alignas(16) glm::vec3 position;
+	alignas(4) float radius;
+	alignas(4) uint materialIndex;
+};
+
+struct RayMaterial {
+	alignas(16) glm::vec3 albedo;
+	alignas(16) glm::vec3 emissionColor;
+	alignas(4) float emissionStrength;
 };
 
 struct Material {
@@ -99,15 +106,34 @@ struct Texture {
 };
 
 struct CameraInfo {
-	glm::vec3 pos;
-	float nearPlane;
+	glm::mat4 cameraRotation;
+	alignas(4) glm::vec3 pos = glm::vec3(0.f, -0.5f, -3.5f);
+	float nearPlane = 0.1f;
 	float aspectRatio;
-	float fov;
+	float fov = 50.f;
+};
+
+struct EnvironmentData {
+	alignas(16) glm::vec3 horizonColor = glm::vec3(0.986f, 1.f, 0.902f);
+	alignas(16) glm::vec3 zenithColor = glm::vec3(0.265f, 0.595f, 0.887);
+	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
+	alignas(4) float sunFocus = 1000.f;
+	alignas(4) float sunIntensity = 200.f;
+};
+
+struct RayTracerData {
+	bool progressive = false;
+	uint raysPerPixel = 10;
+	uint bounceLimit = 10;
 };
 
 struct PushConstants {
-	alignas(32) CameraInfo camInfo;
-	alignas(16) glm::mat4 cameraRotation;
+	CameraInfo camInfo;
+	EnvironmentData environment;
+	RayTracerData rayTraceParams;
+	alignas(16) glm::vec3 lightDir;
+	uint sphereCount;
+	uint frameCount;
 };	
 
 struct RenderStats {
@@ -116,6 +142,8 @@ struct RenderStats {
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
+const unsigned int MAX_MATERIALS = 10;
+const unsigned int MAX_SPHERES = 10;
 
 class VulkanEngine {
 private:
@@ -134,6 +162,8 @@ private:
 	void load_meshes();
 	void load_images();
 	void upload_mesh(Mesh& mesh);
+	void copy_buffer(size_t bufferSize, AllocatedBuffer& buffer, VkBufferUsageFlags flags, void* bufferData);
+	void update_buffer(size_t bufferSize, AllocatedBuffer& buffer, void* bufferData);
 
 	size_t pad_uniform_buffer_size(size_t originalSize);
 
@@ -171,6 +201,7 @@ public:
 
 	FrameData frames[FRAME_OVERLAP];
 	std::vector<Sphere> spheres;
+	std::vector<RayMaterial> rayMaterials;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSetLayout singleTextureLayout;
@@ -179,6 +210,8 @@ public:
 
 	AllocatedBuffer sphereBuffer;
 	VkDescriptorSet sphereDescriptor;
+	AllocatedBuffer materialBuffer;
+	VkDescriptorSet materialDescriptor;
 
 	VkPipelineLayout computePipeLayout;
 	VkPipeline computePipeline;
@@ -198,12 +231,13 @@ public:
 	int _frameNumber{0};
 	uint64_t _lastTime;
 
-	float color[4] = {0.f, 0.f, 0.f, 0.f};
+	float cameraAngles[3] = {4.f, 0.f, 0.f};
+	RayTracerData rayTracerParams;
 	RenderStats renderStats;
-	bool enableRotation;
-	float fov = 50.f;
+	CameraInfo cameraInfo;
+	EnvironmentData environment;
 
-	VkExtent2D _windowExtent{1280, 720};
+	VkExtent2D _windowExtent{1920, 1080};
 
 	struct SDL_Window* _window{nullptr};
 

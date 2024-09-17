@@ -452,21 +452,27 @@ void VulkanEngine::init_scene() {
 	VkDescriptorBufferInfo sphereBufferInfo;
 	sphereBufferInfo.buffer = sphereBuffer.buffer;
 	sphereBufferInfo.offset = 0;
-	sphereBufferInfo.range = sizeof(Sphere) * spheres.size();
+	sphereBufferInfo.range = sizeof(Sphere) * MAX_SPHERES;
+
+	VkDescriptorBufferInfo materialBufferInfo;
+	materialBufferInfo.buffer = materialBuffer.buffer;
+	materialBufferInfo.offset = 0;
+	materialBufferInfo.range = sizeof(RayMaterial) * MAX_MATERIALS;
 
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
 	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 1);
+	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 2);
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite};
 
-	vkUpdateDescriptorSets(device, 2, computeWrites, 0, nullptr);
+	vkUpdateDescriptorSets(device, 3, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, blockySampler, nullptr);
 	});
 }
 
-void VulkanEngine:: init_descriptors() {
+void VulkanEngine::init_descriptors() {
 	std::vector<VkDescriptorPoolSize> sizes = {
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
@@ -495,12 +501,13 @@ void VulkanEngine:: init_descriptors() {
 	//compute descriptors
 	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding};
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 2;
+	computeSetInfo.bindingCount = 3;
 	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
@@ -623,53 +630,46 @@ void VulkanEngine::load_meshes() {
 	meshes["quad"] = quad;
 
 	//spheres
-	spheres.push_back({glm::vec3(0.f, 0.f, 4.f), 1.f});
-	spheres.push_back({glm::vec3(2.f, 0.f, 0.f), 0.1f});
+	spheres.push_back({glm::vec3(3.f, 0.2f, 5.5f), 1.f, 1});
+	spheres.push_back({glm::vec3(0.5f, -0.3f, 6.f), 1.5f, 2});
+	spheres.push_back({glm::vec3(0.f, 31.f, 6.f), 30.f, 3});
+	spheres.push_back({glm::vec3(-3.f, -0.8f, 6.f), 2.f, 4});
 
-	const size_t bufferSize = spheres.size() * sizeof(Sphere);
+	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
-	VkBufferCreateInfo stagingInfo{};
-	stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	stagingInfo.size = bufferSize;
-	stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	//materials
+	RayMaterial mat1;
+	mat1.albedo = glm::vec3(1.f, 0.f, 0.f);
+	mat1.emissionColor = glm::vec3(0.f);
+	mat1.emissionStrength = 0.f;
 
-	VmaAllocationCreateInfo vmaAllocInfo{};
-	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+	RayMaterial mat2;
+	mat2.albedo = glm::vec3(0.f);
+	mat2.emissionColor = glm::vec3(1.f);
+	mat2.emissionStrength = 10.f;
 
-	AllocatedBuffer stagingBuffer;
+	RayMaterial mat3;
+	mat3.albedo = glm::vec3(1.f);
+	mat3.emissionColor = glm::vec3(0.f);
+	mat3.emissionStrength = 0.f;
 
-	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer.buffer, &stagingBuffer.allocation, nullptr));
+	RayMaterial mat4;
+	mat4.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
+	mat4.emissionColor = glm::vec3(0.f);
+	mat4.emissionStrength = 0.f;
 
-	//copy data to staging buffer
-	void* data;
-	vmaMapMemory(allocator, stagingBuffer.allocation, &data);
-	memcpy(data, spheres.data(), spheres.size() * sizeof(Sphere));
-	vmaUnmapMemory(allocator, stagingBuffer.allocation);
+	RayMaterial mat5;
+	mat5.albedo = glm::vec3(0.f, 0.4f, 0.1f);
+	mat5.emissionColor = glm::vec3(0.f, 0.4f, 0.1f);
+	mat5.emissionStrength = 10.f;
 
-	//allocate sphere buffer
-	VkBufferCreateInfo sphereBufferInfo = {};
-	sphereBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	sphereBufferInfo.size = bufferSize;
-	sphereBufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	rayMaterials.push_back(mat1);
+	rayMaterials.push_back(mat2);
+	rayMaterials.push_back(mat3);
+	rayMaterials.push_back(mat4);
+	rayMaterials.push_back(mat5);
 
-	vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-	VK_CHECK(vmaCreateBuffer(allocator, &sphereBufferInfo, &vmaAllocInfo, &sphereBuffer.buffer, &sphereBuffer.allocation, nullptr));
-
-	//copy buffer
-	immediate_submit([=](VkCommandBuffer cmd) {
-		VkBufferCopy copy;
-		copy.size = bufferSize;
-		copy.srcOffset = 0;
-		copy.dstOffset = 0;
-		vkCmdCopyBuffer(cmd, stagingBuffer.buffer, sphereBuffer.buffer, 1, &copy);
-	});
-
-	deletionQueue.push_function([=]() {
-		vmaDestroyBuffer(allocator, sphereBuffer.buffer, sphereBuffer.allocation);
-	});
-
-	vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
+	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 }
 
 void VulkanEngine::load_images() {
@@ -735,6 +735,82 @@ void VulkanEngine::upload_mesh(Mesh& mesh) {
 	vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
 }
 
+void VulkanEngine::copy_buffer(size_t bufferSize, AllocatedBuffer& buffer, VkBufferUsageFlags flags, void* bufferData) {
+	VkBufferCreateInfo stagingInfo{};
+	stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	stagingInfo.size = bufferSize;
+	stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+	AllocatedBuffer stagingBuffer;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer.buffer, &stagingBuffer.allocation, nullptr));
+
+	//copy data to staging buffer
+	void* data;
+	vmaMapMemory(allocator, stagingBuffer.allocation, &data);
+	memcpy(data, bufferData, bufferSize);
+	vmaUnmapMemory(allocator, stagingBuffer.allocation);
+
+	//allocate sphere buffer
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = flags | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaAllocInfo, &buffer.buffer, &buffer.allocation, nullptr));
+
+	//copy buffer
+	immediate_submit([=](VkCommandBuffer cmd) {
+		VkBufferCopy copy;
+		copy.size = bufferSize;
+		copy.srcOffset = 0;
+		copy.dstOffset = 0;
+		vkCmdCopyBuffer(cmd, stagingBuffer.buffer, buffer.buffer, 1, &copy);
+	});
+
+	deletionQueue.push_function([=]() {
+		vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation);
+	});
+
+	vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
+}
+
+void VulkanEngine::update_buffer(size_t bufferSize, AllocatedBuffer& buffer, void* bufferData) {
+	VkBufferCreateInfo stagingInfo{};
+	stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	stagingInfo.size = bufferSize;
+	stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+	AllocatedBuffer stagingBuffer;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer.buffer, &stagingBuffer.allocation, nullptr));
+
+	//copy data to staging buffer
+	void* data;
+	vmaMapMemory(allocator, stagingBuffer.allocation, &data);
+	memcpy(data, bufferData, bufferSize);
+	vmaUnmapMemory(allocator, stagingBuffer.allocation);
+
+	//copy buffer
+	immediate_submit([=](VkCommandBuffer cmd) {
+		VkBufferCopy copy;
+		copy.size = bufferSize;
+		copy.srcOffset = 0;
+		copy.dstOffset = 0;
+		vkCmdCopyBuffer(cmd, stagingBuffer.buffer, buffer.buffer, 1, &copy);
+	});
+
+	vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.allocation);
+}
+
 AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -784,16 +860,37 @@ void VulkanEngine::dispatch_compute(VkQueue queue, VkCommandBuffer cmd) {
 	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeLayout, 0, 1, &computeSet, 0, nullptr);
 
 	PushConstants constants;
+	cameraInfo.aspectRatio = _windowExtent.width / (float) _windowExtent.height;
 
-	glm::mat4 rotate = glm::rotate(glm::mat4(1.f), _frameNumber / 120.f, glm::vec3(0, 1, 0));
-	constants.cameraRotation = enableRotation ? rotate : glm::mat4(1.f);
+	float thetaX = glm::radians(cameraAngles[0]);
+	float thetaY = glm::radians(cameraAngles[1]);
+	float thetaZ = glm::radians(cameraAngles[2]);
+	glm::mat3 rotX = glm::mat3(
+		glm::vec3(1, 0, 0),
+		glm::vec3(0, cos(thetaX), -sin(thetaX)),
+		glm::vec3(0, sin(thetaX), cos(thetaX))	
+	);
 
-	CameraInfo camInfo;
-	camInfo.aspectRatio = _windowExtent.width / (float) _windowExtent.height;
-	camInfo.fov = fov;
-	camInfo.nearPlane = 0.1f;
-	camInfo.pos = glm::vec3(0.f);
-	constants.camInfo = camInfo;
+	glm::mat3 rotY = glm::mat3(
+		glm::vec3(cos(thetaY), 0, sin(thetaY)),
+		glm::vec3(0, 1, 0),
+		glm::vec3(-sin(thetaY), 0, cos(thetaY))
+	);
+
+	glm::mat3 rotZ = glm::mat3(
+		glm::vec3(cos(thetaZ), -sin(thetaZ), 0),
+		glm::vec3(sin(thetaZ), cos(thetaZ), 0),
+		glm::vec3(0, 0, 1)
+	);
+	cameraInfo.cameraRotation = rotX * rotY * rotZ;
+
+	glm::vec3 sun = normalize(glm::vec3(2.f, 0.8f, -3.f));
+
+	constants.lightDir = sun;
+	constants.camInfo = cameraInfo;
+	constants.environment = environment;
+	constants.rayTraceParams = rayTracerParams;
+	constants.frameCount = _frameNumber;
 
 	vkCmdPushConstants(cmd, computePipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants), &constants);
 	
@@ -816,12 +913,68 @@ void VulkanEngine::imgui_draw() {
 	ImGui::Begin("raytracer... :mydog:");
 	ImVec2 windowSize = {400, 400};
 	ImGui::SetWindowSize(windowSize);
-	ImGui::ColorEdit4("Color", color, ImGuiColorEditFlags_AlphaBar);
-	ImGui::Text("drawtime: %.3fms", renderStats.drawTime);
-	ImGui::Text("frametime: %.3fms", renderStats.frameTime);
-	ImGui::Text("fps: %.1f", 1.f / (renderStats.frameTime / 1000.f));
-	ImGui::Checkbox("Rotate Enable", &enableRotation);
-	ImGui::DragFloat("Fov", &fov, 1.f, 30.f, 120.f, "%.1f", 0);
+	
+	if (ImGui::CollapsingHeader("Render Stats")) {
+		ImGui::Text("drawtime: %.3fms", renderStats.drawTime);
+		ImGui::Text("frametime: %.3fms", renderStats.frameTime);
+		ImGui::Text("fps: %.1f", 1.f / (renderStats.frameTime / 1000.f));
+	}
+
+	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
+		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
+		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 100);
+		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
+	}
+
+	if (ImGui::CollapsingHeader("Camera Info")) {
+		ImGui::DragFloat("Fov", &cameraInfo.fov, 1.f, 30.f, 120.f, "%.1f", 0);
+		ImGui::DragFloat3("Camera Rotation (euler angles)", cameraAngles);
+		ImGui::DragFloat3("Camera Position", (float*) &cameraInfo.pos, 0.1f);
+	}
+
+	if (ImGui::CollapsingHeader("Environment")) {
+		ImGui::ColorEdit3("Horizon Color", (float*) &environment.horizonColor);
+		ImGui::ColorEdit3("Zenith Color", (float*) &environment.zenithColor);
+		ImGui::ColorEdit3("Ground Color", (float*) &environment.groundColor);
+		ImGui::DragFloat("Sun Focus", &environment.sunFocus, 0.1f, 0.f, 100.f);
+		ImGui::DragFloat("Sun Intensity", &environment.sunIntensity, 0.1f, 0.f, 100.f);
+	}
+
+	if (ImGui::CollapsingHeader("Materials")) {
+		ImGui::Indent(16.f);
+
+		ImGui::Unindent(4.f);
+		if (ImGui::Button("Add Material") && rayMaterials.size() < MAX_MATERIALS) {
+			rayMaterials.push_back({glm::vec3(0.f), glm::vec3(0.f), 0.f});
+		}
+
+		if (ImGui::Button("Update Buffer")) {
+			update_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, rayMaterials.data());
+		}
+		ImGui::Indent(4.f);
+
+		for (int i = 0; i < rayMaterials.size(); i++) {
+			if (ImGui::CollapsingHeader(("Material " + to_string(i)).c_str())) {
+				ImGui::Indent(16.f);
+				ImGui::ColorEdit3("Albedo", (float*) &rayMaterials[i].albedo);
+				ImGui::ColorEdit3("Emission Color", (float*) &rayMaterials[i].emissionColor);
+				ImGui::DragFloat("Emission Strength", (float*) &rayMaterials[i].emissionStrength, 0.1f, 0.f, 100.f);
+				ImGui::Unindent(16.f);
+			}
+		}
+		ImGui::Unindent(16.f);
+	}
+
+	if (ImGui::CollapsingHeader("Spheres")) {
+		for (int i = 0; i < spheres.size(); i++) {
+			if (ImGui::CollapsingHeader(("Sphere " + to_string(i)).c_str())) {
+				ImGui::DragFloat3("Position", (float*) &spheres[i].position);
+				ImGui::DragFloat("Radius", &spheres[i].radius, 0.1f, 0.f, 100.f);
+				ImGui::DragInt("Material Index", (int*) &spheres[i].materialIndex, 0.1f, 0, rayMaterials.size() - 1);
+			}
+		}
+	}
+
 	ImGui::End();
 }
 
@@ -933,10 +1086,6 @@ void VulkanEngine::draw() {
 	draw_objects(currentFrame.commandBuffer, renderables.data(), renderables.size());
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), currentFrame.commandBuffer);
 
-	auto end = std::chrono::system_clock::now();
-	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-	renderStats.drawTime = elapsed.count() / 1000.f;
-
 	vkCmdEndRenderPass(currentFrame.commandBuffer);
 	VK_CHECK(vkEndCommandBuffer(currentFrame.commandBuffer));
 
@@ -959,6 +1108,10 @@ void VulkanEngine::draw() {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &currentFrame.commandBuffer;
 
+	auto end = std::chrono::system_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	renderStats.drawTime = elapsed.count() / 1000.f;
+
 	VK_CHECK(vkQueueSubmit(graphicsQueue, 1, &submitInfo, currentFrame.renderFence));
 
 	//present queue results
@@ -972,7 +1125,7 @@ void VulkanEngine::draw() {
 
 	VK_CHECK(vkQueuePresentKHR(graphicsQueue, &presentInfo));
 
-	_frameNumber++;
+	_frameNumber = rayTracerParams.progressive ? ++_frameNumber : 0;
 }
 
 void VulkanEngine::run() {
