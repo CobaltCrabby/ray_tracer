@@ -48,6 +48,7 @@ struct RayTracerData {
     bool progressive;
     uint raysPerPixel;
     uint bounceLimit;
+    uint sphereCount;
 };
 
 layout (binding = 0, rgba8) uniform image2D outImage;
@@ -116,8 +117,9 @@ HitInfo calculateIntersections(Ray ray) {
     HitInfo closestHit;
     closestHit.didHit = false;
     closestHit.dst = 999999999;
+    RayTracerData traceData = PushConstants.rayTracerParams;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < traceData.sphereCount; i++) {
         HitInfo hitInfo = sphereIntersection(spheres[i], ray);
         if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
             closestHit = hitInfo;
@@ -154,9 +156,10 @@ vec3 trace(Ray ray, inout uint state) {
             Material material = materials[hitInfo.materialIndex];
             vec3 emitted = material.emissionColor * material.emissionStrength;
             float lightStrength = dot(hitInfo.normal, newRay.dir);
+            incomingLight += lightStrength * emitted * rayColor;
             rayColor *= material.albedo;
         } else {
-            //incomingLight += getEnvironmentLight(newRay) * rayColor;
+            incomingLight += getEnvironmentLight(newRay) * rayColor;
             break;
         }
     }
@@ -197,6 +200,7 @@ void main() {
 
     float weight = 1.f / (PushConstants.frameCount + 1.f);
     vec3 finalColor = oldColor.rgb * (1 - weight) + outColor * weight;
+    finalColor = traceData.progressive ? finalColor : outColor;
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
 }

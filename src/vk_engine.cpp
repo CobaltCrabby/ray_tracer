@@ -630,44 +630,43 @@ void VulkanEngine::load_meshes() {
 	meshes["quad"] = quad;
 
 	//spheres
-	spheres.push_back({glm::vec3(3.f, 0.2f, 5.5f), 1.f, 1});
-	spheres.push_back({glm::vec3(0.5f, -0.3f, 6.f), 1.5f, 2});
-	spheres.push_back({glm::vec3(0.f, 31.f, 6.f), 30.f, 3});
-	spheres.push_back({glm::vec3(-3.f, -0.8f, 6.f), 2.f, 4});
+	spheres.push_back({glm::vec3(3.f, 0.2f, 5.5f), 1.f, 0});
+	spheres.push_back({glm::vec3(0.5f, -0.3f, 6.f), 1.5f, 1});
+	spheres.push_back({glm::vec3(0.f, 31.f, 6.f), 30.f, 2});
+	spheres.push_back({glm::vec3(-3.f, -0.8f, 6.f), 2.f, 3});
 
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
+	RayMaterial mat0;
+	mat0.albedo = glm::vec3(1.f, 0.f, 0.f);
+	mat0.emissionColor = glm::vec3(0.f);
+	mat0.emissionStrength = 0.f;
+
 	RayMaterial mat1;
-	mat1.albedo = glm::vec3(1.f, 0.f, 0.f);
-	mat1.emissionColor = glm::vec3(0.f);
-	mat1.emissionStrength = 0.f;
+	mat1.albedo = glm::vec3(0.f);
+	mat1.emissionColor = glm::vec3(1.f, 0.f, 0.f);
+	mat1.emissionStrength = 2.f;
 
 	RayMaterial mat2;
-	mat2.albedo = glm::vec3(0.f);
-	mat2.emissionColor = glm::vec3(1.f);
-	mat2.emissionStrength = 10.f;
+	mat2.albedo = glm::vec3(1.f);
+	mat2.emissionColor = glm::vec3(0.f);
+	mat2.emissionStrength = 0.f;
 
 	RayMaterial mat3;
-	mat3.albedo = glm::vec3(1.f);
+	mat3.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
 	mat3.emissionColor = glm::vec3(0.f);
 	mat3.emissionStrength = 0.f;
 
 	RayMaterial mat4;
-	mat4.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
-	mat4.emissionColor = glm::vec3(0.f);
+	mat4.albedo = glm::vec3(0.f, 0.4f, 0.1f);
+	mat4.emissionColor = glm::vec3(0.f, 0.4f, 0.1f);
 	mat4.emissionStrength = 0.f;
-
-	RayMaterial mat5;
-	mat5.albedo = glm::vec3(0.f, 0.4f, 0.1f);
-	mat5.emissionColor = glm::vec3(0.f, 0.4f, 0.1f);
-	mat5.emissionStrength = 10.f;
 
 	rayMaterials.push_back(mat1);
 	rayMaterials.push_back(mat2);
 	rayMaterials.push_back(mat3);
 	rayMaterials.push_back(mat4);
-	rayMaterials.push_back(mat5);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 }
@@ -886,6 +885,8 @@ void VulkanEngine::dispatch_compute(VkQueue queue, VkCommandBuffer cmd) {
 
 	glm::vec3 sun = normalize(glm::vec3(2.f, 0.8f, -3.f));
 
+	rayTracerParams.sphereCount = spheres.size();
+
 	constants.lightDir = sun;
 	constants.camInfo = cameraInfo;
 	constants.environment = environment;
@@ -966,13 +967,30 @@ void VulkanEngine::imgui_draw() {
 	}
 
 	if (ImGui::CollapsingHeader("Spheres")) {
+		ImGui::Indent(16.f);
+		ImGui::Unindent(4.f);
+
+		if (ImGui::Button("Add Sphere") && spheres.size() < MAX_SPHERES) {
+			spheres.push_back({glm::vec3(0.f), 1.f, 0});
+		}
+
+		if (ImGui::Button("Update Buffer")) {
+			update_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, spheres.data());
+		}
+
+		ImGui::Indent(4.f);
+
 		for (int i = 0; i < spheres.size(); i++) {
 			if (ImGui::CollapsingHeader(("Sphere " + to_string(i)).c_str())) {
-				ImGui::DragFloat3("Position", (float*) &spheres[i].position);
+				ImGui::Indent(16.f);
+				ImGui::DragFloat3("Position", (float*) &spheres[i].position, 0.1f);
 				ImGui::DragFloat("Radius", &spheres[i].radius, 0.1f, 0.f, 100.f);
 				ImGui::DragInt("Material Index", (int*) &spheres[i].materialIndex, 0.1f, 0, rayMaterials.size() - 1);
+				ImGui::Unindent(16.f);
 			}
 		}
+
+		ImGui::Unindent(16.f);
 	}
 
 	ImGui::End();

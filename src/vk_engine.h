@@ -125,6 +125,7 @@ struct RayTracerData {
 	bool progressive = false;
 	uint raysPerPixel = 10;
 	uint bounceLimit = 10;
+	uint sphereCount;
 };
 
 struct PushConstants {
