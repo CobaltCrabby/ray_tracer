@@ -642,26 +642,31 @@ void VulkanEngine::load_meshes() {
 	mat0.albedo = glm::vec3(1.f, 0.f, 0.f);
 	mat0.emissionColor = glm::vec3(0.f);
 	mat0.emissionStrength = 0.f;
+	mat0.reflectance = 1.f;
 
 	RayMaterial mat1;
-	mat1.albedo = glm::vec3(0.f);
-	mat1.emissionColor = glm::vec3(1.f, 0.f, 0.f);
-	mat1.emissionStrength = 2.f;
+	mat1.albedo = glm::vec3(1.f, 0.f, 0.f);
+	mat1.emissionColor = glm::vec3(0.f);
+	mat1.emissionStrength = 0.f;
+	mat1.reflectance = 0.f;
 
 	RayMaterial mat2;
 	mat2.albedo = glm::vec3(1.f);
 	mat2.emissionColor = glm::vec3(0.f);
 	mat2.emissionStrength = 0.f;
+	mat2.reflectance = 1.f;
 
 	RayMaterial mat3;
 	mat3.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
 	mat3.emissionColor = glm::vec3(0.f);
 	mat3.emissionStrength = 0.f;
+	mat3.reflectance = 0.f;
 
 	RayMaterial mat4;
 	mat4.albedo = glm::vec3(0.f, 0.4f, 0.1f);
 	mat4.emissionColor = glm::vec3(0.f, 0.4f, 0.1f);
 	mat4.emissionStrength = 0.f;
+	mat4.reflectance = 0.f;
 
 	rayMaterials.push_back(mat1);
 	rayMaterials.push_back(mat2);
@@ -960,6 +965,7 @@ void VulkanEngine::imgui_draw() {
 				ImGui::ColorEdit3("Albedo", (float*) &rayMaterials[i].albedo);
 				ImGui::ColorEdit3("Emission Color", (float*) &rayMaterials[i].emissionColor);
 				ImGui::DragFloat("Emission Strength", (float*) &rayMaterials[i].emissionStrength, 0.1f, 0.f, 100.f);
+				ImGui::DragFloat("Reflectance", &rayMaterials[i].reflectance, 0.05f, 0.f, 1.f);
 				ImGui::Unindent(16.f);
 			}
 		}

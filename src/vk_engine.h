@@ -41,6 +41,7 @@ struct RayMaterial {
 	alignas(16) glm::vec3 albedo;
 	alignas(16) glm::vec3 emissionColor;
 	alignas(4) float emissionStrength;
+	alignas(4) float reflectance;
 };
 
 struct Material {
