@@ -4,7 +4,7 @@
 # compile CXX with /Library/Developer/CommandLineTools/usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/cobalt/src/vkguide/third_party/imgui -I/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2 -I/include/SDL2 -isystem /usr/local/include
+CXX_INCLUDES = -I/Users/cobalt/src/ray_tracer/third_party/imgui -I/opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2 -I/include/SDL2 -isystem /usr/local/include
 
 CXX_FLAGSarm64 = -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk
 

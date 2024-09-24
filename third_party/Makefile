@@ -57,10 +57,10 @@ RM = /opt/homebrew/Cellar/cmake/3.29.6/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/cobalt/src/vkguide
+CMAKE_SOURCE_DIR = /Users/cobalt/src/ray_tracer
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/cobalt/src/vkguide
+CMAKE_BINARY_DIR = /Users/cobalt/src/ray_tracer
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles /Users/cobalt/src/vkguide/third_party//CMakeFiles/progress.marks
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles /Users/cobalt/src/ray_tracer/third_party//CMakeFiles/progress.marks
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/clean
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,22 +103,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/preinstall
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/preinstall
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 third_party/CMakeFiles/vkbootstrap.dir/rule:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/vkbootstrap.dir/rule
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/vkbootstrap.dir/rule
 .PHONY : third_party/CMakeFiles/vkbootstrap.dir/rule
 
 # Convenience name for target.
@@ -127,12 +127,12 @@ vkbootstrap: third_party/CMakeFiles/vkbootstrap.dir/rule
 
 # fast build rule for target.
 vkbootstrap/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/build
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/build
 .PHONY : vkbootstrap/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/tinyobjloader.dir/rule:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/tinyobjloader.dir/rule
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/tinyobjloader.dir/rule
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/rule
 
 # Convenience name for target.
@@ -141,12 +141,12 @@ tinyobjloader: third_party/CMakeFiles/tinyobjloader.dir/rule
 
 # fast build rule for target.
 tinyobjloader/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/build
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/build
 .PHONY : tinyobjloader/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/imgui.dir/rule:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/imgui.dir/rule
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/imgui.dir/rule
 .PHONY : third_party/CMakeFiles/imgui.dir/rule
 
 # Convenience name for target.
@@ -155,7 +155,7 @@ imgui: third_party/CMakeFiles/imgui.dir/rule
 
 # fast build rule for target.
 imgui/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/build
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/build
 .PHONY : imgui/fast
 
 imgui/imgui.o: imgui/imgui.cpp.o
@@ -163,7 +163,7 @@ imgui/imgui.o: imgui/imgui.cpp.o
 
 # target to build an object file
 imgui/imgui.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.o
 .PHONY : imgui/imgui.cpp.o
 
 imgui/imgui.i: imgui/imgui.cpp.i
@@ -171,7 +171,7 @@ imgui/imgui.i: imgui/imgui.cpp.i
 
 # target to preprocess a source file
 imgui/imgui.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.i
 .PHONY : imgui/imgui.cpp.i
 
 imgui/imgui.s: imgui/imgui.cpp.s
@@ -179,7 +179,7 @@ imgui/imgui.s: imgui/imgui.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.s
 .PHONY : imgui/imgui.cpp.s
 
 imgui/imgui_demo.o: imgui/imgui_demo.cpp.o
@@ -187,7 +187,7 @@ imgui/imgui_demo.o: imgui/imgui_demo.cpp.o
 
 # target to build an object file
 imgui/imgui_demo.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.o
 .PHONY : imgui/imgui_demo.cpp.o
 
 imgui/imgui_demo.i: imgui/imgui_demo.cpp.i
@@ -195,7 +195,7 @@ imgui/imgui_demo.i: imgui/imgui_demo.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_demo.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.i
 .PHONY : imgui/imgui_demo.cpp.i
 
 imgui/imgui_demo.s: imgui/imgui_demo.cpp.s
@@ -203,7 +203,7 @@ imgui/imgui_demo.s: imgui/imgui_demo.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_demo.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.s
 .PHONY : imgui/imgui_demo.cpp.s
 
 imgui/imgui_draw.o: imgui/imgui_draw.cpp.o
@@ -211,7 +211,7 @@ imgui/imgui_draw.o: imgui/imgui_draw.cpp.o
 
 # target to build an object file
 imgui/imgui_draw.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o
 .PHONY : imgui/imgui_draw.cpp.o
 
 imgui/imgui_draw.i: imgui/imgui_draw.cpp.i
@@ -219,7 +219,7 @@ imgui/imgui_draw.i: imgui/imgui_draw.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_draw.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.i
 .PHONY : imgui/imgui_draw.cpp.i
 
 imgui/imgui_draw.s: imgui/imgui_draw.cpp.s
@@ -227,7 +227,7 @@ imgui/imgui_draw.s: imgui/imgui_draw.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_draw.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s
 .PHONY : imgui/imgui_draw.cpp.s
 
 imgui/imgui_impl_sdl.o: imgui/imgui_impl_sdl.cpp.o
@@ -235,7 +235,7 @@ imgui/imgui_impl_sdl.o: imgui/imgui_impl_sdl.cpp.o
 
 # target to build an object file
 imgui/imgui_impl_sdl.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o
 .PHONY : imgui/imgui_impl_sdl.cpp.o
 
 imgui/imgui_impl_sdl.i: imgui/imgui_impl_sdl.cpp.i
@@ -243,7 +243,7 @@ imgui/imgui_impl_sdl.i: imgui/imgui_impl_sdl.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_impl_sdl.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.i
 .PHONY : imgui/imgui_impl_sdl.cpp.i
 
 imgui/imgui_impl_sdl.s: imgui/imgui_impl_sdl.cpp.s
@@ -251,7 +251,7 @@ imgui/imgui_impl_sdl.s: imgui/imgui_impl_sdl.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_impl_sdl.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.s
 .PHONY : imgui/imgui_impl_sdl.cpp.s
 
 imgui/imgui_impl_vulkan.o: imgui/imgui_impl_vulkan.cpp.o
@@ -259,7 +259,7 @@ imgui/imgui_impl_vulkan.o: imgui/imgui_impl_vulkan.cpp.o
 
 # target to build an object file
 imgui/imgui_impl_vulkan.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o
 .PHONY : imgui/imgui_impl_vulkan.cpp.o
 
 imgui/imgui_impl_vulkan.i: imgui/imgui_impl_vulkan.cpp.i
@@ -267,7 +267,7 @@ imgui/imgui_impl_vulkan.i: imgui/imgui_impl_vulkan.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_impl_vulkan.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.i
 .PHONY : imgui/imgui_impl_vulkan.cpp.i
 
 imgui/imgui_impl_vulkan.s: imgui/imgui_impl_vulkan.cpp.s
@@ -275,7 +275,7 @@ imgui/imgui_impl_vulkan.s: imgui/imgui_impl_vulkan.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_impl_vulkan.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s
 .PHONY : imgui/imgui_impl_vulkan.cpp.s
 
 imgui/imgui_tables.o: imgui/imgui_tables.cpp.o
@@ -283,7 +283,7 @@ imgui/imgui_tables.o: imgui/imgui_tables.cpp.o
 
 # target to build an object file
 imgui/imgui_tables.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.o
 .PHONY : imgui/imgui_tables.cpp.o
 
 imgui/imgui_tables.i: imgui/imgui_tables.cpp.i
@@ -291,7 +291,7 @@ imgui/imgui_tables.i: imgui/imgui_tables.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_tables.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i
 .PHONY : imgui/imgui_tables.cpp.i
 
 imgui/imgui_tables.s: imgui/imgui_tables.cpp.s
@@ -299,7 +299,7 @@ imgui/imgui_tables.s: imgui/imgui_tables.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_tables.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s
 .PHONY : imgui/imgui_tables.cpp.s
 
 imgui/imgui_widgets.o: imgui/imgui_widgets.cpp.o
@@ -307,7 +307,7 @@ imgui/imgui_widgets.o: imgui/imgui_widgets.cpp.o
 
 # target to build an object file
 imgui/imgui_widgets.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.o
 .PHONY : imgui/imgui_widgets.cpp.o
 
 imgui/imgui_widgets.i: imgui/imgui_widgets.cpp.i
@@ -315,7 +315,7 @@ imgui/imgui_widgets.i: imgui/imgui_widgets.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_widgets.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i
 .PHONY : imgui/imgui_widgets.cpp.i
 
 imgui/imgui_widgets.s: imgui/imgui_widgets.cpp.s
@@ -323,7 +323,7 @@ imgui/imgui_widgets.s: imgui/imgui_widgets.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_widgets.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s
 .PHONY : imgui/imgui_widgets.cpp.s
 
 tinyobjloader/tiny_obj_loader.o: tinyobjloader/tiny_obj_loader.cc.o
@@ -331,7 +331,7 @@ tinyobjloader/tiny_obj_loader.o: tinyobjloader/tiny_obj_loader.cc.o
 
 # target to build an object file
 tinyobjloader/tiny_obj_loader.cc.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o
 .PHONY : tinyobjloader/tiny_obj_loader.cc.o
 
 tinyobjloader/tiny_obj_loader.i: tinyobjloader/tiny_obj_loader.cc.i
@@ -339,7 +339,7 @@ tinyobjloader/tiny_obj_loader.i: tinyobjloader/tiny_obj_loader.cc.i
 
 # target to preprocess a source file
 tinyobjloader/tiny_obj_loader.cc.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.i
 .PHONY : tinyobjloader/tiny_obj_loader.cc.i
 
 tinyobjloader/tiny_obj_loader.s: tinyobjloader/tiny_obj_loader.cc.s
@@ -347,7 +347,7 @@ tinyobjloader/tiny_obj_loader.s: tinyobjloader/tiny_obj_loader.cc.s
 
 # target to generate assembly for a file
 tinyobjloader/tiny_obj_loader.cc.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.s
 .PHONY : tinyobjloader/tiny_obj_loader.cc.s
 
 vkbootstrap/VkBootstrap.o: vkbootstrap/VkBootstrap.cpp.o
@@ -355,7 +355,7 @@ vkbootstrap/VkBootstrap.o: vkbootstrap/VkBootstrap.cpp.o
 
 # target to build an object file
 vkbootstrap/VkBootstrap.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.o
 .PHONY : vkbootstrap/VkBootstrap.cpp.o
 
 vkbootstrap/VkBootstrap.i: vkbootstrap/VkBootstrap.cpp.i
@@ -363,7 +363,7 @@ vkbootstrap/VkBootstrap.i: vkbootstrap/VkBootstrap.cpp.i
 
 # target to preprocess a source file
 vkbootstrap/VkBootstrap.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.i
 .PHONY : vkbootstrap/VkBootstrap.cpp.i
 
 vkbootstrap/VkBootstrap.s: vkbootstrap/VkBootstrap.cpp.s
@@ -371,7 +371,7 @@ vkbootstrap/VkBootstrap.s: vkbootstrap/VkBootstrap.cpp.s
 
 # target to generate assembly for a file
 vkbootstrap/VkBootstrap.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.s
 .PHONY : vkbootstrap/VkBootstrap.cpp.s
 
 # Help Target
@@ -423,6 +423,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

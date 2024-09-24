@@ -1,4 +1,4 @@
-# Install script for directory: /Users/cobalt/src/vkguide/src
+# Install script for directory: /Users/cobalt/src/ray_tracer/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

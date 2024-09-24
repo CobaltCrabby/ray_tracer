@@ -57,10 +57,10 @@ RM = /opt/homebrew/Cellar/cmake/3.29.6/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/cobalt/src/vkguide
+CMAKE_SOURCE_DIR = /Users/cobalt/src/ray_tracer
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/cobalt/src/vkguide
+CMAKE_BINARY_DIR = /Users/cobalt/src/ray_tracer
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles /Users/cobalt/src/vkguide/src//CMakeFiles/progress.marks
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles /Users/cobalt/src/ray_tracer/src//CMakeFiles/progress.marks
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/clean
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,22 +103,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/CMakeFiles/raytracer.dir/rule:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/raytracer.dir/rule
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/raytracer.dir/rule
 .PHONY : src/CMakeFiles/raytracer.dir/rule
 
 # Convenience name for target.
@@ -127,7 +127,7 @@ raytracer: src/CMakeFiles/raytracer.dir/rule
 
 # fast build rule for target.
 raytracer/fast:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/build
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/build
 .PHONY : raytracer/fast
 
 main.o: main.cpp.o
@@ -135,7 +135,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/main.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -143,7 +143,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/main.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -151,7 +151,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/main.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 vk_engine.o: vk_engine.cpp.o
@@ -159,7 +159,7 @@ vk_engine.o: vk_engine.cpp.o
 
 # target to build an object file
 vk_engine.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_engine.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_engine.cpp.o
 .PHONY : vk_engine.cpp.o
 
 vk_engine.i: vk_engine.cpp.i
@@ -167,7 +167,7 @@ vk_engine.i: vk_engine.cpp.i
 
 # target to preprocess a source file
 vk_engine.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_engine.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_engine.cpp.i
 .PHONY : vk_engine.cpp.i
 
 vk_engine.s: vk_engine.cpp.s
@@ -175,7 +175,7 @@ vk_engine.s: vk_engine.cpp.s
 
 # target to generate assembly for a file
 vk_engine.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_engine.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_engine.cpp.s
 .PHONY : vk_engine.cpp.s
 
 vk_initializers.o: vk_initializers.cpp.o
@@ -183,7 +183,7 @@ vk_initializers.o: vk_initializers.cpp.o
 
 # target to build an object file
 vk_initializers.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o
 .PHONY : vk_initializers.cpp.o
 
 vk_initializers.i: vk_initializers.cpp.i
@@ -191,7 +191,7 @@ vk_initializers.i: vk_initializers.cpp.i
 
 # target to preprocess a source file
 vk_initializers.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_initializers.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_initializers.cpp.i
 .PHONY : vk_initializers.cpp.i
 
 vk_initializers.s: vk_initializers.cpp.s
@@ -199,7 +199,7 @@ vk_initializers.s: vk_initializers.cpp.s
 
 # target to generate assembly for a file
 vk_initializers.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_initializers.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_initializers.cpp.s
 .PHONY : vk_initializers.cpp.s
 
 vk_mesh.o: vk_mesh.cpp.o
@@ -207,7 +207,7 @@ vk_mesh.o: vk_mesh.cpp.o
 
 # target to build an object file
 vk_mesh.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o
 .PHONY : vk_mesh.cpp.o
 
 vk_mesh.i: vk_mesh.cpp.i
@@ -215,7 +215,7 @@ vk_mesh.i: vk_mesh.cpp.i
 
 # target to preprocess a source file
 vk_mesh.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_mesh.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_mesh.cpp.i
 .PHONY : vk_mesh.cpp.i
 
 vk_mesh.s: vk_mesh.cpp.s
@@ -223,7 +223,7 @@ vk_mesh.s: vk_mesh.cpp.s
 
 # target to generate assembly for a file
 vk_mesh.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_mesh.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_mesh.cpp.s
 .PHONY : vk_mesh.cpp.s
 
 vk_textures.o: vk_textures.cpp.o
@@ -231,7 +231,7 @@ vk_textures.o: vk_textures.cpp.o
 
 # target to build an object file
 vk_textures.cpp.o:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_textures.cpp.o
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_textures.cpp.o
 .PHONY : vk_textures.cpp.o
 
 vk_textures.i: vk_textures.cpp.i
@@ -239,7 +239,7 @@ vk_textures.i: vk_textures.cpp.i
 
 # target to preprocess a source file
 vk_textures.cpp.i:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_textures.cpp.i
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_textures.cpp.i
 .PHONY : vk_textures.cpp.i
 
 vk_textures.s: vk_textures.cpp.s
@@ -247,7 +247,7 @@ vk_textures.s: vk_textures.cpp.s
 
 # target to generate assembly for a file
 vk_textures.cpp.s:
-	cd /Users/cobalt/src/vkguide && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_textures.cpp.s
+	cd /Users/cobalt/src/ray_tracer && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/vk_textures.cpp.s
 .PHONY : vk_textures.cpp.s
 
 # Help Target
@@ -285,6 +285,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

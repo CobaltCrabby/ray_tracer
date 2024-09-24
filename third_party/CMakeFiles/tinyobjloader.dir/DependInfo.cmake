@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/Users/cobalt/src/vkguide/third_party/tinyobjloader/tiny_obj_loader.cc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o" "gcc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o.d"
+  "/Users/cobalt/src/ray_tracer/third_party/tinyobjloader/tiny_obj_loader.cc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o" "gcc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

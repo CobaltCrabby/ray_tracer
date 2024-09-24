@@ -53,10 +53,10 @@ RM = /opt/homebrew/Cellar/cmake/3.29.6/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/cobalt/src/vkguide
+CMAKE_SOURCE_DIR = /Users/cobalt/src/ray_tracer
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/cobalt/src/vkguide
+CMAKE_BINARY_DIR = /Users/cobalt/src/ray_tracer
 
 # Include any dependencies generated for this target.
 include src/CMakeFiles/raytracer.dir/depend.make
@@ -72,72 +72,72 @@ include src/CMakeFiles/raytracer.dir/flags.make
 src/CMakeFiles/raytracer.dir/main.cpp.o: src/CMakeFiles/raytracer.dir/flags.make
 src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp
 src/CMakeFiles/raytracer.dir/main.cpp.o: src/CMakeFiles/raytracer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/CMakeFiles/raytracer.dir/main.cpp.o"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/main.cpp.o -MF CMakeFiles/raytracer.dir/main.cpp.o.d -o CMakeFiles/raytracer.dir/main.cpp.o -c /Users/cobalt/src/vkguide/src/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/CMakeFiles/raytracer.dir/main.cpp.o"
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/main.cpp.o -MF CMakeFiles/raytracer.dir/main.cpp.o.d -o CMakeFiles/raytracer.dir/main.cpp.o -c /Users/cobalt/src/ray_tracer/src/main.cpp
 
 src/CMakeFiles/raytracer.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/raytracer.dir/main.cpp.i"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/src/main.cpp > CMakeFiles/raytracer.dir/main.cpp.i
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/ray_tracer/src/main.cpp > CMakeFiles/raytracer.dir/main.cpp.i
 
 src/CMakeFiles/raytracer.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/raytracer.dir/main.cpp.s"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/main.cpp -o CMakeFiles/raytracer.dir/main.cpp.s
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/ray_tracer/src/main.cpp -o CMakeFiles/raytracer.dir/main.cpp.s
 
 src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/CMakeFiles/raytracer.dir/flags.make
 src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp
 src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/CMakeFiles/raytracer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/CMakeFiles/raytracer.dir/vk_engine.cpp.o"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_engine.cpp.o -MF CMakeFiles/raytracer.dir/vk_engine.cpp.o.d -o CMakeFiles/raytracer.dir/vk_engine.cpp.o -c /Users/cobalt/src/vkguide/src/vk_engine.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/CMakeFiles/raytracer.dir/vk_engine.cpp.o"
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_engine.cpp.o -MF CMakeFiles/raytracer.dir/vk_engine.cpp.o.d -o CMakeFiles/raytracer.dir/vk_engine.cpp.o -c /Users/cobalt/src/ray_tracer/src/vk_engine.cpp
 
 src/CMakeFiles/raytracer.dir/vk_engine.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/raytracer.dir/vk_engine.cpp.i"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/src/vk_engine.cpp > CMakeFiles/raytracer.dir/vk_engine.cpp.i
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/ray_tracer/src/vk_engine.cpp > CMakeFiles/raytracer.dir/vk_engine.cpp.i
 
 src/CMakeFiles/raytracer.dir/vk_engine.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/raytracer.dir/vk_engine.cpp.s"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/vk_engine.cpp -o CMakeFiles/raytracer.dir/vk_engine.cpp.s
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/ray_tracer/src/vk_engine.cpp -o CMakeFiles/raytracer.dir/vk_engine.cpp.s
 
 src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o: src/CMakeFiles/raytracer.dir/flags.make
 src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o: src/vk_mesh.cpp
 src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o: src/CMakeFiles/raytracer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o -MF CMakeFiles/raytracer.dir/vk_mesh.cpp.o.d -o CMakeFiles/raytracer.dir/vk_mesh.cpp.o -c /Users/cobalt/src/vkguide/src/vk_mesh.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o"
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o -MF CMakeFiles/raytracer.dir/vk_mesh.cpp.o.d -o CMakeFiles/raytracer.dir/vk_mesh.cpp.o -c /Users/cobalt/src/ray_tracer/src/vk_mesh.cpp
 
 src/CMakeFiles/raytracer.dir/vk_mesh.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/raytracer.dir/vk_mesh.cpp.i"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/src/vk_mesh.cpp > CMakeFiles/raytracer.dir/vk_mesh.cpp.i
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/ray_tracer/src/vk_mesh.cpp > CMakeFiles/raytracer.dir/vk_mesh.cpp.i
 
 src/CMakeFiles/raytracer.dir/vk_mesh.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/raytracer.dir/vk_mesh.cpp.s"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/vk_mesh.cpp -o CMakeFiles/raytracer.dir/vk_mesh.cpp.s
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/ray_tracer/src/vk_mesh.cpp -o CMakeFiles/raytracer.dir/vk_mesh.cpp.s
 
 src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o: src/CMakeFiles/raytracer.dir/flags.make
 src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o: src/vk_initializers.cpp
 src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o: src/CMakeFiles/raytracer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o -MF CMakeFiles/raytracer.dir/vk_initializers.cpp.o.d -o CMakeFiles/raytracer.dir/vk_initializers.cpp.o -c /Users/cobalt/src/vkguide/src/vk_initializers.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o"
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o -MF CMakeFiles/raytracer.dir/vk_initializers.cpp.o.d -o CMakeFiles/raytracer.dir/vk_initializers.cpp.o -c /Users/cobalt/src/ray_tracer/src/vk_initializers.cpp
 
 src/CMakeFiles/raytracer.dir/vk_initializers.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/raytracer.dir/vk_initializers.cpp.i"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/src/vk_initializers.cpp > CMakeFiles/raytracer.dir/vk_initializers.cpp.i
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/ray_tracer/src/vk_initializers.cpp > CMakeFiles/raytracer.dir/vk_initializers.cpp.i
 
 src/CMakeFiles/raytracer.dir/vk_initializers.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/raytracer.dir/vk_initializers.cpp.s"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/vk_initializers.cpp -o CMakeFiles/raytracer.dir/vk_initializers.cpp.s
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/ray_tracer/src/vk_initializers.cpp -o CMakeFiles/raytracer.dir/vk_initializers.cpp.s
 
 src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/CMakeFiles/raytracer.dir/flags.make
 src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp
 src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/CMakeFiles/raytracer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/CMakeFiles/raytracer.dir/vk_textures.cpp.o"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_textures.cpp.o -MF CMakeFiles/raytracer.dir/vk_textures.cpp.o.d -o CMakeFiles/raytracer.dir/vk_textures.cpp.o -c /Users/cobalt/src/vkguide/src/vk_textures.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object src/CMakeFiles/raytracer.dir/vk_textures.cpp.o"
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/raytracer.dir/vk_textures.cpp.o -MF CMakeFiles/raytracer.dir/vk_textures.cpp.o.d -o CMakeFiles/raytracer.dir/vk_textures.cpp.o -c /Users/cobalt/src/ray_tracer/src/vk_textures.cpp
 
 src/CMakeFiles/raytracer.dir/vk_textures.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/raytracer.dir/vk_textures.cpp.i"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/vkguide/src/vk_textures.cpp > CMakeFiles/raytracer.dir/vk_textures.cpp.i
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/cobalt/src/ray_tracer/src/vk_textures.cpp > CMakeFiles/raytracer.dir/vk_textures.cpp.i
 
 src/CMakeFiles/raytracer.dir/vk_textures.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/raytracer.dir/vk_textures.cpp.s"
-	cd /Users/cobalt/src/vkguide/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/vkguide/src/vk_textures.cpp -o CMakeFiles/raytracer.dir/vk_textures.cpp.s
+	cd /Users/cobalt/src/ray_tracer/src && /Library/Developer/CommandLineTools/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/cobalt/src/ray_tracer/src/vk_textures.cpp -o CMakeFiles/raytracer.dir/vk_textures.cpp.s
 
 # Object files for target raytracer
 raytracer_OBJECTS = \
@@ -161,18 +161,18 @@ bin/raytracer: third_party/libtinyobjloader.a
 bin/raytracer: third_party/libimgui.a
 bin/raytracer: /usr/local/lib/libvulkan.dylib
 bin/raytracer: src/CMakeFiles/raytracer.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable ../bin/raytracer"
-	cd /Users/cobalt/src/vkguide/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/raytracer.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable ../bin/raytracer"
+	cd /Users/cobalt/src/ray_tracer/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/raytracer.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 src/CMakeFiles/raytracer.dir/build: bin/raytracer
 .PHONY : src/CMakeFiles/raytracer.dir/build
 
 src/CMakeFiles/raytracer.dir/clean:
-	cd /Users/cobalt/src/vkguide/src && $(CMAKE_COMMAND) -P CMakeFiles/raytracer.dir/cmake_clean.cmake
+	cd /Users/cobalt/src/ray_tracer/src && $(CMAKE_COMMAND) -P CMakeFiles/raytracer.dir/cmake_clean.cmake
 .PHONY : src/CMakeFiles/raytracer.dir/clean
 
 src/CMakeFiles/raytracer.dir/depend:
-	cd /Users/cobalt/src/vkguide && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/cobalt/src/vkguide /Users/cobalt/src/vkguide/src /Users/cobalt/src/vkguide /Users/cobalt/src/vkguide/src /Users/cobalt/src/vkguide/src/CMakeFiles/raytracer.dir/DependInfo.cmake "--color=$(COLOR)"
+	cd /Users/cobalt/src/ray_tracer && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/cobalt/src/ray_tracer /Users/cobalt/src/ray_tracer/src /Users/cobalt/src/ray_tracer /Users/cobalt/src/ray_tracer/src /Users/cobalt/src/ray_tracer/src/CMakeFiles/raytracer.dir/DependInfo.cmake "--color=$(COLOR)"
 .PHONY : src/CMakeFiles/raytracer.dir/depend
 

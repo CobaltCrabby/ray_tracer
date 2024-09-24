@@ -1,7 +1,7 @@
 src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o: \
-  /Users/cobalt/src/vkguide/src/vk_mesh.cpp \
-  /Users/cobalt/src/vkguide/src/vk_mesh.h \
-  /Users/cobalt/src/vkguide/src/vk_types.h \
+  /Users/cobalt/src/ray_tracer/src/vk_mesh.cpp \
+  /Users/cobalt/src/ray_tracer/src/vk_mesh.h \
+  /Users/cobalt/src/ray_tracer/src/vk_types.h \
   /usr/local/include/vulkan/vulkan.h \
   /usr/local/include/vulkan/vk_platform.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/stddef.h \
@@ -47,7 +47,7 @@ src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o: \
   /usr/local/include/vk_video/vulkan_video_codec_h265std_decode.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std_decode.h \
-  /Users/cobalt/src/vkguide/third_party/vma/vk_mem_alloc.h \
+  /Users/cobalt/src/ray_tracer/third_party/vma/vk_mem_alloc.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/vector \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/copy.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/copy_move_common.h \
@@ -860,40 +860,40 @@ src/CMakeFiles/raytracer.dir/vk_mesh.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/cstdarg \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__memory/temp_value.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__split_buffer \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/vec3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_bool3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/type_vec3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/qualifier.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/setup.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vec3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_bool3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/type_vec3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/qualifier.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/setup.hpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/cassert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/assert.h \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/../simd/platform.h \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/type_vec3.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/compute_vector_relational.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_bool3_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_float3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_float3_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_double3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_double3_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_int3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_int3_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_uint3.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_uint3_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/vec2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_bool2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/type_vec2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/type_vec2.inl \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/../detail/./compute_vector_relational.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_bool2_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_float2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_float2_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_double2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_double2_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_int2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_int2_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_uint2.hpp \
-  /Users/cobalt/src/vkguide/third_party/glm/glm/./ext/vector_uint2_precision.hpp \
-  /Users/cobalt/src/vkguide/third_party/tinyobjloader/tiny_obj_loader.h \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/../simd/platform.h \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/type_vec3.inl \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/compute_vector_relational.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_bool3_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_float3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_float3_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_double3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_double3_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_int3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_int3_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_uint3.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_uint3_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vec2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_bool2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/type_vec2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/type_vec2.inl \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/../detail/./compute_vector_relational.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_bool2_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_float2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_float2_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_double2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_double2_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_int2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_int2_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_uint2.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/./ext/vector_uint2_precision.hpp \
+  /Users/cobalt/src/ray_tracer/third_party/tinyobjloader/tiny_obj_loader.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/map \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__functional/is_transparent.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__iterator/ranges_iterator_traits.h \

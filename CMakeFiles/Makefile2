@@ -54,10 +54,10 @@ RM = /opt/homebrew/Cellar/cmake/3.29.6/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/cobalt/src/vkguide
+CMAKE_SOURCE_DIR = /Users/cobalt/src/ray_tracer
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/cobalt/src/vkguide
+CMAKE_BINARY_DIR = /Users/cobalt/src/ray_tracer
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -119,14 +119,14 @@ third_party/clean: third_party/CMakeFiles/imgui.dir/clean
 CMakeFiles/Shaders.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Shaders.dir/build.make CMakeFiles/Shaders.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Shaders.dir/build.make CMakeFiles/Shaders.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12 "Built target Shaders"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12 "Built target Shaders"
 .PHONY : CMakeFiles/Shaders.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Shaders.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 12
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 12
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Shaders.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : CMakeFiles/Shaders.dir/rule
 
 # Convenience name for target.
@@ -145,14 +145,14 @@ CMakeFiles/Shaders.dir/clean:
 third_party/CMakeFiles/vkbootstrap.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/vkbootstrap.dir/build.make third_party/CMakeFiles/vkbootstrap.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=29,30 "Built target vkbootstrap"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=29,30 "Built target vkbootstrap"
 .PHONY : third_party/CMakeFiles/vkbootstrap.dir/all
 
 # Build rule for subdir invocation for target.
 third_party/CMakeFiles/vkbootstrap.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/vkbootstrap.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : third_party/CMakeFiles/vkbootstrap.dir/rule
 
 # Convenience name for target.
@@ -171,14 +171,14 @@ third_party/CMakeFiles/vkbootstrap.dir/clean:
 third_party/CMakeFiles/tinyobjloader.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/tinyobjloader.dir/build.make third_party/CMakeFiles/tinyobjloader.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=27,28 "Built target tinyobjloader"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=27,28 "Built target tinyobjloader"
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/all
 
 # Build rule for subdir invocation for target.
 third_party/CMakeFiles/tinyobjloader.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/tinyobjloader.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/rule
 
 # Convenience name for target.
@@ -197,14 +197,14 @@ third_party/CMakeFiles/tinyobjloader.dir/clean:
 third_party/CMakeFiles/imgui.dir/all:
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/depend
 	$(MAKE) $(MAKESILENT) -f third_party/CMakeFiles/imgui.dir/build.make third_party/CMakeFiles/imgui.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=13,14,15,16,17,18,19,20 "Built target imgui"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=13,14,15,16,17,18,19,20 "Built target imgui"
 .PHONY : third_party/CMakeFiles/imgui.dir/all
 
 # Build rule for subdir invocation for target.
 third_party/CMakeFiles/imgui.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 8
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 8
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 third_party/CMakeFiles/imgui.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : third_party/CMakeFiles/imgui.dir/rule
 
 # Convenience name for target.
@@ -226,14 +226,14 @@ src/CMakeFiles/raytracer.dir/all: third_party/CMakeFiles/tinyobjloader.dir/all
 src/CMakeFiles/raytracer.dir/all: third_party/CMakeFiles/imgui.dir/all
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/raytracer.dir/build.make src/CMakeFiles/raytracer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/vkguide/CMakeFiles --progress-num=21,22,23,24,25,26 "Built target raytracer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=21,22,23,24,25,26 "Built target raytracer"
 .PHONY : src/CMakeFiles/raytracer.dir/all
 
 # Build rule for subdir invocation for target.
 src/CMakeFiles/raytracer.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 30
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 30
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/raytracer.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/vkguide/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/cobalt/src/ray_tracer/CMakeFiles 0
 .PHONY : src/CMakeFiles/raytracer.dir/rule
 
 # Convenience name for target.

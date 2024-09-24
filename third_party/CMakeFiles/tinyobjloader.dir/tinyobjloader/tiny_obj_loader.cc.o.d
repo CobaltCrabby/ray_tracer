@@ -1,6 +1,6 @@
 third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.o: \
-  /Users/cobalt/src/vkguide/third_party/tinyobjloader/tiny_obj_loader.cc \
-  /Users/cobalt/src/vkguide/third_party/tinyobjloader/tiny_obj_loader.h \
+  /Users/cobalt/src/ray_tracer/third_party/tinyobjloader/tiny_obj_loader.cc \
+  /Users/cobalt/src/ray_tracer/third_party/tinyobjloader/tiny_obj_loader.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/map \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/equal.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/comp.h \

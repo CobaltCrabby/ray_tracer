@@ -1,7 +1,7 @@
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o: \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_sdl.cpp \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imconfig.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.cpp \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/float.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config_site \
@@ -88,7 +88,7 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/malloc/_ptrcheck.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_dev_t.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_mode_t.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_sdl.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_main.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_stdinc.h \

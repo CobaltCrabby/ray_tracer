@@ -1,7 +1,7 @@
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o: \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_vulkan.cpp \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imconfig.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.cpp \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/float.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config_site \
@@ -88,7 +88,7 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/malloc/_ptrcheck.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_dev_t.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_mode_t.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui_impl_vulkan.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.h \
   /usr/local/include/vulkan/vulkan.h \
   /usr/local/include/vulkan/vk_platform.h \
   /usr/local/include/vulkan/vulkan_core.h \

@@ -1,6 +1,6 @@
 third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.o: \
-  /Users/cobalt/src/vkguide/third_party/vkbootstrap/VkBootstrap.cpp \
-  /Users/cobalt/src/vkguide/third_party/vkbootstrap/VkBootstrap.h \
+  /Users/cobalt/src/ray_tracer/third_party/vkbootstrap/VkBootstrap.cpp \
+  /Users/cobalt/src/ray_tracer/third_party/vkbootstrap/VkBootstrap.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/cassert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__assert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config \

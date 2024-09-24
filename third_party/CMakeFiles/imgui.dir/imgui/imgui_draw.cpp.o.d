@@ -1,7 +1,7 @@
 third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o: \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui_draw.cpp \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imconfig.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_draw.cpp \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/float.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__config_site \
@@ -88,7 +88,7 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/malloc/_ptrcheck.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_dev_t.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_mode_t.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imgui_internal.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_internal.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/stdio.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/stdio.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/_stdio.h \
@@ -243,6 +243,6 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/arm/limits.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/arm/_limits.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/syslimits.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imstb_textedit.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imstb_rectpack.h \
-  /Users/cobalt/src/vkguide/third_party/imgui/imstb_truetype.h
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imstb_textedit.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imstb_rectpack.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imstb_truetype.h

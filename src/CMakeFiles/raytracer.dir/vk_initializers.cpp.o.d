@@ -1,7 +1,7 @@
 src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o: \
-  /Users/cobalt/src/vkguide/src/vk_initializers.cpp \
-  /Users/cobalt/src/vkguide/src/vk_initializers.h \
-  /Users/cobalt/src/vkguide/src/vk_types.h \
+  /Users/cobalt/src/ray_tracer/src/vk_initializers.cpp \
+  /Users/cobalt/src/ray_tracer/src/vk_initializers.h \
+  /Users/cobalt/src/ray_tracer/src/vk_types.h \
   /usr/local/include/vulkan/vulkan.h \
   /usr/local/include/vulkan/vk_platform.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/stddef.h \
@@ -47,4 +47,4 @@ src/CMakeFiles/raytracer.dir/vk_initializers.cpp.o: \
   /usr/local/include/vk_video/vulkan_video_codec_h265std_decode.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std_decode.h \
-  /Users/cobalt/src/vkguide/third_party/vma/vk_mem_alloc.h
+  /Users/cobalt/src/ray_tracer/third_party/vma/vk_mem_alloc.h

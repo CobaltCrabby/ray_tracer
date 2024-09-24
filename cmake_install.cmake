@@ -1,4 +1,4 @@
-# Install script for directory: /Users/cobalt/src/vkguide
+# Install script for directory: /Users/cobalt/src/ray_tracer
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,8 +39,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/Users/cobalt/src/vkguide/third_party/cmake_install.cmake")
-  include("/Users/cobalt/src/vkguide/src/cmake_install.cmake")
+  include("/Users/cobalt/src/ray_tracer/third_party/cmake_install.cmake")
+  include("/Users/cobalt/src/ray_tracer/src/cmake_install.cmake")
 
 endif()
 
@@ -52,5 +52,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/cobalt/src/vkguide/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/cobalt/src/ray_tracer/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

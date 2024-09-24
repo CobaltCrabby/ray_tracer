@@ -4,7 +4,7 @@
 # compile CXX with /Library/Developer/CommandLineTools/usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/Users/cobalt/src/vkguide/third_party/vkbootstrap -isystem /usr/local/include
+CXX_INCLUDES = -I/Users/cobalt/src/ray_tracer/third_party/vkbootstrap -isystem /usr/local/include
 
 CXX_FLAGSarm64 = -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk
 

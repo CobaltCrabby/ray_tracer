@@ -459,11 +459,23 @@ void VulkanEngine::init_scene() {
 	materialBufferInfo.offset = 0;
 	materialBufferInfo.range = sizeof(RayMaterial) * MAX_MATERIALS;
 
+	VkDescriptorBufferInfo triPointBufferInfo;
+	triPointBufferInfo.buffer = triPointBuffer.buffer;
+	triPointBufferInfo.offset = 0;
+	triPointBufferInfo.range = sizeof(glm::vec3) * triPoints.size();
+
+	VkDescriptorBufferInfo triangleBufferInfo;
+	triangleBufferInfo.buffer = triangleBuffer.buffer;
+	triangleBufferInfo.offset = 0;
+	triangleBufferInfo.range = sizeof(Triangle) * triangles.size();
+
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
 	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 1);
 	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 2);
+	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 3);
+	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 4);
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite};//, triPointWrite, triangleWrite};
 
 	vkUpdateDescriptorSets(device, 3, computeWrites, 0, nullptr);
 
@@ -502,8 +514,10 @@ void VulkanEngine::init_descriptors() {
 	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
 	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
+	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3);
+	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding};
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding};//, triPointBufferBinding, triangleBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -563,7 +577,6 @@ void VulkanEngine::init_imgui() {
 	init_info.RenderPass = renderPass;
 	init_info.QueueFamily = graphicsQueueFamily;
 	init_info.Subpass = 0;
-
 
 	ImGui_ImplVulkan_Init(&init_info);	
 
@@ -654,7 +667,7 @@ void VulkanEngine::load_meshes() {
 	mat2.albedo = glm::vec3(1.f);
 	mat2.emissionColor = glm::vec3(0.f);
 	mat2.emissionStrength = 0.f;
-	mat2.reflectance = 1.f;
+	mat2.reflectance = 0.f;
 
 	RayMaterial mat3;
 	mat3.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
@@ -674,6 +687,22 @@ void VulkanEngine::load_meshes() {
 	rayMaterials.push_back(mat4);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
+
+	triPoints.push_back(glm::vec3(-1.f, 2.f, 6.f));
+	triPoints.push_back(glm::vec3(0.f, 3.f, 6.f));
+	triPoints.push_back(glm::vec3(1.f, 2.f, 6.f));
+
+	copy_buffer(sizeof(glm::vec3) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
+
+	Triangle tri;
+	tri.indices[0] = 0;
+	tri.indices[1] = 1;
+	tri.indices[2] = 2;
+	tri.materialIndex = 2;
+
+	triangles.push_back(tri);
+
+	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
 }
 
 void VulkanEngine::load_images() {
@@ -891,6 +920,7 @@ void VulkanEngine::dispatch_compute(VkQueue queue, VkCommandBuffer cmd) {
 	glm::vec3 sun = normalize(glm::vec3(2.f, 0.8f, -3.f));
 
 	rayTracerParams.sphereCount = spheres.size();
+	//rayTracerParams.triangleCount = triangles.size();
 
 	constants.lightDir = sun;
 	constants.camInfo = cameraInfo;
@@ -928,7 +958,7 @@ void VulkanEngine::imgui_draw() {
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
-		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 100);
+		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 1000);
 		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
 	}
 
@@ -1116,17 +1146,26 @@ void VulkanEngine::draw() {
 	vkWaitForFences(device, 1, &currentFrame.computeFence, VK_TRUE, 9999999999);
 	vkResetFences(device, 1, &currentFrame.computeFence);
 
+	VkPipelineStageFlags waitStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
 	VkSubmitInfo computeSubmitInfo = vkinit::submitInfo(&currentFrame.computeCmdBuffer);
+	// computeSubmitInfo.waitSemaphoreCount = 1;
+	// computeSubmitInfo.pWaitSemaphores = &currentFrame.renderSemaphore;
+	computeSubmitInfo.pWaitDstStageMask = &waitStageMask;
+	computeSubmitInfo.signalSemaphoreCount = 1;
+	computeSubmitInfo.pSignalSemaphores = &currentFrame.computeSemaphore;
 	VK_CHECK(vkQueueSubmit(computeQueue, 1, &computeSubmitInfo, currentFrame.computeFence));
 
 	//submit to queue
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
+	VkSemaphore graphicsSemaphores[] = {currentFrame.presentSemaphore, currentFrame.computeSemaphore};
+
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	submitInfo.pWaitDstStageMask = &waitStage;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &currentFrame.presentSemaphore;
+	submitInfo.waitSemaphoreCount = 2;
+	submitInfo.pWaitSemaphores = graphicsSemaphores;
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &currentFrame.renderSemaphore;
 	submitInfo.commandBufferCount = 1;
@@ -1179,6 +1218,7 @@ void VulkanEngine::run() {
 		ImGui_ImplSDL2_NewFrame(_window);
 		ImGui::NewFrame();
 		imgui_draw();
+		//fasdf
 
 		double deltaTime = (SDL_GetTicks() - _lastTime) * (60.f/1000.f);
 

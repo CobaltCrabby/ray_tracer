@@ -37,6 +37,11 @@ struct Sphere {
 	alignas(4) uint materialIndex;
 };
 
+struct Triangle {
+   	alignas(16) uint indices[3];
+    alignas(4) uint materialIndex;
+};
+
 struct RayMaterial {
 	alignas(16) glm::vec3 albedo;
 	alignas(16) glm::vec3 emissionColor;
@@ -107,11 +112,11 @@ struct Texture {
 };
 
 struct CameraInfo {
-	glm::mat4 cameraRotation;
-	alignas(4) glm::vec3 pos = glm::vec3(0.f, -0.5f, -3.5f);
-	float nearPlane = 0.1f;
-	float aspectRatio;
-	float fov = 50.f;
+	alignas(16) glm::mat4 cameraRotation;
+	alignas(16) glm::vec3 pos = glm::vec3(0.f, -0.5f, -3.5f);
+	alignas(4) float nearPlane = 0.1f;
+	alignas(4) float aspectRatio;
+	alignas(4) float fov = 50.f;
 };
 
 struct EnvironmentData {
@@ -123,18 +128,18 @@ struct EnvironmentData {
 };
 
 struct RayTracerData {
-	bool progressive = false;
-	uint raysPerPixel = 10;
-	uint bounceLimit = 10;
-	uint sphereCount;
+	alignas(4) bool progressive = false;
+	alignas(4) uint raysPerPixel = 10;
+	alignas(4) uint bounceLimit = 10;
+	alignas(4) uint sphereCount;
+	//alignas(4) uint triangleCount;
 };
 
 struct PushConstants {
-	CameraInfo camInfo;
-	EnvironmentData environment;
-	RayTracerData rayTraceParams;
+	CameraInfo camInfo; //44 -> 64 (?)
+	EnvironmentData environment; //52 -> 64
+	RayTracerData rayTraceParams; //20 -> 32
 	alignas(16) glm::vec3 lightDir;
-	uint sphereCount;
 	uint frameCount;
 };	
 
@@ -204,6 +209,8 @@ public:
 	FrameData frames[FRAME_OVERLAP];
 	std::vector<Sphere> spheres;
 	std::vector<RayMaterial> rayMaterials;
+	std::vector<glm::vec3> triPoints;
+	std::vector<Triangle> triangles;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSetLayout singleTextureLayout;
@@ -212,8 +219,12 @@ public:
 
 	AllocatedBuffer sphereBuffer;
 	VkDescriptorSet sphereDescriptor;
+	AllocatedBuffer triPointBuffer;
+	VkDescriptorSet triPointDescriptor;
 	AllocatedBuffer materialBuffer;
 	VkDescriptorSet materialDescriptor;
+	AllocatedBuffer triangleBuffer;
+	VkDescriptorSet triangleDescriptor;
 
 	VkPipelineLayout computePipeLayout;
 	VkPipeline computePipeline;
