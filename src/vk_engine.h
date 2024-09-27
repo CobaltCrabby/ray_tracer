@@ -15,6 +15,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include <imgui.h>
+#include <imgui_impl_sdl.h>
+#include <imgui_impl_vulkan.h>
+
 struct DeletionQueue {
 	std::deque<std::function<void()>> deletors;
 
@@ -90,10 +94,6 @@ struct CamSceneData {
 };
 
 struct FrameData {
-	VkSemaphore presentSemaphore, renderSemaphore, computeSemaphore;
-	VkFence renderFence, computeFence;
-
-	VkCommandPool commandPool;
 	VkCommandBuffer commandBuffer;
 
 	VkCommandPool computeCmdPool;
@@ -161,27 +161,21 @@ private:
 	void init_framebuffers();
 	void init_sync_structures();
 	void init_pipelines();
-	void init_scene();
 	void init_descriptors();
 	void init_imgui();
+	void init_image();
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
-	void load_meshes();
-	void load_images();
-	void upload_mesh(Mesh& mesh);
+	void generate_quad();
+
+	void prepare_storage_buffers();
+	void update_descriptors();
 	void copy_buffer(size_t bufferSize, AllocatedBuffer& buffer, VkBufferUsageFlags flags, void* bufferData);
 	void update_buffer(size_t bufferSize, AllocatedBuffer& buffer, void* bufferData);
 
-	size_t pad_uniform_buffer_size(size_t originalSize);
-
-	Material* create_material(VkPipeline pipeline, VkPipelineLayout pipelineLayout, const std::string& name);
-	Material* get_material(const std::string& name);
-	Mesh* get_mesh(const std::string& name);
-	void dispatch_compute(VkQueue queue, VkCommandBuffer cmd);
-	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
 	void imgui_draw();
-
-	FrameData& get_current_frame();
+	void run_compute();
+	void run_graphics(uint index);
 
 public:
 	DeletionQueue deletionQueue;
@@ -198,6 +192,7 @@ public:
 	std::vector<VkImage> swapchainImages;
 	std::vector<VkImageView> swapchainImageViews;
 
+	//queues
 	VkQueue graphicsQueue;
 	uint32_t graphicsQueueFamily;
 	VkQueue computeQueue;
@@ -205,7 +200,11 @@ public:
 
 	VkRenderPass renderPass;
 	std::vector<VkFramebuffer> framebuffers;
+	std::vector<VkCommandBuffer> drawCmdBuffers;
+	VkCommandBuffer computeCmdBuffer;
+	VkCommandPool commandPool;
 
+	//gone
 	FrameData frames[FRAME_OVERLAP];
 	std::vector<Sphere> spheres;
 	std::vector<RayMaterial> rayMaterials;
@@ -213,9 +212,14 @@ public:
 	std::vector<Triangle> triangles;
 
 	VkDescriptorSet computeSet;
-	VkDescriptorSetLayout singleTextureLayout;
+	VkDescriptorSet graphicsSet;
+	VkDescriptorSetLayout graphicsLayout;
 	VkDescriptorSetLayout computeLayout;
 	VkDescriptorPool descriptorPool;
+
+	AllocatedBuffer vertexBuffer;
+	AllocatedBuffer indexBuffer;
+	Texture computeImage;
 
 	AllocatedBuffer sphereBuffer;
 	VkDescriptorSet sphereDescriptor;
@@ -226,29 +230,30 @@ public:
 	AllocatedBuffer triangleBuffer;
 	VkDescriptorSet triangleDescriptor;
 
+	VkPipelineLayout graphicsPipelineLayout;
+	VkPipeline graphicsPipeline;
+
 	VkPipelineLayout computePipeLayout;
 	VkPipeline computePipeline;
+
+	VkSemaphore presentSemaphore, renderSemaphore, computeSemaphore, graphicsSemaphore;
+	VkFence renderFence, computeFence;
 
 	VmaAllocator allocator;
 	UploadContext uploadContext;
 
-	std::vector<RenderObject> renderables;
-	std::unordered_map<std::string, Material> materials;
-	std::unordered_map<std::string, Mesh> meshes;
-	std::unordered_map<std::string, Texture> textures;
+	ImDrawData* imGuiDrawData;
 
-	glm::vec3 cameraPos = {0.f, -4.f, -10.f};
-	float cameraSpeed = 0.3f;
-
+	//all dont need
 	bool _isInitialized{false};
 	int _frameNumber{0};
-	uint64_t _lastTime;
 
 	float cameraAngles[3] = {4.f, 0.f, 0.f};
 	RayTracerData rayTracerParams;
 	RenderStats renderStats;
 	CameraInfo cameraInfo;
 	EnvironmentData environment;
+	PushConstants constants;
 
 	VkExtent2D _windowExtent{1920, 1080};
 

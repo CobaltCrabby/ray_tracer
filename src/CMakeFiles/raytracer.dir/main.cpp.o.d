@@ -1062,4 +1062,8 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: \
   /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/../gtc/../geometric.hpp \
   /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/../gtc/../trigonometric.hpp \
   /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/../gtc/../matrix.hpp \
-  /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/transform.inl
+  /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/transform.inl \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.h

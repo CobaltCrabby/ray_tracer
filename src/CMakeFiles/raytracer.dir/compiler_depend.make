@@ -1052,6 +1052,10 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/vec3.hpp \
   third_party/glm/glm/vec4.hpp \
   third_party/glm/glm/vector_relational.hpp \
+  third_party/imgui/imconfig.h \
+  third_party/imgui/imgui.h \
+  third_party/imgui/imgui_impl_sdl.h \
+  third_party/imgui/imgui_impl_vulkan.h \
   third_party/vma/vk_mem_alloc.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std_decode.h \
@@ -4257,6 +4261,10 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/vec3.hpp \
   third_party/glm/glm/vec4.hpp \
   third_party/glm/glm/vector_relational.hpp \
+  third_party/imgui/imconfig.h \
+  third_party/imgui/imgui.h \
+  third_party/imgui/imgui_impl_sdl.h \
+  third_party/imgui/imgui_impl_vulkan.h \
   third_party/stb_image/stb_image.h \
   third_party/vma/vk_mem_alloc.h \
   /usr/local/include/vk_video/vulkan_video_codec_av1std.h \
@@ -4337,17 +4345,9 @@ src/vk_initializers.cpp:
 
 third_party/vkbootstrap/VkBootstrap.h:
 
-third_party/imgui/imgui_impl_vulkan.h:
-
-third_party/imgui/imgui.h:
-
 src/vk_textures.h:
 
 /Library/Developer/CommandLineTools/usr/lib/clang/15.0.0/include/arm_bf16.h:
-
-third_party/imgui/imconfig.h:
-
-/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/iostream:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/bitset:
 
@@ -4396,6 +4396,14 @@ src/vk_engine.cpp:
 /usr/local/include/vk_video/vulkan_video_codec_av1std_decode.h:
 
 /usr/local/include/vk_video/vulkan_video_codec_av1std.h:
+
+third_party/imgui/imgui_impl_vulkan.h:
+
+third_party/imgui/imgui.h:
+
+/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/iostream:
+
+third_party/imgui/imconfig.h:
 
 third_party/glm/glm/packing.hpp:
 

@@ -1063,6 +1063,10 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: \
   /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/../gtc/../trigonometric.hpp \
   /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/../gtc/../matrix.hpp \
   /Users/cobalt/src/ray_tracer/third_party/glm/glm/gtx/transform.inl \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.h \
+  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_main.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_stdinc.h \
@@ -1122,10 +1126,6 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_locale.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_misc.h \
   /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_vulkan.h \
-  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h \
-  /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h \
-  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.h \
-  /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.h \
   /Users/cobalt/src/ray_tracer/src/vk_initializers.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/iostream \
   /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/istream \

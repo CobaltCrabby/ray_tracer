@@ -1053,6 +1053,10 @@ src/CMakeFiles/raytracer.dir/main.cpp.o
  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vec3.hpp
  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vec4.hpp
  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vector_relational.hpp
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.h
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.h
  /Users/cobalt/src/ray_tracer/third_party/vma/vk_mem_alloc.h
  /usr/local/include/vk_video/vulkan_video_codec_av1std.h
  /usr/local/include/vk_video/vulkan_video_codec_av1std_decode.h
@@ -4262,6 +4266,10 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o
  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vec3.hpp
  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vec4.hpp
  /Users/cobalt/src/ray_tracer/third_party/glm/glm/vector_relational.hpp
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imconfig.h
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imgui.h
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_sdl.h
+ /Users/cobalt/src/ray_tracer/third_party/imgui/imgui_impl_vulkan.h
  /Users/cobalt/src/ray_tracer/third_party/stb_image/stb_image.h
  /Users/cobalt/src/ray_tracer/third_party/vma/vk_mem_alloc.h
  /usr/local/include/vk_video/vulkan_video_codec_av1std.h
