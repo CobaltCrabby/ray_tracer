@@ -420,11 +420,11 @@ void VulkanEngine::init_descriptors() {
 	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3);
 	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding};//, triPointBufferBinding, triangleBufferBinding};
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, triPointBufferBinding, triangleBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 3;
+	computeSetInfo.bindingCount = 5;
 	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
@@ -550,7 +550,7 @@ void VulkanEngine::update_descriptors() {
 	VkDescriptorBufferInfo triPointBufferInfo;
 	triPointBufferInfo.buffer = triPointBuffer.buffer;
 	triPointBufferInfo.offset = 0;
-	triPointBufferInfo.range = sizeof(glm::vec3) * triPoints.size();
+	triPointBufferInfo.range = sizeof(TrianglePoint) * triPoints.size();
 
 	VkDescriptorBufferInfo triangleBufferInfo;
 	triangleBufferInfo.buffer = triangleBuffer.buffer;
@@ -563,9 +563,9 @@ void VulkanEngine::update_descriptors() {
 	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 3);
 	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 4);
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite};//, triPointWrite, triangleWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, triPointWrite, triangleWrite};
 
-	vkUpdateDescriptorSets(device, 3, computeWrites, 0, nullptr);
+	vkUpdateDescriptorSets(device, 5, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
@@ -619,21 +619,19 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
-	triPoints.push_back(glm::vec3(-1.f, 2.f, 6.f));
-	triPoints.push_back(glm::vec3(0.f, 3.f, 6.f));
-	triPoints.push_back(glm::vec3(1.f, 2.f, 6.f));
+	//ccw
+	triPoints.push_back({glm::vec3(1.f, -2.f, 8.f)});
+	triPoints.push_back({glm::vec3(1.f, -4.f, 8.f)});
+	triPoints.push_back({glm::vec3(-1.f, -4.f, 8.f)});
+	triPoints.push_back({glm::vec3(-1.f, -2.f, 8.f)});
 
-	copy_buffer(sizeof(glm::vec3) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
+	triangles.push_back({glm::uvec3(0, 1, 2), 2});
+	triangles.push_back({glm::uvec3(2, 3, 0), 2});
 
-	Triangle tri;
-	tri.indices[0] = 0;
-	tri.indices[1] = 1;
-	tri.indices[2] = 2;
-	tri.materialIndex = 2;
+	read_obj("../assets/monkey_flat.obj", triangles.size());
 
-	triangles.push_back(tri);
-
-	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
+	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
+	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
 }
 
 bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule) {
@@ -673,6 +671,67 @@ void VulkanEngine::generate_quad() {
 	
 	copy_buffer(sizeof(Vertex) * 4, vertexBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices.data());
 	copy_buffer(sizeof(uint32_t) * 6, indexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
+}
+
+void VulkanEngine::read_obj(std::string filePath, int offset) {
+	std::ifstream fileStream;
+	fileStream.open(filePath);
+
+	std::string fileLine;
+	bool vertex = false;
+
+	if (!fileStream.is_open()) return;
+	while (fileStream) {
+		std::string prefix;
+
+		std::getline(fileStream, fileLine);
+		if (fileLine.size() <= 1) break;
+		for (int i = 0; i < 2; i++) {
+			if (fileLine.at(i) != ' ') {
+				prefix += fileLine.at(i);
+			} else {
+				break;
+			}
+		}
+
+		int index = 2;
+		if (prefix == "v") { //vertices
+			glm::vec3 position;
+			for (int i = 0; i < 3; i++) {
+				int size = fileLine.at(index) == '-' ? 9 : 8;
+				position[i] = stof(fileLine.substr(index, size));
+				index += size + 1;
+			}
+			triPoints.push_back({position});
+		} else if (prefix == "vt") { //uv
+			index++;
+			glm::vec2 uv;
+			for (int i = 0; i < 2; i++) {
+				int size = 9;
+				uv[i] = stof(fileLine.substr(index, size));
+				index += size + 1;
+			}
+		} else if (prefix == "vn") { //normal
+			index++;
+			glm::vec3 normal;
+			for (int i = 0; i < 3; i++) {
+				int size = fileLine.at(index) == '-' ? 7 : 6;
+				normal[i] = stof(fileLine.substr(index, size));
+				index += size + 1;
+			}
+		} else if (prefix == "f") { //triangles (position only for now)
+			index = 0;
+			glm::uvec3 vertexIndex;
+			for (int i = 0; i < 3; i++) {
+				int space = fileLine.find(' ', index);
+				int nextSpace = fileLine.find(' ', space + 1);
+				std::string vertex = fileLine.substr(space, nextSpace);
+				vertexIndex[i] = stoi(vertex.substr(0, vertex.find('/'))) + offset + 1;
+				index = nextSpace;
+			}
+			triangles.push_back({vertexIndex, 2});
+		}
+	}
 }
 
 void VulkanEngine::init_image() {
@@ -899,7 +958,7 @@ void VulkanEngine::run_compute() {
 	glm::vec3 sun = normalize(glm::vec3(2.f, 0.8f, -3.f));
 
 	rayTracerParams.sphereCount = spheres.size();
-	//rayTracerParams.triangleCount = triangles.size();
+	rayTracerParams.triangleCount = triangles.size();
 
 	constants.lightDir = sun;
 	constants.camInfo = cameraInfo;

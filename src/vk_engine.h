@@ -42,8 +42,14 @@ struct Sphere {
 };
 
 struct Triangle {
-   	alignas(16) uint indices[3];
-    alignas(4) uint materialIndex;
+   	glm::uvec3 indices;
+    uint materialIndex;
+};
+
+struct TrianglePoint {
+	alignas(16) glm::vec3 position;
+	alignas(8) glm::vec2 uv;
+	alignas(16) glm::vec3 normal;
 };
 
 struct RayMaterial {
@@ -129,10 +135,10 @@ struct EnvironmentData {
 
 struct RayTracerData {
 	alignas(4) bool progressive = false;
-	alignas(4) uint raysPerPixel = 10;
-	alignas(4) uint bounceLimit = 10;
+	alignas(4) uint raysPerPixel = 0;
+	alignas(4) uint bounceLimit = 0;
 	alignas(4) uint sphereCount;
-	//alignas(4) uint triangleCount;
+	alignas(4) uint triangleCount;
 };
 
 struct PushConstants {
@@ -167,6 +173,7 @@ private:
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
+	void read_obj(std::string filePath, int offset);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
@@ -208,7 +215,7 @@ public:
 	FrameData frames[FRAME_OVERLAP];
 	std::vector<Sphere> spheres;
 	std::vector<RayMaterial> rayMaterials;
-	std::vector<glm::vec3> triPoints;
+	std::vector<TrianglePoint> triPoints;
 	std::vector<Triangle> triangles;
 
 	VkDescriptorSet computeSet;
