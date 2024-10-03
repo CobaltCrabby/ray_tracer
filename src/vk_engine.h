@@ -42,8 +42,7 @@ struct Sphere {
 };
 
 struct Triangle {
-   	glm::uvec3 indices;
-    uint materialIndex;
+   	alignas(16) glm::uvec3 indices;
 };
 
 struct TrianglePoint {
@@ -59,51 +58,11 @@ struct RayMaterial {
 	alignas(4) float reflectance;
 };
 
-struct Material {
-	VkDescriptorSet textureSet{VK_NULL_HANDLE};
-	VkPipeline pipeline;
-	VkPipelineLayout pipelineLayout;
-};
-
 struct RenderObject {
-	Mesh* mesh;
-	Material* material;
-	glm::mat4 transformMatrix;
-	glm::vec3 color;
-};
-
-struct GPUCameraData {
-	glm::mat4 proj;
-	glm::mat4 view;
-	glm::mat4 viewProj;
-};
-
-struct GPUObjectData {
-	glm::mat4 modelMatrix;
-};
-
-struct GPUSceneData {
-	glm::vec4 fogColor; // w is for exponent
-	glm::vec4 fogDistances; //x for min, y for max, zw unused.
-	glm::vec4 ambientColor;
-	glm::vec4 sunlightDirection; //w for sun power
-	glm::vec4 sunlightColor;
-};
-
-struct GPUColorData {
-	alignas(16) glm::vec3 color;
-};
-
-struct CamSceneData {
-	GPUCameraData camera;
-	GPUSceneData scene;
-};
-
-struct FrameData {
-	VkCommandBuffer commandBuffer;
-
-	VkCommandPool computeCmdPool;
-	VkCommandBuffer computeCmdBuffer;
+	alignas(4) uint triangleStart;
+	alignas(4) uint triangleCount;
+	alignas(4) uint materialIndex;
+	alignas(16) glm::mat4 transformMatrix;
 };
 
 struct UploadContext {
@@ -135,10 +94,10 @@ struct EnvironmentData {
 
 struct RayTracerData {
 	alignas(4) bool progressive = false;
-	alignas(4) uint raysPerPixel = 0;
-	alignas(4) uint bounceLimit = 0;
+	alignas(4) uint raysPerPixel = 1;
+	alignas(4) uint bounceLimit = 1;
 	alignas(4) uint sphereCount;
-	alignas(4) uint triangleCount;
+	alignas(4) uint objectCount;
 };
 
 struct PushConstants {
@@ -212,11 +171,11 @@ public:
 	VkCommandPool commandPool;
 
 	//gone
-	FrameData frames[FRAME_OVERLAP];
 	std::vector<Sphere> spheres;
 	std::vector<RayMaterial> rayMaterials;
 	std::vector<TrianglePoint> triPoints;
 	std::vector<Triangle> triangles;
+	std::vector<RenderObject> objects;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;
@@ -236,6 +195,8 @@ public:
 	VkDescriptorSet materialDescriptor;
 	AllocatedBuffer triangleBuffer;
 	VkDescriptorSet triangleDescriptor;
+	AllocatedBuffer objectBuffer;
+	VkDescriptorSet objectDescriptor;
 
 	VkPipelineLayout graphicsPipelineLayout;
 	VkPipeline graphicsPipeline;

@@ -16,6 +16,7 @@ struct Ray {
     vec3 dir;
 };
 
+//material/objects
 struct Material {
     vec3 albedo;
     vec3 emissionColor;
@@ -23,6 +24,14 @@ struct Material {
     float reflectance;
 };
 
+struct RenderObject {
+    uint triangleStart;
+    uint triangleCount;
+    uint materialIndex;
+    mat4 transformMatrix;
+};
+
+//shapes
 struct Sphere {
     vec3 position;
     float radius;
@@ -31,7 +40,6 @@ struct Sphere {
 
 struct Triangle {
     uvec3 indices;
-    uint materialIndex;
 };
 
 struct TrianglePoint {
@@ -46,8 +54,10 @@ struct HitInfo {
     uint materialIndex;
     vec3 hitPoint;
     vec3 normal;
+    vec2 uv;
 };
 
+//push constants
 struct EnvironmentData {
     vec3 horizonColor;
     vec3 zenithColor;
@@ -61,7 +71,7 @@ struct RayTracerData {
     uint raysPerPixel;
     uint bounceLimit;
     uint sphereCount;
-    uint triangleCount;
+    uint objectCount;
 };
 
 layout (binding = 0, rgba8) uniform image2D outImage;
@@ -80,6 +90,10 @@ layout (std140, binding = 3) readonly buffer TrianglePositionBuffer {
 
 layout (std140, binding = 4) readonly buffer TriangleBuffer {
     Triangle triangles[];
+};
+
+layout (std140, binding = 5) readonly buffer ObjectBuffer {
+    RenderObject objects[];
 };
 
 layout (push_constant) uniform constants {
@@ -135,10 +149,10 @@ HitInfo sphereIntersection(Sphere sphere, Ray ray) {
 }
 
 //https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-HitInfo triangleIntersection(Ray ray, vec3 v0, vec3 v1, vec3 v2) {
-    vec3 v1v0 = v1 - v0;
-    vec3 v2v0 = v2 - v0;
-    vec3 rov0 = ray.origin - v0;
+HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2) {
+    vec3 v1v0 = v1.position - v0.position;
+    vec3 v2v0 = v2.position - v0.position;
+    vec3 rov0 = ray.origin - v0.position;
     vec3 n = cross( v1v0, v2v0 );
 
     vec3  q = cross( rov0, ray.dir );
@@ -155,7 +169,10 @@ HitInfo triangleIntersection(Ray ray, vec3 v0, vec3 v1, vec3 v2) {
     hit.hitPoint = ray.origin + ray.dir * dst;
     hit.normal = normalize(n);
     hit.dst = dst;
+    hit.uv = v0.uv;
     return hit;
+
+    //area of a triangle = |AB x AC|/2 where AB is v1v0 and AC is v2v0, use for barycentric calcs
 }
 
 HitInfo calculateIntersections(Ray ray) {
@@ -171,12 +188,20 @@ HitInfo calculateIntersections(Ray ray) {
         }
     }
 
-    for (int i = 0; i < traceData.triangleCount; i++) {
-        uvec3 tris = triangles[i].indices;
-        HitInfo hitInfo = triangleIntersection(ray, trianglePoints[tris.x].position, trianglePoints[tris.y].position, trianglePoints[tris.z].position);
-        hitInfo.materialIndex = triangles[i].materialIndex;
-        if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
-            closestHit = hitInfo;
+    for (int i = 0; i < traceData.objectCount; i++) {
+        RenderObject object = objects[i];
+        Ray transformRay;
+        transformRay.dir = (inverse(object.transformMatrix) * vec4(ray.dir, 1.f)).xyz;
+        transformRay.origin = (inverse(object.transformMatrix) * vec4(ray.origin, 1.f)).xyz;
+
+        for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
+            uvec3 indices = triangles[j].indices;
+            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[indices.x], trianglePoints[indices.y], trianglePoints[indices.z]);
+            hitInfo.materialIndex = object.materialIndex;
+            if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
+                closestHit = hitInfo;
+                //closestHit.normal = (inverse(object.transformMatrix) * vec4(closestHit.normal, 1.f)).xyz;
+            }
         }
     }
 
@@ -214,7 +239,7 @@ vec3 trace(Ray ray, inout uint state) {
             vec3 emitted = material.emissionColor * material.emissionStrength;
             float lightStrength = dot(hitInfo.normal, newRay.dir);
             incomingLight += lightStrength * emitted * rayColor;
-            rayColor *= material.albedo;
+            rayColor *= material.albedo; //vec3(hitInfo.uv, 0.f);
         } else {
             incomingLight += getEnvironmentLight(newRay) * rayColor;
             break;

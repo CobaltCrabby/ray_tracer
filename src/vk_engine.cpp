@@ -419,12 +419,13 @@ void VulkanEngine::init_descriptors() {
 	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
 	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3);
 	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
+	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5);
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, triPointBufferBinding, triangleBufferBinding};
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 5;
+	computeSetInfo.bindingCount = 6;
 	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
@@ -557,15 +558,22 @@ void VulkanEngine::update_descriptors() {
 	triangleBufferInfo.offset = 0;
 	triangleBufferInfo.range = sizeof(Triangle) * triangles.size();
 
+	VkDescriptorBufferInfo objectBufferInfo;
+	objectBufferInfo.buffer = objectBuffer.buffer;
+	objectBufferInfo.offset = 0;
+	objectBufferInfo.range = sizeof(RenderObject) * objects.size();
+
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
 	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 1);
 	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 2);
 	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 3);
 	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 4);
-	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, triPointWrite, triangleWrite};
+	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 5);
 
-	vkUpdateDescriptorSets(device, 5, computeWrites, 0, nullptr);
+	
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite};
+
+	vkUpdateDescriptorSets(device, 6, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
@@ -612,10 +620,17 @@ void VulkanEngine::prepare_storage_buffers() {
 	mat4.emissionStrength = 0.f;
 	mat4.reflectance = 0.f;
 
+	RayMaterial mat5;
+	mat5.albedo = glm::vec3(0.5f, 0.2f, 0.1f);
+	mat5.emissionColor = glm::vec3(0.f, 0.f, 0.f);
+	mat5.emissionStrength = 0.f;
+	mat5.reflectance = 0.97f;
+
 	rayMaterials.push_back(mat1);
 	rayMaterials.push_back(mat2);
 	rayMaterials.push_back(mat3);
 	rayMaterials.push_back(mat4);
+	rayMaterials.push_back(mat5);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
@@ -625,13 +640,22 @@ void VulkanEngine::prepare_storage_buffers() {
 	triPoints.push_back({glm::vec3(-1.f, -4.f, 8.f)});
 	triPoints.push_back({glm::vec3(-1.f, -2.f, 8.f)});
 
-	triangles.push_back({glm::uvec3(0, 1, 2), 2});
-	triangles.push_back({glm::uvec3(2, 3, 0), 2});
+	triangles.push_back({glm::uvec3(0, 1, 2)});
+	triangles.push_back({glm::uvec3(2, 3, 0)});
 
-	read_obj("../assets/monkey_flat.obj", triangles.size());
+	RenderObject object;
+	object.materialIndex = 2;
+	object.transformMatrix = glm::mat4(1.f);
+	object.triangleCount = 2;
+	object.triangleStart = 0;
+
+	objects.push_back(object);
+
+	read_obj("../assets/rb_low.obj", triangles.size());
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
+	copy_buffer(sizeof(RenderObject) * objects.size(), objectBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) objects.data());
 }
 
 bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule) {
@@ -679,6 +703,7 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 
 	std::string fileLine;
 	bool vertex = false;
+	std::vector<glm::vec2> uvs;
 
 	if (!fileStream.is_open()) return;
 	while (fileStream) {
@@ -711,6 +736,7 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 				uv[i] = stof(fileLine.substr(index, size));
 				index += size + 1;
 			}
+			uvs.push_back(uv);
 		} else if (prefix == "vn") { //normal
 			index++;
 			glm::vec3 normal;
@@ -719,19 +745,33 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 				normal[i] = stof(fileLine.substr(index, size));
 				index += size + 1;
 			}
-		} else if (prefix == "f") { //triangles (position only for now)
+		} else if (prefix == "f") { //triangles
 			index = 0;
 			glm::uvec3 vertexIndex;
 			for (int i = 0; i < 3; i++) {
 				int space = fileLine.find(' ', index);
 				int nextSpace = fileLine.find(' ', space + 1);
 				std::string vertex = fileLine.substr(space, nextSpace);
-				vertexIndex[i] = stoi(vertex.substr(0, vertex.find('/'))) + offset + 1;
+
+				int firstSlash = vertex.find('/');
+				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + offset + 1;
+				int secondSlash = vertex.find('/', firstSlash + 1);
+				triPoints[vertexIndex[i]].uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
+
 				index = nextSpace;
 			}
-			triangles.push_back({vertexIndex, 2});
+			triangles.push_back({vertexIndex});
 		}
 	}
+
+	RenderObject object;
+	object.materialIndex = 4;
+	object.transformMatrix = glm::translate(glm::vec3(-0.1f, 0.f, 0.f)) * glm::rotate(glm::radians(-90.f), glm::vec3(0, 1, 0)) * glm::rotate(glm::radians(180.f), glm::vec3(1, 0, 0));
+	object.triangleCount = triangles.size() - offset;
+	object.triangleStart = offset;
+	objects.push_back(object);
+
+	cout << "Object at " << filePath << ": " <<  object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
 }
 
 void VulkanEngine::init_image() {
@@ -958,7 +998,7 @@ void VulkanEngine::run_compute() {
 	glm::vec3 sun = normalize(glm::vec3(2.f, 0.8f, -3.f));
 
 	rayTracerParams.sphereCount = spheres.size();
-	rayTracerParams.triangleCount = triangles.size();
+	rayTracerParams.objectCount = objects.size();
 
 	constants.lightDir = sun;
 	constants.camInfo = cameraInfo;
