@@ -28,6 +28,11 @@ struct Material {
 };
 
 //objects
+struct BoundingBox {
+    //[0] = min, [1] = max, only use 3 of the vec components bc memory alignment
+    vec4[2] bounds; 
+};
+
 struct RenderObject {
     bool smoothShade;
     uint triangleStart;
@@ -35,11 +40,6 @@ struct RenderObject {
     uint materialIndex;
     mat4 transformMatrix;
     BoundingBox boundingBox;
-};
-
-struct BoundingBox {
-    //[0] = min, [1] = max, only use 3 of the vec components bc memory alignment
-    vec4[2] bounds; 
 };
 
 //shapes

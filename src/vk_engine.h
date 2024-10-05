@@ -182,13 +182,13 @@ public:
 	VkCommandBuffer computeCmdBuffer;
 	VkCommandPool commandPool;
 
-	//gone
 	std::vector<Sphere> spheres;
 	std::vector<RayMaterial> rayMaterials;
 	std::vector<Texture> textures;
 	std::vector<TrianglePoint> triPoints;
 	std::vector<Triangle> triangles;
 	std::vector<RenderObject> objects;
+	std::vector<ImGuiObject> imGuiObjects;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;

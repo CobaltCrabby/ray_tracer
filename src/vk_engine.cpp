@@ -789,6 +789,8 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 	object.boundingBox.bounds[0] = glm::vec4(bounds[0], 0.f);
 	object.boundingBox.bounds[1] = glm::vec4(bounds[1], 0.f);
 	objects.push_back(object);
+
+	imGuiObjects.push_back({"slosher", object});
 	cout << "Object at " << filePath << ": " <<  object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
 }
 
@@ -982,6 +984,17 @@ void VulkanEngine::imgui_draw() {
 			}
 		}
 
+		ImGui::Unindent(16.f);
+	}
+
+	if (ImGui::CollapsingHeader("Models")) {
+		ImGui::Indent(16.f);
+		for (int i = 0; i < imGuiObjects.size(); i++) {
+			if (ImGui::CollapsingHeader(imGuiObjects[i].name.c_str())) {
+				ImGui::Indent(16.f);
+				ImGui::Unindent(16.f);
+			}
+		}
 		ImGui::Unindent(16.f);
 	}
 
