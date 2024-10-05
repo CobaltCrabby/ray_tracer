@@ -56,13 +56,25 @@ struct RayMaterial {
 	alignas(16) glm::vec3 emissionColor;
 	alignas(4) float emissionStrength;
 	alignas(4) float reflectance;
+	alignas(4) uint textureIndex;
+};
+
+struct BoundingBox {
+	alignas(16) glm::vec4 bounds[2];
 };
 
 struct RenderObject {
+	bool smoothShade;
 	alignas(4) uint triangleStart;
 	alignas(4) uint triangleCount;
 	alignas(4) uint materialIndex;
 	alignas(16) glm::mat4 transformMatrix;
+	BoundingBox boundingBox;
+};
+
+struct ImGuiObject {
+	std::string name;
+	RenderObject object;
 };
 
 struct UploadContext {
@@ -95,7 +107,7 @@ struct EnvironmentData {
 struct RayTracerData {
 	alignas(4) bool progressive = false;
 	alignas(4) uint raysPerPixel = 1;
-	alignas(4) uint bounceLimit = 1;
+	alignas(4) uint bounceLimit = 2;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
 };
@@ -173,6 +185,7 @@ public:
 	//gone
 	std::vector<Sphere> spheres;
 	std::vector<RayMaterial> rayMaterials;
+	std::vector<Texture> textures;
 	std::vector<TrianglePoint> triPoints;
 	std::vector<Triangle> triangles;
 	std::vector<RenderObject> objects;

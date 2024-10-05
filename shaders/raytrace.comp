@@ -14,21 +14,32 @@ struct CameraInfo {
 struct Ray {
     vec3 origin;
     vec3 dir;
+    vec3 invDir;
+    uvec3 dimSign;
 };
 
-//material/objects
+//material
 struct Material {
     vec3 albedo;
     vec3 emissionColor;
     float emissionStrength;
     float reflectance;
+    uint textureIndex;
 };
 
+//objects
 struct RenderObject {
+    bool smoothShade;
     uint triangleStart;
     uint triangleCount;
     uint materialIndex;
     mat4 transformMatrix;
+    BoundingBox boundingBox;
+};
+
+struct BoundingBox {
+    //[0] = min, [1] = max, only use 3 of the vec components bc memory alignment
+    vec4[2] bounds; 
 };
 
 //shapes
@@ -84,15 +95,17 @@ layout (std140, binding = 2) readonly buffer MaterialBuffer {
     Material materials[];
 };
 
-layout (std140, binding = 3) readonly buffer TrianglePositionBuffer {
+layout (binding = 3, rgba8) uniform readonly image2D TextureBuffer[1];
+
+layout (std140, binding = 4) readonly buffer TrianglePositionBuffer {
     TrianglePoint trianglePoints[];
 };
 
-layout (std140, binding = 4) readonly buffer TriangleBuffer {
+layout (std140, binding = 5) readonly buffer TriangleBuffer {
     Triangle triangles[];
 };
 
-layout (std140, binding = 5) readonly buffer ObjectBuffer {
+layout (std140, binding = 6) readonly buffer ObjectBuffer {
     RenderObject objects[];
 };
 
@@ -101,7 +114,6 @@ layout (push_constant) uniform constants {
     EnvironmentData environment;
     RayTracerData rayTracerParams;
     vec3 lightDir;
-    //uint sphereCount;
     uint frameCount;
 } PushConstants;
 
@@ -150,6 +162,7 @@ HitInfo sphereIntersection(Sphere sphere, Ray ray) {
 
 //https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2) {
+    vec3 v1v2 = v1.position - v2.position;
     vec3 v1v0 = v1.position - v0.position;
     vec3 v2v0 = v2.position - v0.position;
     vec3 rov0 = ray.origin - v0.position;
@@ -167,12 +180,43 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
     HitInfo hit;
     hit.didHit = d0 >= 0.00000001f && dst >= 0 && u >= 0 && v >= 0 && w >= 0;
     hit.hitPoint = ray.origin + ray.dir * dst;
-    hit.normal = normalize(n);
     hit.dst = dst;
-    hit.uv = v0.uv;
-    return hit;
 
-    //area of a triangle = |AB x AC|/2 where AB is v1v0 and AC is v2v0, use for barycentric calcs
+    //area of a triangle = |AB x AC|/2 where AB and AC is the edge vectors. use for barycentric calcs
+    float area = length(cross(v1v0, v2v0)) / 2.f;
+    float pbc = length(cross(hit.hitPoint - v2.position, v1v2)) / 2.f;
+    float apc = length(cross(hit.hitPoint - v0.position, v2v0)) / 2.f;
+    float abp = length(cross(hit.hitPoint - v0.position, v1v0)) / 2.f;
+
+    vec3 barycentric = vec3(pbc, apc, abp) / area;
+    hit.uv = barycentric.x * v0.uv + barycentric.y * v1.uv + barycentric.z * v2.uv;
+
+    hit.normal = barycentric.x * v0.normal + barycentric.y * v1.normal + barycentric.z * v2.normal;
+    hit.normal = normalize(n);
+    return hit;
+}
+
+bool boxIntersection(BoundingBox box, Ray ray) {
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
+    tmin = (box.bounds[ray.dimSign.x].x - ray.origin.x) * ray.invDir.x;
+    tmax = (box.bounds[1 - ray.dimSign.x].x - ray.origin.x) * ray.invDir.x;
+    tymin = (box.bounds[ray.dimSign.y].y - ray.origin.y) * ray.invDir.y;
+    tymax = (box.bounds[1 - ray.dimSign.y].y - ray.origin.y) * ray.invDir.y;
+    if ((tmin > tymax) || (tymin > tmax))
+        return false;
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+    tzmin = (box.bounds[ray.dimSign.z].z - ray.origin.z) * ray.invDir.z;
+    tzmax = (box.bounds[1-ray.dimSign.z].z - ray.origin.z) * ray.invDir.z;
+    if ((tmin > tzmax) || (tzmin > tmax))
+        return false;
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+    return ((tmin < 9999) && (tmax > 0));
 }
 
 HitInfo calculateIntersections(Ray ray) {
@@ -191,8 +235,15 @@ HitInfo calculateIntersections(Ray ray) {
     for (int i = 0; i < traceData.objectCount; i++) {
         RenderObject object = objects[i];
         Ray transformRay;
-        transformRay.dir = (inverse(object.transformMatrix) * vec4(ray.dir, 1.f)).xyz;
+        transformRay.dir = normalize((inverse(object.transformMatrix) * vec4(ray.dir, 0.f))).xyz;
         transformRay.origin = (inverse(object.transformMatrix) * vec4(ray.origin, 1.f)).xyz;
+        transformRay.invDir = 1 / transformRay.dir;
+
+        for (int i = 0; i < 3; i++) {
+            transformRay.dimSign[i] = uint(transformRay.invDir[i] < 0);
+        }
+
+        if (!boxIntersection(objects[i].boundingBox, transformRay)) continue;
 
         for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
             uvec3 indices = triangles[j].indices;
@@ -200,7 +251,8 @@ HitInfo calculateIntersections(Ray ray) {
             hitInfo.materialIndex = object.materialIndex;
             if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
                 closestHit = hitInfo;
-                //closestHit.normal = (inverse(object.transformMatrix) * vec4(closestHit.normal, 1.f)).xyz;
+                closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
+                closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
             }
         }
     }
@@ -239,7 +291,13 @@ vec3 trace(Ray ray, inout uint state) {
             vec3 emitted = material.emissionColor * material.emissionStrength;
             float lightStrength = dot(hitInfo.normal, newRay.dir);
             incomingLight += lightStrength * emitted * rayColor;
-            rayColor *= material.albedo; //vec3(hitInfo.uv, 0.f);
+            if (material.textureIndex != -1) {
+                ivec2 size = imageSize(TextureBuffer[material.textureIndex]);
+                vec3 albedo = imageLoad(TextureBuffer[material.textureIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).rgb;
+                rayColor *= albedo;
+                continue;
+            } 
+            rayColor *=  material.albedo;
         } else {
             incomingLight += getEnvironmentLight(newRay) * rayColor;
             break;
@@ -267,6 +325,10 @@ void main() {
     Ray ray;
     ray.dir = (cam.cameraRotation * vec4(dir, 1.f)).xyz;
     ray.origin = cam.pos;
+    ray.invDir = 1.f / ray.dir;
+    for (int i = 0; i < 3; i++) {
+        ray.dimSign[i] = uint(ray.invDir[i] < 0);
+    }
 
     uint lol = PushConstants.frameCount;
     uint startingSeed = uint(random(lol) * 23892183);
@@ -283,10 +345,6 @@ void main() {
     float weight = 1.f / (PushConstants.frameCount + 1.f);
     vec3 finalColor = oldColor.rgb * (1 - weight) + outColor * weight;
     finalColor = traceData.progressive ? finalColor : outColor;
-
-    HitInfo hit;
-    hit = calculateIntersections(ray);
-    //finalColor = materials[hit.materialIndex].albedo;
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
 }

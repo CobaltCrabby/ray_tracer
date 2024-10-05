@@ -417,15 +417,18 @@ void VulkanEngine::init_descriptors() {
 	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
 	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
 	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
-	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3);
-	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
-	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5);
+	VkDescriptorSetLayoutBinding textureBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 3);
+	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
+	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5);
+	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 6);
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding};
+	textureBufferBinding.descriptorCount = 1;
+
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 6;
+	computeSetInfo.bindingCount = 7;
 	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
@@ -514,7 +517,7 @@ void VulkanEngine::update_descriptors() {
 
 	vkAllocateDescriptorSets(device, &allocInfo, &graphicsSet);
 
-	//write to the descriptor set so that it points to our empire_diffuse texture
+	//write to the descriptor set
 	VkDescriptorImageInfo imageBufferInfo;
 	imageBufferInfo.sampler = sampler;
 	imageBufferInfo.imageView = computeImage.imageView;
@@ -548,6 +551,13 @@ void VulkanEngine::update_descriptors() {
 	materialBufferInfo.offset = 0;
 	materialBufferInfo.range = sizeof(RayMaterial) * MAX_MATERIALS;
 
+	VkDescriptorImageInfo textureImageInfos[1];
+	for (int i = 0; i < 1; i++) {
+		textureImageInfos[i].sampler = sampler;
+		textureImageInfos[i].imageView = textures[i].imageView;
+		textureImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	}
+
 	VkDescriptorBufferInfo triPointBufferInfo;
 	triPointBufferInfo.buffer = triPointBuffer.buffer;
 	triPointBufferInfo.offset = 0;
@@ -566,14 +576,16 @@ void VulkanEngine::update_descriptors() {
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
 	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 1);
 	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 2);
-	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 3);
-	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 4);
-	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 5);
+	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, textureImageInfos, 3);
+	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 4);
+	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 5);
+	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 6);
 
+	textureWrite.descriptorCount = 1;
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, textureWrite, triPointWrite, triangleWrite, objectWrite};
 
-	vkUpdateDescriptorSets(device, 6, computeWrites, 0, nullptr);
+	vkUpdateDescriptorSets(device, 7, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
@@ -595,36 +607,42 @@ void VulkanEngine::prepare_storage_buffers() {
 	mat0.emissionColor = glm::vec3(0.f);
 	mat0.emissionStrength = 0.f;
 	mat0.reflectance = 1.f;
+	mat0.textureIndex = -1;
 
 	RayMaterial mat1;
 	mat1.albedo = glm::vec3(1.f, 0.f, 0.f);
 	mat1.emissionColor = glm::vec3(0.f);
 	mat1.emissionStrength = 0.f;
 	mat1.reflectance = 0.f;
+	mat1.textureIndex = -1;
 
 	RayMaterial mat2;
 	mat2.albedo = glm::vec3(1.f);
 	mat2.emissionColor = glm::vec3(0.f);
 	mat2.emissionStrength = 0.f;
 	mat2.reflectance = 0.f;
+	mat2.textureIndex = -1;
 
 	RayMaterial mat3;
 	mat3.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
 	mat3.emissionColor = glm::vec3(0.f);
 	mat3.emissionStrength = 0.f;
 	mat3.reflectance = 0.f;
+	mat3.textureIndex = -1;
 
 	RayMaterial mat4;
 	mat4.albedo = glm::vec3(0.f, 0.4f, 0.1f);
 	mat4.emissionColor = glm::vec3(0.f, 0.4f, 0.1f);
 	mat4.emissionStrength = 0.f;
 	mat4.reflectance = 0.f;
+	mat4.textureIndex = -1;
 
 	RayMaterial mat5;
-	mat5.albedo = glm::vec3(0.5f, 0.2f, 0.1f);
-	mat5.emissionColor = glm::vec3(0.f, 0.f, 0.f);
+	mat5.albedo = glm::vec3(1.f);
+	mat5.emissionColor = glm::vec3(0.f);
 	mat5.emissionStrength = 0.f;
-	mat5.reflectance = 0.97f;
+	mat5.reflectance = 0.f;
+	mat5.textureIndex = 0;
 
 	rayMaterials.push_back(mat1);
 	rayMaterials.push_back(mat2);
@@ -635,23 +653,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
-	triPoints.push_back({glm::vec3(1.f, -2.f, 8.f)});
-	triPoints.push_back({glm::vec3(1.f, -4.f, 8.f)});
-	triPoints.push_back({glm::vec3(-1.f, -4.f, 8.f)});
-	triPoints.push_back({glm::vec3(-1.f, -2.f, 8.f)});
-
-	triangles.push_back({glm::uvec3(0, 1, 2)});
-	triangles.push_back({glm::uvec3(2, 3, 0)});
-
-	RenderObject object;
-	object.materialIndex = 2;
-	object.transformMatrix = glm::mat4(1.f);
-	object.triangleCount = 2;
-	object.triangleStart = 0;
-
-	objects.push_back(object);
-
-	read_obj("../assets/rb_low.obj", triangles.size());
+	read_obj("../assets/slosher.obj", triPoints.size());
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -704,6 +706,8 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 	std::string fileLine;
 	bool vertex = false;
 	std::vector<glm::vec2> uvs;
+	std::vector<glm::vec3> normals;
+	glm::vec3 bounds[2] = {glm::vec3(99999.f), glm::vec3(-99999.f)};
 
 	if (!fileStream.is_open()) return;
 	while (fileStream) {
@@ -716,7 +720,7 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 				prefix += fileLine.at(i);
 			} else {
 				break;
-			}
+			} 
 		}
 
 		int index = 2;
@@ -726,6 +730,10 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 				int size = fileLine.at(index) == '-' ? 9 : 8;
 				position[i] = stof(fileLine.substr(index, size));
 				index += size + 1;
+
+				//for bounding box
+				bounds[0][i] = min(bounds[0][i], position[i]);
+				bounds[1][i] = max(bounds[1][i], position[i]);
 			}
 			triPoints.push_back({position});
 		} else if (prefix == "vt") { //uv
@@ -745,43 +753,60 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
 				normal[i] = stof(fileLine.substr(index, size));
 				index += size + 1;
 			}
+			normals.push_back(normal);
 		} else if (prefix == "f") { //triangles
 			index = 0;
 			glm::uvec3 vertexIndex;
 			for (int i = 0; i < 3; i++) {
 				int space = fileLine.find(' ', index);
 				int nextSpace = fileLine.find(' ', space + 1);
-				std::string vertex = fileLine.substr(space, nextSpace);
+				std::string vertex = fileLine.substr(space + 1, nextSpace - space - (i == 2 ? 0 : 1));
 
 				int firstSlash = vertex.find('/');
-				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + offset + 1;
+				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + offset - 1;
 				int secondSlash = vertex.find('/', firstSlash + 1);
 				triPoints[vertexIndex[i]].uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
+				triPoints[vertexIndex[i]].normal = normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1);
 
 				index = nextSpace;
 			}
 			triangles.push_back({vertexIndex});
+ 		}
+	}
+
+	for (int i = 0; i < 2; i++) {
+		for (int j = 0; j < 3; j++) {
+			cout << bounds[i][j] << ", ";
 		}
 	}
+	cout << endl;
 
 	RenderObject object;
 	object.materialIndex = 4;
-	object.transformMatrix = glm::translate(glm::vec3(-0.1f, 0.f, 0.f)) * glm::rotate(glm::radians(-90.f), glm::vec3(0, 1, 0)) * glm::rotate(glm::radians(180.f), glm::vec3(1, 0, 0));
+	object.transformMatrix = glm::translate(glm::vec3(-0.5f, 0.0f, 1.f));
 	object.triangleCount = triangles.size() - offset;
 	object.triangleStart = offset;
+	object.boundingBox.bounds[0] = glm::vec4(bounds[0], 0.f);
+	object.boundingBox.bounds[1] = glm::vec4(bounds[1], 0.f);
 	objects.push_back(object);
-
 	cout << "Object at " << filePath << ": " <<  object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
 }
 
 void VulkanEngine::init_image() {
+	textures.resize(1);
+
 	vkutil::create_empty_image(*this, computeImage.image, _windowExtent);
+	vkutil::load_image_from_file(*this, "../assets/slosher_alb.png", textures[0].image);
 
 	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, computeImage.image.image, VK_IMAGE_ASPECT_COLOR_BIT);
 	VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &computeImage.imageView));
 
+	VkImageViewCreateInfo viewInfo2 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[0].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
+	VK_CHECK(vkCreateImageView(device, &viewInfo2, nullptr, &textures[0].imageView));
+
 	deletionQueue.push_function([=]() {
 		vkDestroyImageView(device, computeImage.imageView, nullptr);
+		vkDestroyImageView(device, textures[0].imageView, nullptr);
 	});
 }
 
