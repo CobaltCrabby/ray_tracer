@@ -95,7 +95,7 @@ bool vkutil::load_image_from_file(VulkanEngine& engine, const char* file, Alloca
     });
 
     vmaDestroyBuffer(engine.allocator, stagingBuffer.buffer, stagingBuffer.allocation);
-    std::cout << "texture loaded successfully" << std::endl;
+    std::cout << "textures loaded successfully" << std::endl;
     outImage = image;
 
     return true;

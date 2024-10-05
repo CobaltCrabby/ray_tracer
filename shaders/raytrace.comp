@@ -34,7 +34,7 @@ struct BoundingBox {
 };
 
 struct RenderObject {
-    bool smoothShade;
+    uint smoothShade; //0 = off, 1 = on (bool weird on glsl)
     uint triangleStart;
     uint triangleCount;
     uint materialIndex;
@@ -161,7 +161,7 @@ HitInfo sphereIntersection(Sphere sphere, Ray ray) {
 }
 
 //https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2) {
+HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2, bool smoothShade) {
     vec3 v1v2 = v1.position - v2.position;
     vec3 v1v0 = v1.position - v0.position;
     vec3 v2v0 = v2.position - v0.position;
@@ -191,8 +191,7 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
     vec3 barycentric = vec3(pbc, apc, abp) / area;
     hit.uv = barycentric.x * v0.uv + barycentric.y * v1.uv + barycentric.z * v2.uv;
 
-    hit.normal = barycentric.x * v0.normal + barycentric.y * v1.normal + barycentric.z * v2.normal;
-    hit.normal = normalize(n);
+    hit.normal = smoothShade ? barycentric.x * v0.normal + barycentric.y * v1.normal + barycentric.z * v2.normal : normalize(n);
     return hit;
 }
 
@@ -239,16 +238,17 @@ HitInfo calculateIntersections(Ray ray) {
         transformRay.origin = (inverse(object.transformMatrix) * vec4(ray.origin, 1.f)).xyz;
         transformRay.invDir = 1 / transformRay.dir;
 
-        for (int i = 0; i < 3; i++) {
-            transformRay.dimSign[i] = uint(transformRay.invDir[i] < 0);
+        for (int j = 0; j < 3; j++) {
+            transformRay.dimSign[j] = uint(transformRay.invDir[j] < 0);
         }
 
-        if (!boxIntersection(objects[i].boundingBox, transformRay)) continue;
+        if (!boxIntersection(object.boundingBox, transformRay)) continue;
 
         for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
             uvec3 indices = triangles[j].indices;
-            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[indices.x], trianglePoints[indices.y], trianglePoints[indices.z]);
+            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[indices.x], trianglePoints[indices.y], trianglePoints[indices.z], bool(object.smoothShade));
             hitInfo.materialIndex = object.materialIndex;
+
             if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
                 closestHit = hitInfo;
                 closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
@@ -291,6 +291,7 @@ vec3 trace(Ray ray, inout uint state) {
             vec3 emitted = material.emissionColor * material.emissionStrength;
             float lightStrength = dot(hitInfo.normal, newRay.dir);
             incomingLight += lightStrength * emitted * rayColor;
+
             if (material.textureIndex != -1) {
                 ivec2 size = imageSize(TextureBuffer[material.textureIndex]);
                 vec3 albedo = imageLoad(TextureBuffer[material.textureIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).rgb;
@@ -346,7 +347,7 @@ void main() {
     vec3 finalColor = oldColor.rgb * (1 - weight) + outColor * weight;
     finalColor = traceData.progressive ? finalColor : outColor;
 
-    imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
+    imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));//vec4(finalColor, 1.f));
 }
 // #ifndef rachIT was HERE
 // #define rachit WAS here!

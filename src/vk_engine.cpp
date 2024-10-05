@@ -641,7 +641,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	mat5.albedo = glm::vec3(1.f);
 	mat5.emissionColor = glm::vec3(0.f);
 	mat5.emissionStrength = 0.f;
-	mat5.reflectance = 0.f;
+	mat5.reflectance = 1.f;
 	mat5.textureIndex = 0;
 
 	rayMaterials.push_back(mat1);
@@ -653,7 +653,11 @@ void VulkanEngine::prepare_storage_buffers() {
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
-	read_obj("../assets/slosher.obj", triPoints.size());
+	ImGuiObject slosh;
+	slosh.name = "slosher";
+	slosh.position = glm::vec3(-0.5f, 0.f, 0.f);
+	slosh.rotation = glm::vec3(0.f);
+	read_obj("../assets/rb.obj", triPoints.size(), slosh);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -699,7 +703,7 @@ void VulkanEngine::generate_quad() {
 	copy_buffer(sizeof(uint32_t) * 6, indexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
 }
 
-void VulkanEngine::read_obj(std::string filePath, int offset) {
+void VulkanEngine::read_obj(std::string filePath, int offset, ImGuiObject imGuiObj) {
 	std::ifstream fileStream;
 	fileStream.open(filePath);
 
@@ -774,23 +778,21 @@ void VulkanEngine::read_obj(std::string filePath, int offset) {
  		}
 	}
 
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 3; j++) {
-			cout << bounds[i][j] << ", ";
-		}
-	}
-	cout << endl;
-
 	RenderObject object;
 	object.materialIndex = 4;
-	object.transformMatrix = glm::translate(glm::vec3(-0.5f, 0.0f, 1.f));
+	object.transformMatrix = glm::translate(imGuiObj.position) * 
+		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
+		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
+		glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f));
 	object.triangleCount = triangles.size() - offset;
 	object.triangleStart = offset;
 	object.boundingBox.bounds[0] = glm::vec4(bounds[0], 0.f);
 	object.boundingBox.bounds[1] = glm::vec4(bounds[1], 0.f);
+	object.smoothShade = false;
 	objects.push_back(object);
 
-	imGuiObjects.push_back({"slosher", object});
+	imGuiObj.object = &objects.back();
+	imGuiObjects.push_back(imGuiObj);
 	cout << "Object at " << filePath << ": " <<  object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
 }
 
@@ -798,7 +800,7 @@ void VulkanEngine::init_image() {
 	textures.resize(1);
 
 	vkutil::create_empty_image(*this, computeImage.image, _windowExtent);
-	vkutil::load_image_from_file(*this, "../assets/slosher_alb.png", textures[0].image);
+	vkutil::load_image_from_file(*this, "../assets/rb_alb.png", textures[0].image);
 
 	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, computeImage.image.image, VK_IMAGE_ASPECT_COLOR_BIT);
 	VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &computeImage.imageView));
@@ -989,9 +991,26 @@ void VulkanEngine::imgui_draw() {
 
 	if (ImGui::CollapsingHeader("Models")) {
 		ImGui::Indent(16.f);
+
+		ImGui::Unindent(4.f);
+		if (ImGui::Button("Update Buffer")) {
+			for (int i = 0; i < imGuiObjects.size(); i++) {
+				ImGuiObject object = imGuiObjects[i];
+				object.object->transformMatrix = glm::translate(object.position) * 
+					glm::rotate(glm::radians(object.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
+					glm::rotate(glm::radians(object.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
+					glm::rotate(glm::radians(object.rotation.z), glm::vec3(0.f, 0.f, 1.f));
+			}
+			update_buffer(sizeof(RenderObject) * objects.size(), objectBuffer, objects.data());
+		}
+		ImGui::Indent(4.f);
+
 		for (int i = 0; i < imGuiObjects.size(); i++) {
 			if (ImGui::CollapsingHeader(imGuiObjects[i].name.c_str())) {
 				ImGui::Indent(16.f);
+				ImGui::DragFloat3("Position", (float*) &imGuiObjects[i].position, 0.1f);
+				ImGui::DragFloat3("Rotation", (float*) &imGuiObjects[i].rotation, 1.f);
+				ImGui::Checkbox("Smooth Shading", (bool*) &imGuiObjects[i].object->smoothShade);
 				ImGui::Unindent(16.f);
 			}
 		}

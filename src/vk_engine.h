@@ -60,21 +60,23 @@ struct RayMaterial {
 };
 
 struct BoundingBox {
-	alignas(16) glm::vec4 bounds[2];
+	glm::vec4 bounds[2];
 };
 
 struct RenderObject {
-	bool smoothShade;
+	alignas(4) uint smoothShade; //0 = off, non-zero = on (bool weird on glsl)
 	alignas(4) uint triangleStart;
 	alignas(4) uint triangleCount;
 	alignas(4) uint materialIndex;
 	alignas(16) glm::mat4 transformMatrix;
-	BoundingBox boundingBox;
+	alignas(16) BoundingBox boundingBox;
 };
 
 struct ImGuiObject {
 	std::string name;
-	RenderObject object;
+	glm::vec3 position;
+	glm::vec3 rotation;
+	RenderObject* object;
 };
 
 struct UploadContext {
@@ -144,7 +146,7 @@ private:
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
-	void read_obj(std::string filePath, int offset);
+	void read_obj(std::string filePath, int offset, ImGuiObject imGui);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
