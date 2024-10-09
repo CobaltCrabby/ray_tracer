@@ -415,14 +415,14 @@ void VulkanEngine::init_descriptors() {
 
 	//compute descriptors
 	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
-	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1);
-	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
-	VkDescriptorSetLayoutBinding textureBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 3);
+	VkDescriptorSetLayoutBinding textureBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
+	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3);
 	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
 	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5);
 	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 6);
 
-	textureBufferBinding.descriptorCount = 1;
+	textureBufferBinding.descriptorCount = 2;
 
 	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding};
 
@@ -551,8 +551,8 @@ void VulkanEngine::update_descriptors() {
 	materialBufferInfo.offset = 0;
 	materialBufferInfo.range = sizeof(RayMaterial) * MAX_MATERIALS;
 
-	VkDescriptorImageInfo textureImageInfos[1];
-	for (int i = 0; i < 1; i++) {
+	VkDescriptorImageInfo textureImageInfos[2];
+	for (int i = 0; i < 2; i++) {
 		textureImageInfos[i].sampler = sampler;
 		textureImageInfos[i].imageView = textures[i].imageView;
 		textureImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -574,16 +574,16 @@ void VulkanEngine::update_descriptors() {
 	objectBufferInfo.range = sizeof(RenderObject) * objects.size();
 
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
-	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 1);
-	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 2);
-	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, textureImageInfos, 3);
+	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, textureImageInfos, 1);
+	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 2);
+	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 3);
 	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 4);
 	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 5);
 	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 6);
 
-	textureWrite.descriptorCount = 1;
+	textureWrite.descriptorCount = 2;
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, textureWrite, triPointWrite, triangleWrite, objectWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite, textureWrite};
 
 	vkUpdateDescriptorSets(device, 7, computeWrites, 0, nullptr);
 
@@ -594,70 +594,71 @@ void VulkanEngine::update_descriptors() {
 
 void VulkanEngine::prepare_storage_buffers() {
 	//spheres
-	spheres.push_back({glm::vec3(3.f, 0.2f, 5.5f), 1.f, 0});
-	spheres.push_back({glm::vec3(0.5f, -0.3f, 6.f), 1.5f, 1});
-	spheres.push_back({glm::vec3(0.f, 31.f, 6.f), 30.f, 2});
-	spheres.push_back({glm::vec3(-3.f, -0.8f, 6.f), 2.f, 3});
-
+	spheres.resize(MAX_SPHERES);
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
-	RayMaterial mat0;
-	mat0.albedo = glm::vec3(1.f, 0.f, 0.f);
-	mat0.emissionColor = glm::vec3(0.f);
-	mat0.emissionStrength = 0.f;
-	mat0.reflectance = 1.f;
-	mat0.textureIndex = -1;
+	RayMaterial object;
+	object.albedoIndex = 0;
+	object.metalnessIndex = 1;
 
-	RayMaterial mat1;
-	mat1.albedo = glm::vec3(1.f, 0.f, 0.f);
-	mat1.emissionColor = glm::vec3(0.f);
-	mat1.emissionStrength = 0.f;
-	mat1.reflectance = 0.f;
-	mat1.textureIndex = -1;
+	RayMaterial white;
 
-	RayMaterial mat2;
-	mat2.albedo = glm::vec3(1.f);
-	mat2.emissionColor = glm::vec3(0.f);
-	mat2.emissionStrength = 0.f;
-	mat2.reflectance = 0.f;
-	mat2.textureIndex = -1;
+	RayMaterial red;
+	red.albedo = glm::vec3(1.f, 0.f, 0.f);
 
-	RayMaterial mat3;
-	mat3.albedo = glm::vec3(96/255.f, 73/255.f, 245/255.f);
-	mat3.emissionColor = glm::vec3(0.f);
-	mat3.emissionStrength = 0.f;
-	mat3.reflectance = 0.f;
-	mat3.textureIndex = -1;
+	RayMaterial green;
+	green.albedo = glm::vec3(0.f, 1.f, 0.f);
 
-	RayMaterial mat4;
-	mat4.albedo = glm::vec3(0.f, 0.4f, 0.1f);
-	mat4.emissionColor = glm::vec3(0.f, 0.4f, 0.1f);
-	mat4.emissionStrength = 0.f;
-	mat4.reflectance = 0.f;
-	mat4.textureIndex = -1;
+	RayMaterial light;
+	light.emissionColor = glm::vec3(1.f);
+	light.emissionStrength = 1.f;
 
-	RayMaterial mat5;
-	mat5.albedo = glm::vec3(1.f);
-	mat5.emissionColor = glm::vec3(0.f);
-	mat5.emissionStrength = 0.f;
-	mat5.reflectance = 1.f;
-	mat5.textureIndex = 0;
-
-	rayMaterials.push_back(mat1);
-	rayMaterials.push_back(mat2);
-	rayMaterials.push_back(mat3);
-	rayMaterials.push_back(mat4);
-	rayMaterials.push_back(mat5);
+	rayMaterials.push_back(object);
+	rayMaterials.push_back(white);
+	rayMaterials.push_back(red);
+	rayMaterials.push_back(green);
+	rayMaterials.push_back(light);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
 	ImGuiObject slosh;
 	slosh.name = "slosher";
-	slosh.position = glm::vec3(-0.5f, 0.f, 0.f);
+	slosh.position = glm::vec3(-0.4f, 0.35f, 0.f);
 	slosh.rotation = glm::vec3(0.f);
-	read_obj("../assets/rb.obj", triPoints.size(), slosh);
+	read_obj("../assets/rb.obj", triPoints.size(), triangles.size(), slosh, 0);
+
+	ImGuiObject plane;
+	plane.name = "bottom";
+	plane.position = glm::vec3(0.f, 0.5f, 0.f);
+	plane.rotation = glm::vec3(0.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+
+	plane.name = "left";
+	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
+	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
+
+	plane.name = "right";
+	plane.position = glm::vec3(1.f, -0.5f, 0.f);
+	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
+
+	plane.name = "top";
+	plane.position = glm::vec3(0.f, -1.5f, 0.f);
+	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 4);
+
+	plane.name = "back";
+	plane.position = glm::vec3(0.f, -0.5f, 1.f);
+	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+
+	plane.name = "front";
+	plane.position = glm::vec3(0.f, -0.5f, -1.f);
+	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -703,7 +704,7 @@ void VulkanEngine::generate_quad() {
 	copy_buffer(sizeof(uint32_t) * 6, indexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
 }
 
-void VulkanEngine::read_obj(std::string filePath, int offset, ImGuiObject imGuiObj) {
+void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset, ImGuiObject imGuiObj, int material) {
 	std::ifstream fileStream;
 	fileStream.open(filePath);
 
@@ -744,7 +745,7 @@ void VulkanEngine::read_obj(std::string filePath, int offset, ImGuiObject imGuiO
 			index++;
 			glm::vec2 uv;
 			for (int i = 0; i < 2; i++) {
-				int size = 9;
+				int size = 8;
 				uv[i] = stof(fileLine.substr(index, size));
 				index += size + 1;
 			}
@@ -767,40 +768,43 @@ void VulkanEngine::read_obj(std::string filePath, int offset, ImGuiObject imGuiO
 				std::string vertex = fileLine.substr(space + 1, nextSpace - space - (i == 2 ? 0 : 1));
 
 				int firstSlash = vertex.find('/');
-				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + offset - 1;
+				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + pointOffset - 1;
 				int secondSlash = vertex.find('/', firstSlash + 1);
 				triPoints[vertexIndex[i]].uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
 				triPoints[vertexIndex[i]].normal = normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1);
 
 				index = nextSpace;
 			}
-			triangles.push_back({vertexIndex});
+
+			Triangle tri;
+			tri.indices = vertexIndex;
+			triangles.push_back(tri);
  		}
 	}
 
 	RenderObject object;
-	object.materialIndex = 4;
+	object.materialIndex = material;
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f));
-	object.triangleCount = triangles.size() - offset;
-	object.triangleStart = offset;
+	object.triangleCount = triangles.size() - triOffset;
+	object.triangleStart = triOffset;
 	object.boundingBox.bounds[0] = glm::vec4(bounds[0], 0.f);
 	object.boundingBox.bounds[1] = glm::vec4(bounds[1], 0.f);
 	object.smoothShade = false;
 	objects.push_back(object);
 
-	imGuiObj.object = &objects.back();
 	imGuiObjects.push_back(imGuiObj);
-	cout << "Object at " << filePath << ": " <<  object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
+	cout << "Object at " << filePath << ": " << object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
 }
 
 void VulkanEngine::init_image() {
-	textures.resize(1);
+	textures.resize(2);
 
 	vkutil::create_empty_image(*this, computeImage.image, _windowExtent);
 	vkutil::load_image_from_file(*this, "../assets/rb_alb.png", textures[0].image);
+	vkutil::load_image_from_file(*this, "../assets/rb_mtl.png", textures[1].image);
 
 	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, computeImage.image.image, VK_IMAGE_ASPECT_COLOR_BIT);
 	VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &computeImage.imageView));
@@ -808,9 +812,13 @@ void VulkanEngine::init_image() {
 	VkImageViewCreateInfo viewInfo2 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[0].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
 	VK_CHECK(vkCreateImageView(device, &viewInfo2, nullptr, &textures[0].imageView));
 
+	VkImageViewCreateInfo viewInfo3 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[1].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
+	VK_CHECK(vkCreateImageView(device, &viewInfo3, nullptr, &textures[1].imageView));
+
 	deletionQueue.push_function([=]() {
 		vkDestroyImageView(device, computeImage.imageView, nullptr);
 		vkDestroyImageView(device, textures[0].imageView, nullptr);
+		vkDestroyImageView(device, textures[1].imageView, nullptr);
 	});
 }
 
@@ -929,9 +937,11 @@ void VulkanEngine::imgui_draw() {
 	}
 
 	if (ImGui::CollapsingHeader("Environment")) {
+		ImGui::DragFloat("Environment Lighting On", &environment.lightDir.w, 1.f, 0.f, 1.f); //bit magic idk
 		ImGui::ColorEdit3("Horizon Color", (float*) &environment.horizonColor);
 		ImGui::ColorEdit3("Zenith Color", (float*) &environment.zenithColor);
 		ImGui::ColorEdit3("Ground Color", (float*) &environment.groundColor);
+		ImGui::DragFloat3("Sun Direction", (float*) &environment.lightDir, 0.01f, 0.f, 1.f);
 		ImGui::DragFloat("Sun Focus", &environment.sunFocus, 0.1f, 0.f, 100.f);
 		ImGui::DragFloat("Sun Intensity", &environment.sunIntensity, 0.1f, 0.f, 100.f);
 	}
@@ -996,7 +1006,7 @@ void VulkanEngine::imgui_draw() {
 		if (ImGui::Button("Update Buffer")) {
 			for (int i = 0; i < imGuiObjects.size(); i++) {
 				ImGuiObject object = imGuiObjects[i];
-				object.object->transformMatrix = glm::translate(object.position) * 
+				objects[i].transformMatrix = glm::translate(object.position) * 
 					glm::rotate(glm::radians(object.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 					glm::rotate(glm::radians(object.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 					glm::rotate(glm::radians(object.rotation.z), glm::vec3(0.f, 0.f, 1.f));
@@ -1010,7 +1020,7 @@ void VulkanEngine::imgui_draw() {
 				ImGui::Indent(16.f);
 				ImGui::DragFloat3("Position", (float*) &imGuiObjects[i].position, 0.1f);
 				ImGui::DragFloat3("Rotation", (float*) &imGuiObjects[i].rotation, 1.f);
-				ImGui::Checkbox("Smooth Shading", (bool*) &imGuiObjects[i].object->smoothShade);
+				ImGui::Checkbox("Smooth Shading", (bool*) &objects[i].smoothShade);
 				ImGui::Unindent(16.f);
 			}
 		}
@@ -1052,12 +1062,9 @@ void VulkanEngine::run_compute() {
 	);
 	cameraInfo.cameraRotation = rotX * rotY * rotZ;
 
-	glm::vec3 sun = normalize(glm::vec3(2.f, 0.8f, -3.f));
-
 	rayTracerParams.sphereCount = spheres.size();
 	rayTracerParams.objectCount = objects.size();
 
-	constants.lightDir = sun;
 	constants.camInfo = cameraInfo;
 	constants.environment = environment;
 	constants.rayTraceParams = rayTracerParams;
@@ -1175,6 +1182,7 @@ void VulkanEngine::cleanup() {
 }
 
 void VulkanEngine::draw() {
+	auto start = std::chrono::system_clock::now();
 	ImGui::Render();
 
 	//wait for render
@@ -1189,6 +1197,9 @@ void VulkanEngine::draw() {
 	vkAcquireNextImageKHR(device, swapchain, 1000000000, presentSemaphore, nullptr, &swapchainIndex);
 	run_graphics(swapchainIndex);
 
+	auto end = std::chrono::system_clock::now();    
+	auto fence = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
 	//present queue results
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -1199,7 +1210,11 @@ void VulkanEngine::draw() {
 	presentInfo.pImageIndices = &swapchainIndex;
 
 	VK_CHECK(vkQueuePresentKHR(graphicsQueue, &presentInfo));
+
 	vkQueueWaitIdle(graphicsQueue);
+	end = std::chrono::system_clock::now();    
+	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	//cout << "Frametime: " << elapsed.count() / 1000.f << "ms; fence wait: " << fence.count() / 1000.f << "ms\n";
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
 }

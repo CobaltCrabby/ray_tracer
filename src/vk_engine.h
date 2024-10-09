@@ -52,11 +52,12 @@ struct TrianglePoint {
 };
 
 struct RayMaterial {
-	alignas(16) glm::vec3 albedo;
-	alignas(16) glm::vec3 emissionColor;
-	alignas(4) float emissionStrength;
-	alignas(4) float reflectance;
-	alignas(4) uint textureIndex;
+	alignas(16) glm::vec3 albedo = glm::vec3(1.f);
+	alignas(16) glm::vec3 emissionColor = glm::vec3(0.f);
+	alignas(4) float emissionStrength = 0.f;
+	alignas(4) float reflectance = 0.f;
+	alignas(4) uint albedoIndex = -1;
+	alignas(4) uint metalnessIndex = -1;
 };
 
 struct BoundingBox {
@@ -76,7 +77,6 @@ struct ImGuiObject {
 	std::string name;
 	glm::vec3 position;
 	glm::vec3 rotation;
-	RenderObject* object;
 };
 
 struct UploadContext {
@@ -102,6 +102,7 @@ struct EnvironmentData {
 	alignas(16) glm::vec3 horizonColor = glm::vec3(0.986f, 1.f, 0.902f);
 	alignas(16) glm::vec3 zenithColor = glm::vec3(0.265f, 0.595f, 0.887);
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
+	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 1.f); //w component = environment on
 	alignas(4) float sunFocus = 1000.f;
 	alignas(4) float sunIntensity = 200.f;
 };
@@ -118,7 +119,6 @@ struct PushConstants {
 	CameraInfo camInfo; //44 -> 64 (?)
 	EnvironmentData environment; //52 -> 64
 	RayTracerData rayTraceParams; //20 -> 32
-	alignas(16) glm::vec3 lightDir;
 	uint frameCount;
 };	
 
@@ -146,7 +146,7 @@ private:
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
-	void read_obj(std::string filePath, int offset, ImGuiObject imGui);
+	void read_obj(std::string filePath, int offset, int offset2, ImGuiObject imGui, int material);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
@@ -238,7 +238,7 @@ public:
 	EnvironmentData environment;
 	PushConstants constants;
 
-	VkExtent2D _windowExtent{1920, 1080};
+	VkExtent2D _windowExtent{1728, 1117};
 
 	struct SDL_Window* _window{nullptr};
 
