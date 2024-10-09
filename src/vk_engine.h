@@ -102,7 +102,7 @@ struct EnvironmentData {
 	alignas(16) glm::vec3 horizonColor = glm::vec3(0.986f, 1.f, 0.902f);
 	alignas(16) glm::vec3 zenithColor = glm::vec3(0.265f, 0.595f, 0.887);
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
-	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 1.f); //w component = environment on
+	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 0.f); //w component = environment on
 	alignas(4) float sunFocus = 1000.f;
 	alignas(4) float sunIntensity = 200.f;
 };

@@ -283,10 +283,15 @@ vec3 trace(Ray ray, inout uint state) {
         HitInfo hitInfo = calculateIntersections(newRay);
         if (hitInfo.didHit) {
             Material material = materials[hitInfo.materialIndex];
+            float reflectance = material.reflectance;
+            if (material.metalnessIndex != -1) {
+                ivec2 size = imageSize(TextureBuffer[material.metalnessIndex]);
+                reflectance = imageLoad(TextureBuffer[material.metalnessIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).r;
+            }
 
             vec3 diffuseDir = normalize(hitInfo.normal + randomDirection(state));
             vec3 specularDir = newRay.dir - hitInfo.normal * 2 * dot(newRay.dir, hitInfo.normal);
-            newRay.dir = mix(diffuseDir, specularDir, material.reflectance);
+            newRay.dir = mix(diffuseDir, specularDir, reflectance);
             newRay.origin = hitInfo.hitPoint;
 
             vec3 emitted = material.emissionColor * material.emissionStrength;

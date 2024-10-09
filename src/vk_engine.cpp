@@ -595,13 +595,14 @@ void VulkanEngine::update_descriptors() {
 void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
-	//spheres.re
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
 	RayMaterial object;
-	object.albedoIndex = 0;
-	object.metalnessIndex = 1;
+	object.albedoIndex = -1;
+	object.metalnessIndex = -1;
+	object.albedo = glm::vec3(1.f, 0.69f, 0.f);
+	object.reflectance = 1.f;
 
 	RayMaterial white;
 
@@ -626,9 +627,9 @@ void VulkanEngine::prepare_storage_buffers() {
 	//ccw
 	ImGuiObject slosh;
 	slosh.name = "slosher";
-	slosh.position = glm::vec3(-0.4f, 0.35f, 0.f);
+	slosh.position = glm::vec3(-0.3f, 0.35f, 0.f);
 	slosh.rotation = glm::vec3(0.f);
-	read_obj("../assets/rb.obj", triPoints.size(), triangles.size(), slosh, 0);
+	read_obj("../assets/rb_low.obj", triPoints.size(), triangles.size(), slosh, 0);
 
 	ImGuiObject plane;
 	plane.name = "bottom";
