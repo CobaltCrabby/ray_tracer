@@ -24,7 +24,8 @@ struct Material {
     vec3 emissionColor;
     float emissionStrength;
     float reflectance;
-    uint textureIndex;
+    uint albedoIndex;
+    uint metalnessIndex;
 };
 
 //objects
@@ -73,6 +74,7 @@ struct EnvironmentData {
     vec3 horizonColor;
     vec3 zenithColor;
     vec3 groundColor;
+    vec4 lightDir;
     float sunFocus;
     float sunIntensity;
 };
@@ -87,15 +89,15 @@ struct RayTracerData {
 
 layout (binding = 0, rgba8) uniform image2D outImage;
 
-layout (std140, binding = 1) readonly buffer SphereBuffer {
+layout (binding = 1, rgba8) uniform readonly image2D TextureBuffer[2];
+
+layout (std140, binding = 2) readonly buffer SphereBuffer {
     Sphere spheres[];
 };
 
-layout (std140, binding = 2) readonly buffer MaterialBuffer {
+layout (std140, binding = 3) readonly buffer MaterialBuffer {
     Material materials[];
 };
-
-layout (binding = 3, rgba8) uniform readonly image2D TextureBuffer[1];
 
 layout (std140, binding = 4) readonly buffer TrianglePositionBuffer {
     TrianglePoint trianglePoints[];
@@ -113,7 +115,6 @@ layout (push_constant) uniform constants {
     CameraInfo camInfo;
     EnvironmentData environment;
     RayTracerData rayTracerParams;
-    vec3 lightDir;
     uint frameCount;
 } PushConstants;
 
@@ -265,7 +266,7 @@ vec3 getEnvironmentLight(Ray ray) {
     EnvironmentData env = PushConstants.environment;
     float skyGradientT = pow(smoothstep(0, 0.4, -ray.dir.y), 0.35);
     vec3 skyGradient = mix(env.horizonColor, env.zenithColor, skyGradientT);
-    float sun = pow(max(0, dot(ray.dir, -PushConstants.lightDir)), env.sunFocus) * env.sunIntensity;
+    float sun = pow(max(0, dot(ray.dir, -env.lightDir.rgb)), env.sunFocus) * env.sunIntensity;
 
     float groundToSkyT = smoothstep(-0.01, 0, -ray.dir.y);
     float sunMask = float(groundToSkyT >= 1);
@@ -292,15 +293,15 @@ vec3 trace(Ray ray, inout uint state) {
             float lightStrength = dot(hitInfo.normal, newRay.dir);
             incomingLight += lightStrength * emitted * rayColor;
 
-            if (material.textureIndex != -1) {
-                ivec2 size = imageSize(TextureBuffer[material.textureIndex]);
-                vec3 albedo = imageLoad(TextureBuffer[material.textureIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).rgb;
+            if (material.albedoIndex != -1) {
+                ivec2 size = imageSize(TextureBuffer[material.albedoIndex]);
+                vec3 albedo = imageLoad(TextureBuffer[material.albedoIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).rgb;
                 rayColor *= albedo;
                 continue;
             } 
             rayColor *=  material.albedo;
         } else {
-            incomingLight += getEnvironmentLight(newRay) * rayColor;
+            incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
             break;
         }
     }

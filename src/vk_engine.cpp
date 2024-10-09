@@ -583,7 +583,7 @@ void VulkanEngine::update_descriptors() {
 
 	textureWrite.descriptorCount = 2;
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite, textureWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, textureWrite, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite};
 
 	vkUpdateDescriptorSets(device, 7, computeWrites, 0, nullptr);
 
@@ -595,6 +595,7 @@ void VulkanEngine::update_descriptors() {
 void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
+	//spheres.re
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
