@@ -58,6 +58,8 @@ void VulkanEngine::init() {
 
 	// everything went fine
 	_isInitialized = true;
+
+	cout << sizeof(RayMaterial) << " " << sizeof(Test) << endl;
 }
 
 void VulkanEngine::init_vulkan() {
@@ -595,14 +597,16 @@ void VulkanEngine::update_descriptors() {
 void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
+
+	//spheres[0] = {glm::vec3(0, 0.1f, 0.f), 0.4f, 0};
+
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
 	RayMaterial object;
 	object.albedoIndex = -1;
 	object.metalnessIndex = -1;
-	object.albedo = glm::vec3(1.f, 0.69f, 0.f);
-	object.reflectance = 1.f;
+	object.albedo = glm::vec3(1.f, 1.f, 1.f);
 
 	RayMaterial white;
 
@@ -612,15 +616,19 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial green;
 	green.albedo = glm::vec3(0.f, 1.f, 0.f);
 
-	RayMaterial light;
-	light.emissionColor = glm::vec3(1.f);
-	light.emissionStrength = 1.f;
+	RayMaterial blue;
+	blue.albedo = glm::vec3(0.f, 0.f, 1.f);
+
+	RayMaterial li;
+	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
+	li.emissionStrength = 5.f;
 
 	rayMaterials.push_back(object);
 	rayMaterials.push_back(white);
 	rayMaterials.push_back(red);
 	rayMaterials.push_back(green);
-	rayMaterials.push_back(light);
+	rayMaterials.push_back(blue);
+	rayMaterials.push_back(li);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
@@ -631,6 +639,12 @@ void VulkanEngine::prepare_storage_buffers() {
 	slosh.rotation = glm::vec3(0.f);
 	read_obj("../assets/rb_low.obj", triPoints.size(), triangles.size(), slosh, 0);
 
+	ImGuiObject light;
+	light.name = "light";
+	light.position = glm::vec3(0.f, -1.5f, 0.f);
+	light.scale = glm::vec3(0.3f);
+	read_obj("../assets/light.obj", triPoints.size(), triangles.size(), light, 5);
+
 	ImGuiObject plane;
 	plane.name = "bottom";
 	plane.position = glm::vec3(0.f, 0.5f, 0.f);
@@ -640,27 +654,28 @@ void VulkanEngine::prepare_storage_buffers() {
 	plane.name = "left";
 	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
 
 	plane.name = "right";
 	plane.position = glm::vec3(1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
 
 	plane.name = "top";
 	plane.position = glm::vec3(0.f, -1.5f, 0.f);
 	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 4);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	plane.name = "back";
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	plane.scale = glm::vec3(1.f);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 4);
 
 	plane.name = "front";
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
 	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -742,7 +757,7 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 				bounds[0][i] = min(bounds[0][i], position[i]);
 				bounds[1][i] = max(bounds[1][i], position[i]);
 			}
-			triPoints.push_back({position});
+			triPoints.push_back({glm::vec4(position, 0.f)});
 		} else if (prefix == "vt") { //uv
 			index++;
 			glm::vec2 uv;
@@ -772,14 +787,17 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 				int firstSlash = vertex.find('/');
 				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + pointOffset - 1;
 				int secondSlash = vertex.find('/', firstSlash + 1);
-				triPoints[vertexIndex[i]].uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
-				triPoints[vertexIndex[i]].normal = normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1);
+				glm::vec2 uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
+				triPoints[vertexIndex[i]].position.w = uv.x; 
+				triPoints[vertexIndex[i]].normal = glm::vec4(normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1), uv.y);
 
 				index = nextSpace;
 			}
 
 			Triangle tri;
-			tri.indices = vertexIndex;
+			tri.v0 = vertexIndex[0];
+			tri.v1 = vertexIndex[1];
+			tri.v2 = vertexIndex[2];
 			triangles.push_back(tri);
  		}
 	}
@@ -789,7 +807,8 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
-		glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f));
+		glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
+		glm::scale(imGuiObj.scale);
 	object.triangleCount = triangles.size() - triOffset;
 	object.triangleStart = triOffset;
 	object.boundingBox.bounds[0] = glm::vec4(bounds[0], 0.f);
@@ -953,7 +972,7 @@ void VulkanEngine::imgui_draw() {
 
 		ImGui::Unindent(4.f);
 		if (ImGui::Button("Add Material") && rayMaterials.size() < MAX_MATERIALS) {
-			rayMaterials.push_back({glm::vec3(0.f), glm::vec3(0.f), 0.f});
+			rayMaterials.push_back({});
 		}
 
 		if (ImGui::Button("Update Buffer")) {
@@ -1011,7 +1030,8 @@ void VulkanEngine::imgui_draw() {
 				objects[i].transformMatrix = glm::translate(object.position) * 
 					glm::rotate(glm::radians(object.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 					glm::rotate(glm::radians(object.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
-					glm::rotate(glm::radians(object.rotation.z), glm::vec3(0.f, 0.f, 1.f));
+					glm::rotate(glm::radians(object.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
+					glm::scale(object.scale);
 			}
 			update_buffer(sizeof(RenderObject) * objects.size(), objectBuffer, objects.data());
 		}
@@ -1022,6 +1042,7 @@ void VulkanEngine::imgui_draw() {
 				ImGui::Indent(16.f);
 				ImGui::DragFloat3("Position", (float*) &imGuiObjects[i].position, 0.1f);
 				ImGui::DragFloat3("Rotation", (float*) &imGuiObjects[i].rotation, 1.f);
+				ImGui::DragFloat3("Scale", (float*) &imGuiObjects[i].scale, 1.f);
 				ImGui::Checkbox("Smooth Shading", (bool*) &objects[i].smoothShade);
 				ImGui::Unindent(16.f);
 			}

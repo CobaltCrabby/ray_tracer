@@ -42,17 +42,19 @@ struct Sphere {
 };
 
 struct Triangle {
-   	alignas(16) glm::uvec3 indices;
+   	uint v0;
+   	uint v1;
+   	uint v2;
+	uint padding;
 };
 
 struct TrianglePoint {
-	alignas(16) glm::vec3 position;
-	alignas(8) glm::vec2 uv;
-	alignas(16) glm::vec3 normal;
+	alignas(16) glm::vec4 position; //uv.x is position.w
+	alignas(16) glm::vec4 normal; //uv.x is normal.w
 };
 
 struct RayMaterial {
-	alignas(16) glm::vec3 albedo = glm::vec3(1.f);
+	alignas(16) glm::vec3 albedo = glm::vec3(1.f); //w = reflectance
 	alignas(16) glm::vec3 emissionColor = glm::vec3(0.f);
 	alignas(4) float emissionStrength = 0.f;
 	alignas(4) float reflectance = 0.f;
@@ -60,23 +62,35 @@ struct RayMaterial {
 	alignas(4) uint metalnessIndex = -1;
 };
 
+struct Test {
+	float al_r;
+	float al_g;
+	float al_b;
+	float e_r;
+	float e_g;
+	float e_b;
+	uint a;
+	uint m;
+};
+
 struct BoundingBox {
 	glm::vec4 bounds[2];
 };
 
 struct RenderObject {
+	alignas(16) glm::mat4 transformMatrix;
+	alignas(16) BoundingBox boundingBox;
 	alignas(4) uint smoothShade; //0 = off, non-zero = on (bool weird on glsl)
 	alignas(4) uint triangleStart;
 	alignas(4) uint triangleCount;
 	alignas(4) uint materialIndex;
-	alignas(16) glm::mat4 transformMatrix;
-	alignas(16) BoundingBox boundingBox;
 };
 
 struct ImGuiObject {
 	std::string name;
-	glm::vec3 position;
-	glm::vec3 rotation;
+	glm::vec3 position = glm::vec3(0.f);
+	glm::vec3 rotation = glm::vec3(0.f);
+	glm::vec3 scale = glm::vec3(1.f);
 };
 
 struct UploadContext {

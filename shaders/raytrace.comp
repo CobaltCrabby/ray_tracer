@@ -20,10 +20,10 @@ struct Ray {
 
 //material
 struct Material {
-    vec3 albedo;
-    vec3 emissionColor;
+    vec3 albedo; //albedo.w = reflectance
+    vec3 emissionColor; //emissionColor.w = emissionStrength
     float emissionStrength;
-    float reflectance;
+	float reflectance;
     uint albedoIndex;
     uint metalnessIndex;
 };
@@ -35,12 +35,12 @@ struct BoundingBox {
 };
 
 struct RenderObject {
+    mat4 transformMatrix;
+    BoundingBox boundingBox;
     uint smoothShade; //0 = off, 1 = on (bool weird on glsl)
     uint triangleStart;
     uint triangleCount;
     uint materialIndex;
-    mat4 transformMatrix;
-    BoundingBox boundingBox;
 };
 
 //shapes
@@ -51,13 +51,14 @@ struct Sphere {
 };
 
 struct Triangle {
-    uvec3 indices;
+    uint v0;
+    uint v1;
+    uint v2;
 };
 
 struct TrianglePoint {
-    vec3 position;
-    vec2 uv;
-    vec3 normal;
+    vec4 position;
+    vec4 normal;
 };
 
 struct HitInfo {
@@ -163,10 +164,10 @@ HitInfo sphereIntersection(Sphere sphere, Ray ray) {
 
 //https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2, bool smoothShade) {
-    vec3 v1v2 = v1.position - v2.position;
-    vec3 v1v0 = v1.position - v0.position;
-    vec3 v2v0 = v2.position - v0.position;
-    vec3 rov0 = ray.origin - v0.position;
+    vec3 v1v2 = v1.position.xyz - v2.position.xyz;
+    vec3 v1v0 = v1.position.xyz - v0.position.xyz;
+    vec3 v2v0 = v2.position.xyz - v0.position.xyz;
+    vec3 rov0 = ray.origin - v0.position.xyz;
     vec3 n = cross( v1v0, v2v0 );
 
     vec3  q = cross( rov0, ray.dir );
@@ -185,14 +186,17 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
 
     //area of a triangle = |AB x AC|/2 where AB and AC is the edge vectors. use for barycentric calcs
     float area = length(cross(v1v0, v2v0)) / 2.f;
-    float pbc = length(cross(hit.hitPoint - v2.position, v1v2)) / 2.f;
-    float apc = length(cross(hit.hitPoint - v0.position, v2v0)) / 2.f;
-    float abp = length(cross(hit.hitPoint - v0.position, v1v0)) / 2.f;
+    float pbc = length(cross(hit.hitPoint - v2.position.xyz, v1v2)) / 2.f;
+    float apc = length(cross(hit.hitPoint - v0.position.xyz, v2v0)) / 2.f;
+    float abp = length(cross(hit.hitPoint - v0.position.xyz, v1v0)) / 2.f;
 
     vec3 barycentric = vec3(pbc, apc, abp) / area;
-    hit.uv = barycentric.x * v0.uv + barycentric.y * v1.uv + barycentric.z * v2.uv;
+    vec2 v0uv = vec2(v0.position.w, v0.normal.w);
+    vec2 v1uv = vec2(v1.position.w, v1.normal.w);
+    vec2 v2uv = vec2(v2.position.w, v2.normal.w);
+    hit.uv = barycentric.x * v0uv + barycentric.y * v1uv + barycentric.z * v2uv;
 
-    hit.normal = smoothShade ? barycentric.x * v0.normal + barycentric.y * v1.normal + barycentric.z * v2.normal : normalize(n);
+    hit.normal = smoothShade ? barycentric.x * v0.normal.xyz + barycentric.y * v1.normal.xyz + barycentric.z * v2.normal.xyz : normalize(n);
     return hit;
 }
 
@@ -235,7 +239,7 @@ HitInfo calculateIntersections(Ray ray) {
     for (int i = 0; i < traceData.objectCount; i++) {
         RenderObject object = objects[i];
         Ray transformRay;
-        transformRay.dir = normalize((inverse(object.transformMatrix) * vec4(ray.dir, 0.f))).xyz;
+        transformRay.dir = (inverse(object.transformMatrix) * vec4(ray.dir, 0.f)).xyz;
         transformRay.origin = (inverse(object.transformMatrix) * vec4(ray.origin, 1.f)).xyz;
         transformRay.invDir = 1 / transformRay.dir;
 
@@ -246,8 +250,8 @@ HitInfo calculateIntersections(Ray ray) {
         if (!boxIntersection(object.boundingBox, transformRay)) continue;
 
         for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
-            uvec3 indices = triangles[j].indices;
-            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[indices.x], trianglePoints[indices.y], trianglePoints[indices.z], bool(object.smoothShade));
+            Triangle tri = triangles[j];
+            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade));
             hitInfo.materialIndex = object.materialIndex;
 
             if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
@@ -304,7 +308,13 @@ vec3 trace(Ray ray, inout uint state) {
                 rayColor *= albedo;
                 continue;
             } 
-            rayColor *=  material.albedo;
+            rayColor *= material.albedo.xyz;
+
+            float p = max(rayColor.r, max(rayColor.g, rayColor.b));
+            if (random(state) >= p) {
+                break;
+            }
+            rayColor *= 1.0f / p;
         } else {
             incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
             break;
