@@ -24,6 +24,7 @@ struct Material {
     vec3 emissionColor; //emissionColor.w = emissionStrength
     float emissionStrength;
 	float reflectance;
+    float ior;
     uint albedoIndex;
     uint metalnessIndex;
 };
@@ -54,6 +55,7 @@ struct Triangle {
     uint v0;
     uint v1;
     uint v2;
+    uint padding;
 };
 
 struct TrianglePoint {
@@ -62,22 +64,21 @@ struct TrianglePoint {
 };
 
 struct HitInfo {
-    bool didHit;
-    float dst;
-    uint materialIndex;
     vec3 hitPoint;
     vec3 normal;
     vec2 uv;
+    float dst;
+    uint materialIndex;
+    bool didHit;
+    bool frontFace;
 };
 
 //push constants
 struct EnvironmentData {
-    vec3 horizonColor;
-    vec3 zenithColor;
+    vec4 horizonColor; //w = sun focus
+    vec4 zenithColor; //w = sun intensity
     vec3 groundColor;
-    vec4 lightDir;
-    float sunFocus;
-    float sunIntensity;
+    vec4 lightDir; //w = environment on
 };
 
 struct RayTracerData {
@@ -139,25 +140,51 @@ vec3 randomDirection(inout uint state) {
     return randomDir;
 }
 
+float schlick(float cosine, float refraction_index) {
+    float r0 = (1 - refraction_index) / (1 + refraction_index);
+    r0 = r0 * r0;
+    return r0 + (1 - r0) * pow((1 - cosine), 5);
+}
+
+Ray refraction(Ray ray, vec3 normal, float ior, inout uint state) {
+    float cosine = dot(-ray.dir, normal);
+    float sine =  sqrt(1 - cosine * cosine);
+    bool solution = (ior * sine) > 1.f || schlick(cosine, ior) > random(state);
+    vec3 dir = solution ? reflect(ray.dir, normal) : refract(ray.dir, normal, ior);
+    vec3 origin = ray.origin + normal * 0.0001 * (solution ? 1 : sign(dot(normal, ray.dir)));
+    Ray newRay;
+    newRay.dir = dir;
+    newRay.origin = origin;
+    return newRay;
+}
+
 HitInfo sphereIntersection(Sphere sphere, Ray ray) {
     HitInfo hitInfo;
     hitInfo.didHit = false;
 
-    vec3 oc = ray.origin - sphere.position;
+    vec3 oc = sphere.position - ray.origin;
     float a = dot(ray.dir, ray.dir);
-    float b = 2 * dot(oc, ray.dir);
+    float b = dot(oc, ray.dir);
     float c = dot(oc, oc) - sphere.radius * sphere.radius;
-    float discriminant = b * b - 4 * a * c;
+    float discriminant = b * b - a * c;
 
     if (discriminant >= 0) {
-        float dst = (-b - sqrt(discriminant)) / (2 * a);
-        if (dst >= 0) {
-            hitInfo.didHit = true;
-            hitInfo.dst = dst;
-            hitInfo.hitPoint = ray.origin + ray.dir * dst;
-            hitInfo.normal = normalize(hitInfo.hitPoint - sphere.position);
-            hitInfo.materialIndex = sphere.materialIndex;
+        float sqrtd = sqrt(discriminant);
+        float dst = (b - sqrtd) / a;
+        hitInfo.frontFace = true;
+        if (dst < 0) {
+            dst = (b + sqrtd) / a;
+            hitInfo.frontFace = false;
+            if (dst < 0) {
+                return hitInfo;
+            }
         }
+
+        hitInfo.didHit = true;
+        hitInfo.dst = dst;
+        hitInfo.hitPoint = ray.origin + ray.dir * dst;
+        hitInfo.normal = normalize(hitInfo.hitPoint - sphere.position) * (hitInfo.frontFace ? 1 : -1);
+        hitInfo.materialIndex = sphere.materialIndex;
     }
     return hitInfo;
 }
@@ -269,8 +296,8 @@ HitInfo calculateIntersections(Ray ray) {
 vec3 getEnvironmentLight(Ray ray) {
     EnvironmentData env = PushConstants.environment;
     float skyGradientT = pow(smoothstep(0, 0.4, -ray.dir.y), 0.35);
-    vec3 skyGradient = mix(env.horizonColor, env.zenithColor, skyGradientT);
-    float sun = pow(max(0, dot(ray.dir, -env.lightDir.rgb)), env.sunFocus) * env.sunIntensity;
+    vec3 skyGradient = mix(env.horizonColor.xyz, env.zenithColor.xyz, skyGradientT);
+    float sun = pow(max(0, dot(ray.dir, -env.lightDir.rgb)), env.horizonColor.w) * env.zenithColor.w;
 
     float groundToSkyT = smoothstep(-0.01, 0, -ray.dir.y);
     float sunMask = float(groundToSkyT >= 1);
@@ -282,10 +309,11 @@ vec3 trace(Ray ray, inout uint state) {
     vec3 rayColor = vec3(1.f);
     RayTracerData traceData = PushConstants.rayTracerParams;
     Ray newRay = ray;
+    float currentIor = -1.f;
 
     for (int j = 0; j <= traceData.bounceLimit; j++) {
         HitInfo hitInfo = calculateIntersections(newRay);
-        if (hitInfo.didHit) {
+        if (hitInfo.didHit) {  
             Material material = materials[hitInfo.materialIndex];
             float reflectance = material.reflectance;
             if (material.metalnessIndex != -1) {
@@ -293,10 +321,16 @@ vec3 trace(Ray ray, inout uint state) {
                 reflectance = imageLoad(TextureBuffer[material.metalnessIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).r;
             }
 
-            vec3 diffuseDir = normalize(hitInfo.normal + randomDirection(state));
-            vec3 specularDir = newRay.dir - hitInfo.normal * 2 * dot(newRay.dir, hitInfo.normal);
-            newRay.dir = mix(diffuseDir, specularDir, reflectance);
             newRay.origin = hitInfo.hitPoint;
+            if (material.ior != -1.f) {
+                newRay = refraction(newRay, hitInfo.normal, hitInfo.frontFace ? 1.f / material.ior : material.ior, state);
+            } else {
+                vec3 diffuseDir = normalize(hitInfo.normal + randomDirection(state));
+                vec3 specularDir = reflect(newRay.dir, hitInfo.normal);
+                newRay.dir = mix(diffuseDir, specularDir, reflectance);
+                newRay.origin += hitInfo.normal * 0.0001;
+            }
+            currentIor = material.ior;
 
             vec3 emitted = material.emissionColor * material.emissionStrength;
             float lightStrength = dot(hitInfo.normal, newRay.dir);
@@ -308,13 +342,7 @@ vec3 trace(Ray ray, inout uint state) {
                 rayColor *= albedo;
                 continue;
             } 
-            rayColor *= material.albedo.xyz;
-
-            float p = max(rayColor.r, max(rayColor.g, rayColor.b));
-            if (random(state) >= p) {
-                break;
-            }
-            rayColor *= 1.0f / p;
+            rayColor *= material.albedo.rgb;
         } else {
             incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
             break;
@@ -362,6 +390,9 @@ void main() {
     float weight = 1.f / (PushConstants.frameCount + 1.f);
     vec3 finalColor = oldColor.rgb * (1 - weight) + outColor * weight;
     finalColor = traceData.progressive ? finalColor : outColor;
+    if (any(isnan(finalColor)) || any(isinf(finalColor))) {
+        finalColor = vec3(1.f, 0.f, 1.f);
+    }
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));//vec4(finalColor, 1.f));
 }

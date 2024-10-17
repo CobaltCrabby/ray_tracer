@@ -50,7 +50,7 @@ struct Triangle {
 
 struct TrianglePoint {
 	alignas(16) glm::vec4 position; //uv.x is position.w
-	alignas(16) glm::vec4 normal; //uv.x is normal.w
+	alignas(16) glm::vec4 normal; //uv.y is normal.w
 };
 
 struct RayMaterial {
@@ -58,19 +58,9 @@ struct RayMaterial {
 	alignas(16) glm::vec3 emissionColor = glm::vec3(0.f);
 	alignas(4) float emissionStrength = 0.f;
 	alignas(4) float reflectance = 0.f;
+	alignas(4) float ior = -1.f;
 	alignas(4) uint albedoIndex = -1;
 	alignas(4) uint metalnessIndex = -1;
-};
-
-struct Test {
-	float al_r;
-	float al_g;
-	float al_b;
-	float e_r;
-	float e_g;
-	float e_b;
-	uint a;
-	uint m;
 };
 
 struct BoundingBox {
@@ -113,12 +103,10 @@ struct CameraInfo {
 };
 
 struct EnvironmentData {
-	alignas(16) glm::vec3 horizonColor = glm::vec3(0.986f, 1.f, 0.902f);
-	alignas(16) glm::vec3 zenithColor = glm::vec3(0.265f, 0.595f, 0.887);
+	alignas(16) glm::vec4 horizonColor = glm::vec4(0.986f, 1.f, 0.902f, 1000.f); //w = sunFocus;
+	alignas(16) glm::vec4 zenithColor = glm::vec4(0.265f, 0.595f, 0.887f, 200.f); //w = sunIntensity
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
-	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 0.f); //w component = environment on
-	alignas(4) float sunFocus = 1000.f;
-	alignas(4) float sunIntensity = 200.f;
+	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 1.f); //w component = environment on
 };
 
 struct RayTracerData {

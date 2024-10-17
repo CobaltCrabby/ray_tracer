@@ -58,8 +58,6 @@ void VulkanEngine::init() {
 
 	// everything went fine
 	_isInitialized = true;
-
-	cout << sizeof(RayMaterial) << " " << sizeof(Test) << endl;
 }
 
 void VulkanEngine::init_vulkan() {
@@ -598,7 +596,8 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
 
-	//spheres[0] = {glm::vec3(0, 0.1f, 0.f), 0.4f, 0};
+	spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
+	spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
@@ -606,7 +605,8 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial object;
 	object.albedoIndex = -1;
 	object.metalnessIndex = -1;
-	object.albedo = glm::vec3(1.f, 1.f, 1.f);
+	object.albedo = glm::vec3(1.f);
+	object.ior = 1.5f;
 
 	RayMaterial white;
 
@@ -635,9 +635,9 @@ void VulkanEngine::prepare_storage_buffers() {
 	//ccw
 	ImGuiObject slosh;
 	slosh.name = "slosher";
-	slosh.position = glm::vec3(-0.3f, 0.35f, 0.f);
+	slosh.position = glm::vec3(-0.8f, 0.35f, 0.3f);
 	slosh.rotation = glm::vec3(0.f);
-	read_obj("../assets/rb_low.obj", triPoints.size(), triangles.size(), slosh, 0);
+	//read_obj("../assets/slosher.obj", triPoints.size(), triangles.size(), slosh, 1);
 
 	ImGuiObject light;
 	light.name = "light";
@@ -670,7 +670,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
 	plane.scale = glm::vec3(1.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 4);
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	plane.name = "front";
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
@@ -963,8 +963,8 @@ void VulkanEngine::imgui_draw() {
 		ImGui::ColorEdit3("Zenith Color", (float*) &environment.zenithColor);
 		ImGui::ColorEdit3("Ground Color", (float*) &environment.groundColor);
 		ImGui::DragFloat3("Sun Direction", (float*) &environment.lightDir, 0.01f, 0.f, 1.f);
-		ImGui::DragFloat("Sun Focus", &environment.sunFocus, 0.1f, 0.f, 100.f);
-		ImGui::DragFloat("Sun Intensity", &environment.sunIntensity, 0.1f, 0.f, 100.f);
+		ImGui::DragFloat("Sun Focus", &environment.horizonColor.w, 0.1f, 0.f, 100.f);
+		ImGui::DragFloat("Sun Intensity", &environment.zenithColor.w, 0.1f, 0.f, 100.f);
 	}
 
 	if (ImGui::CollapsingHeader("Materials")) {
@@ -987,6 +987,7 @@ void VulkanEngine::imgui_draw() {
 				ImGui::ColorEdit3("Emission Color", (float*) &rayMaterials[i].emissionColor);
 				ImGui::DragFloat("Emission Strength", (float*) &rayMaterials[i].emissionStrength, 0.1f, 0.f, 100.f);
 				ImGui::DragFloat("Reflectance", &rayMaterials[i].reflectance, 0.05f, 0.f, 1.f);
+				ImGui::DragFloat("Index of Refraction", &rayMaterials[i].ior, 0.01f, 0.f, 10.f);
 				ImGui::Unindent(16.f);
 			}
 		}
