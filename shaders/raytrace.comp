@@ -55,7 +55,7 @@ struct Triangle {
     uint v0;
     uint v1;
     uint v2;
-    uint padding;
+    uint frontOnly;
 };
 
 struct TrianglePoint {
@@ -190,7 +190,7 @@ HitInfo sphereIntersection(Sphere sphere, Ray ray) {
 }
 
 //https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2, bool smoothShade) {
+HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, TrianglePoint v2, bool smoothShade, bool frontOnly) {
     vec3 v1v2 = v1.position.xyz - v2.position.xyz;
     vec3 v1v0 = v1.position.xyz - v0.position.xyz;
     vec3 v2v0 = v2.position.xyz - v0.position.xyz;
@@ -207,23 +207,17 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
     float w = 1.f - u - v;
     
     HitInfo hit;
-    hit.didHit = d0 >= 0.00000001f && dst >= 0 && u >= 0 && v >= 0 && w >= 0;
+    hit.frontFace = d0 >= 0.00000001f;
+    hit.didHit = dst >= 0 && u >= 0 && v >= 0 && w >= 0 && !(!hit.frontFace && frontOnly);
     hit.hitPoint = ray.origin + ray.dir * dst;
     hit.dst = dst;
 
-    //area of a triangle = |AB x AC|/2 where AB and AC is the edge vectors. use for barycentric calcs
-    float area = length(cross(v1v0, v2v0)) / 2.f;
-    float pbc = length(cross(hit.hitPoint - v2.position.xyz, v1v2)) / 2.f;
-    float apc = length(cross(hit.hitPoint - v0.position.xyz, v2v0)) / 2.f;
-    float abp = length(cross(hit.hitPoint - v0.position.xyz, v1v0)) / 2.f;
-
-    vec3 barycentric = vec3(pbc, apc, abp) / area;
     vec2 v0uv = vec2(v0.position.w, v0.normal.w);
     vec2 v1uv = vec2(v1.position.w, v1.normal.w);
     vec2 v2uv = vec2(v2.position.w, v2.normal.w);
-    hit.uv = barycentric.x * v0uv + barycentric.y * v1uv + barycentric.z * v2uv;
+    hit.uv = w * v0uv + u * v1uv + v * v2uv;
 
-    hit.normal = smoothShade ? barycentric.x * v0.normal.xyz + barycentric.y * v1.normal.xyz + barycentric.z * v2.normal.xyz : normalize(n);
+    hit.normal = (smoothShade ? w * v0.normal.xyz + u * v1.normal.xyz + v * v2.normal.xyz : normalize(n)) * (hit.frontFace ? 1 : -1);
     return hit;
 }
 
@@ -278,7 +272,7 @@ HitInfo calculateIntersections(Ray ray) {
 
         for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
             Triangle tri = triangles[j];
-            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade));
+            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade), bool(tri.frontOnly));
             hitInfo.materialIndex = object.materialIndex;
 
             if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {

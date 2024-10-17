@@ -45,7 +45,7 @@ struct Triangle {
    	uint v0;
    	uint v1;
    	uint v2;
-	uint padding;
+	uint frontOnly;
 };
 
 struct TrianglePoint {
@@ -81,6 +81,7 @@ struct ImGuiObject {
 	glm::vec3 position = glm::vec3(0.f);
 	glm::vec3 rotation = glm::vec3(0.f);
 	glm::vec3 scale = glm::vec3(1.f);
+	bool frontOnly = false;
 };
 
 struct UploadContext {

@@ -597,16 +597,14 @@ void VulkanEngine::prepare_storage_buffers() {
 	spheres.resize(MAX_SPHERES);
 
 	spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
-	spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
+	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
-	RayMaterial object;
-	object.albedoIndex = -1;
-	object.metalnessIndex = -1;
-	object.albedo = glm::vec3(1.f);
-	object.ior = 1.5f;
+	RayMaterial dielectric;
+	dielectric.ior = 1.5f;
+	dielectric.albedo = glm::vec3(0.4f, 0.4f, 1.f);
 
 	RayMaterial white;
 
@@ -621,23 +619,30 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	RayMaterial li;
 	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
+	li.albedo = glm::vec3(0.f);
 	li.emissionStrength = 5.f;
 
-	rayMaterials.push_back(object);
+	RayMaterial object;
+	object.albedoIndex = -1;
+	object.metalnessIndex = -1;
+
+	rayMaterials.push_back(dielectric);
 	rayMaterials.push_back(white);
 	rayMaterials.push_back(red);
 	rayMaterials.push_back(green);
 	rayMaterials.push_back(blue);
 	rayMaterials.push_back(li);
+	rayMaterials.push_back(object);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
 	ImGuiObject slosh;
-	slosh.name = "slosher";
-	slosh.position = glm::vec3(-0.8f, 0.35f, 0.3f);
-	slosh.rotation = glm::vec3(0.f);
-	//read_obj("../assets/slosher.obj", triPoints.size(), triangles.size(), slosh, 1);
+	slosh.name = "cube";
+	slosh.position = glm::vec3(0.5f, 0.1f, 0.f);
+	slosh.rotation = glm::vec3(180.f, 0.f, 0.f);
+	slosh.scale = glm::vec3(0.4f);
+	read_obj("../assets/monkey.obj", triPoints.size(), triangles.size(), slosh, 0);
 
 	ImGuiObject light;
 	light.name = "light";
@@ -675,7 +680,8 @@ void VulkanEngine::prepare_storage_buffers() {
 	plane.name = "front";
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
 	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
+	plane.frontOnly = true;
+	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -798,6 +804,7 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 			tri.v0 = vertexIndex[0];
 			tri.v1 = vertexIndex[1];
 			tri.v2 = vertexIndex[2];
+			tri.frontOnly = imGuiObj.frontOnly;
 			triangles.push_back(tri);
  		}
 	}
