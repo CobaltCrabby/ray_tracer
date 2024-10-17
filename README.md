@@ -3,12 +3,11 @@ A Vulkan-based compute raytracer written in C++. Code skeleton from *[VkGuide](h
 
 ## Features
 - Sphere and triangle primitives
-- Diffuse and specular materials
+- Diffuse, metallic, and dielectric materials
 - Wavefront OBJ and texture loading
 - ImGui implementation
 
 ## Planned Features
-- Transparent materials
 - Dynamic camera system
 - Bounding Volume Hierarchies
 - Importance Sampling
