@@ -22,3 +22,4 @@ A Vulkan-based compute raytracer written in C++. Code skeleton from *[VkGuide](h
 ![](renders/dread_white.png)
 <sup>Model from *[Sketchfab](https://sketchfab.com/3d-models/splatoon-3-dread-wringer-9a07bd24e0184e6084389f1da41a9818)*</sup>
 ![](renders/dielectrics.png)
+![](renders/monkey_dielectric.png)
