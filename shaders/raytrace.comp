@@ -68,9 +68,17 @@ struct HitInfo {
     vec3 normal;
     vec2 uv;
     float dst;
+    float triangleDebug;
     uint materialIndex;
     bool didHit;
     bool frontFace;
+};
+
+//bvh
+struct BVHNode {
+	vec2 boundsX, boundsY, boundsZ;
+	uint index, triCount;
+	//if triCount == 0: index is a node index, else: index is a triangle index
 };
 
 //push constants
@@ -83,10 +91,12 @@ struct EnvironmentData {
 
 struct RayTracerData {
     bool progressive;
+    bool debug;
     uint raysPerPixel;
     uint bounceLimit;
     uint sphereCount;
     uint objectCount;
+    uint debugCap;
 };
 
 layout (binding = 0, rgba8) uniform image2D outImage;
@@ -111,6 +121,10 @@ layout (std140, binding = 5) readonly buffer TriangleBuffer {
 
 layout (std140, binding = 6) readonly buffer ObjectBuffer {
     RenderObject objects[];
+};
+
+layout (std140, binding = 7) readonly buffer BVHBuffer {
+    BVHNode bvhNodes[];
 };
 
 layout (push_constant) uniform constants {
@@ -245,6 +259,7 @@ bool boxIntersection(BoundingBox box, Ray ray) {
 }
 
 HitInfo calculateIntersections(Ray ray) {
+    float triangleTests = 0;
     HitInfo closestHit;
     closestHit.didHit = false;
     closestHit.dst = 999999999;
@@ -271,6 +286,7 @@ HitInfo calculateIntersections(Ray ray) {
         if (!boxIntersection(object.boundingBox, transformRay)) continue;
 
         for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
+            triangleTests += 1.f;
             Triangle tri = triangles[j];
             HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade), bool(tri.frontOnly));
             hitInfo.materialIndex = object.materialIndex;
@@ -283,6 +299,7 @@ HitInfo calculateIntersections(Ray ray) {
         }
     }
 
+    closestHit.triangleDebug = triangleTests;
     return closestHit;
 }
 
@@ -304,9 +321,11 @@ vec3 trace(Ray ray, inout uint state) {
     RayTracerData traceData = PushConstants.rayTracerParams;
     Ray newRay = ray;
     float currentIor = -1.f;
+    float triangleTests = 0.f;
 
     for (int j = 0; j <= traceData.bounceLimit; j++) {
         HitInfo hitInfo = calculateIntersections(newRay);
+        triangleTests += hitInfo.triangleDebug;
         if (hitInfo.didHit) {  
             Material material = materials[hitInfo.materialIndex];
             float reflectance = material.reflectance;
@@ -327,8 +346,7 @@ vec3 trace(Ray ray, inout uint state) {
             currentIor = material.ior;
 
             vec3 emitted = material.emissionColor * material.emissionStrength;
-            float lightStrength = dot(hitInfo.normal, newRay.dir);
-            incomingLight += lightStrength * emitted * rayColor;
+            incomingLight += emitted * rayColor;
 
             if (material.albedoIndex != -1) {
                 ivec2 size = imageSize(TextureBuffer[material.albedoIndex]);
@@ -342,7 +360,10 @@ vec3 trace(Ray ray, inout uint state) {
             break;
         }
     }
-
+    float cap = float(PushConstants.rayTracerParams.debugCap);
+    if (PushConstants.rayTracerParams.debug) {
+        return triangleTests < cap ? vec3(triangleTests) / cap : vec3(1.f, 0.f, 0.f);
+    }
     return incomingLight;
 }
 

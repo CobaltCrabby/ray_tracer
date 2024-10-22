@@ -112,10 +112,12 @@ struct EnvironmentData {
 
 struct RayTracerData {
 	alignas(4) bool progressive = false;
+	alignas(4) bool debug = false;
 	alignas(4) uint raysPerPixel = 1;
 	alignas(4) uint bounceLimit = 2;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
+	alignas(4) uint debugCap = 50;
 };
 
 struct PushConstants {
@@ -128,6 +130,12 @@ struct PushConstants {
 struct RenderStats {
 	float frameTime;
 	float drawTime;
+};
+
+struct BVHNode {
+	glm::vec2 boundsX, boundsY, boundsZ = glm::vec2(999999999, -9999999999);
+	uint index, triCount = 0;
+	//if triCount == 0: index is a node index, else: index is a triangle index
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -150,6 +158,9 @@ private:
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
 	void read_obj(std::string filePath, int offset, int offset2, ImGuiObject imGui, int material);
+	void build_bvh(int size);
+	void update_bvh_bounds(uint index);
+	void subdivide_bvh(uint intex);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
@@ -195,6 +206,9 @@ public:
 	std::vector<RenderObject> objects;
 	std::vector<ImGuiObject> imGuiObjects;
 
+	BVHNode* bvhNode;
+	uint nodesUsed = 1;
+
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;
 	VkDescriptorSetLayout graphicsLayout;
@@ -206,15 +220,11 @@ public:
 	Texture computeImage;
 
 	AllocatedBuffer sphereBuffer;
-	VkDescriptorSet sphereDescriptor;
 	AllocatedBuffer triPointBuffer;
-	VkDescriptorSet triPointDescriptor;
 	AllocatedBuffer materialBuffer;
-	VkDescriptorSet materialDescriptor;
 	AllocatedBuffer triangleBuffer;
-	VkDescriptorSet triangleDescriptor;
 	AllocatedBuffer objectBuffer;
-	VkDescriptorSet objectDescriptor;
+	AllocatedBuffer bvhBuffer;
 
 	VkPipelineLayout graphicsPipelineLayout;
 	VkPipeline graphicsPipeline;

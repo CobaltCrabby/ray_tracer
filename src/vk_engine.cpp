@@ -421,14 +421,15 @@ void VulkanEngine::init_descriptors() {
 	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
 	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5);
 	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 6);
+	VkDescriptorSetLayoutBinding bvhBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 7);
 
 	textureBufferBinding.descriptorCount = 2;
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding};
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding, bvhBufferBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 7;
+	computeSetInfo.bindingCount = 8;
 	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
@@ -573,6 +574,11 @@ void VulkanEngine::update_descriptors() {
 	objectBufferInfo.offset = 0;
 	objectBufferInfo.range = sizeof(RenderObject) * objects.size();
 
+	VkDescriptorBufferInfo bvhBufferInfo;
+	bvhBufferInfo.buffer = bvhBuffer.buffer;
+	bvhBufferInfo.offset = 0;
+	bvhBufferInfo.range = sizeof(*bvhNode) * nodesUsed;
+
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
 	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, textureImageInfos, 1);
 	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 2);
@@ -580,12 +586,13 @@ void VulkanEngine::update_descriptors() {
 	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 4);
 	VkWriteDescriptorSet triangleWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triangleBufferInfo, 5);
 	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 6);
+	VkWriteDescriptorSet bvhWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &bvhBufferInfo, 7);
 
 	textureWrite.descriptorCount = 2;
 	
-	VkWriteDescriptorSet computeWrites[] = {compTex, textureWrite, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite};
+	VkWriteDescriptorSet computeWrites[] = {compTex, textureWrite, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite, bvhWrite};
 
-	vkUpdateDescriptorSets(device, 7, computeWrites, 0, nullptr);
+	vkUpdateDescriptorSets(device, 8, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
@@ -604,7 +611,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//materials
 	RayMaterial dielectric;
 	dielectric.ior = 1.5f;
-	dielectric.albedo = glm::vec3(0.4f, 0.4f, 1.f);
+	dielectric.albedo = glm::vec3(1.f);
 
 	RayMaterial white;
 
@@ -638,50 +645,50 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	//ccw
 	ImGuiObject slosh;
-	slosh.name = "cube";
+	slosh.name = "slosher";
 	slosh.position = glm::vec3(0.5f, 0.1f, 0.f);
-	slosh.rotation = glm::vec3(180.f, 0.f, 0.f);
-	slosh.scale = glm::vec3(0.4f);
-	read_obj("../assets/monkey.obj", triPoints.size(), triangles.size(), slosh, 0);
+	//slosh.rotation = glm::vec3(180.f, 0.f, 0.f);
+	//slosh.scale = glm::vec3(0.4f);
+	read_obj("../assets/slosher.obj", triPoints.size(), triangles.size(), slosh, 0);
 
 	ImGuiObject light;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
 	light.scale = glm::vec3(0.3f);
-	read_obj("../assets/light.obj", triPoints.size(), triangles.size(), light, 5);
+	// read_obj("../assets/light.obj", triPoints.size(), triangles.size(), light, 5);
 
 	ImGuiObject plane;
 	plane.name = "bottom";
 	plane.position = glm::vec3(0.f, 0.5f, 0.f);
 	plane.rotation = glm::vec3(0.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	plane.name = "left";
 	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
+	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
 
 	plane.name = "right";
 	plane.position = glm::vec3(1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
+	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
 
 	plane.name = "top";
 	plane.position = glm::vec3(0.f, -1.5f, 0.f);
 	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	plane.name = "back";
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
 	plane.scale = glm::vec3(1.f);
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	plane.name = "front";
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
 	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
 	plane.frontOnly = true;
-	read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -825,6 +832,108 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 
 	imGuiObjects.push_back(imGuiObj);
 	cout << "Object at " << filePath << ": " << object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
+
+	build_bvh(object.triangleCount);
+}
+
+void VulkanEngine::build_bvh(int size) {
+	bvhNode = new BVHNode[2 * size - 1];
+	BVHNode& root = bvhNode[0];
+	root.index = 0;
+	root.triCount = size;
+
+	update_bvh_bounds(0);
+	cout << root.boundsX[0] << " " << root.boundsX[1] << endl;
+	cout << root.boundsY[0] << " " << root.boundsY[1] << endl;
+	cout << root.boundsZ[0] << " " << root.boundsZ[1] << endl;
+
+	subdivide_bvh(0);
+	
+	BVHNode lol = root;
+	int depth = 0;
+	while (true) {
+		if (lol.triCount != 0) break;
+		lol = bvhNode[lol.index];
+		//cout << lol.triCount << endl;
+		depth++;	
+	}
+	cout << "depth " << nodesUsed << " " << (2 * size - 1) << endl;
+
+	copy_buffer(sizeof(BVHNode) * nodesUsed, bvhBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) bvhNode);
+}
+
+void VulkanEngine::update_bvh_bounds(uint index) {
+	BVHNode& node = bvhNode[index];
+	for (int i = 0; i < node.triCount; i++) {
+		Triangle& leafTri = triangles[node.index + i];
+		node.boundsX[0] = min(min(min(node.boundsX[0], triPoints.at(leafTri.v0).position.x), triPoints.at(leafTri.v1).position.x), triPoints.at(leafTri.v2).position.x);
+		node.boundsY[0] = min(min(min(node.boundsY[0], triPoints.at(leafTri.v0).position.y), triPoints.at(leafTri.v1).position.y), triPoints.at(leafTri.v2).position.y);
+		node.boundsZ[0] = min(min(min(node.boundsZ[0], triPoints.at(leafTri.v0).position.z), triPoints.at(leafTri.v1).position.z), triPoints.at(leafTri.v2).position.z);
+		node.boundsX[1] = max(max(max(node.boundsX[1], triPoints.at(leafTri.v0).position.x), triPoints.at(leafTri.v1).position.x), triPoints.at(leafTri.v2).position.x);
+		node.boundsY[1] = max(max(max(node.boundsY[1], triPoints.at(leafTri.v0).position.y), triPoints.at(leafTri.v1).position.y), triPoints.at(leafTri.v2).position.y);
+		node.boundsZ[1] = max(max(max(node.boundsZ[1], triPoints.at(leafTri.v0).position.z), triPoints.at(leafTri.v1).position.z), triPoints.at(leafTri.v2).position.z);
+	}
+}
+
+void VulkanEngine::subdivide_bvh(uint index) {
+	BVHNode& node = bvhNode[index];
+	if (node.triCount <= 2) {
+		cout << "tri count exit" << endl;
+		return;
+	}
+	glm::vec3 extent = glm::vec3(node.boundsX[1] - node.boundsX[0], node.boundsY[1] - node.boundsY[0], node.boundsZ[1] - node.boundsZ[0]);
+	
+	//find max axis to split across
+	int axis = 0;
+	float splitPos = node.boundsX[0] + extent.x * 0.5f;
+	if (extent.x < extent.y) {
+		axis = 1;
+		splitPos = node.boundsY[0] + extent.y * 0.5f;
+	}
+	if (extent[axis] < extent.z) {
+		axis = 2;
+		splitPos = node.boundsZ[0] + extent.z * 0.5f;	
+	}
+
+	//partition the triangles
+	int i = node.index;
+	int j = i + node.triCount - 1;
+	while (i <= j) {
+		uint v0 = triangles[i].v0;
+		uint v1 = triangles[i].v1;
+		uint v2 = triangles[i].v2;
+		glm::vec3 centroid = (triPoints[v0].position + triPoints[v1].position + triPoints[v2].position) / 3.f;
+
+		//swap so left side of array is less than splitPos
+		if (centroid[axis] < splitPos) {
+			i++;
+		} else {
+			iter_swap(triangles.begin() + i, triangles.begin() + j);
+			j--;
+		}
+	}
+
+	//if one side has all tris, abort
+	int triIndex = node.index;
+	int leftCount = i - triIndex;
+	if (leftCount == 0 || leftCount == node.triCount) {
+		cout << "one side exit" << endl;
+		return;
+	}
+
+	//node.index is always at first a tri ifor (int index, only becomes a node index after a split
+	node.index = nodesUsed++;
+	nodesUsed++; //right node increase
+	bvhNode[node.index].index = triIndex;
+	bvhNode[node.index].triCount = leftCount;
+	bvhNode[node.index + 1].index = i;
+	bvhNode[node.index + 1].triCount = node.triCount - leftCount;
+	node.triCount = 0;
+	cout << "subdivide" << endl;
+	update_bvh_bounds(node.index);
+	update_bvh_bounds(node.index + 1);
+	subdivide_bvh(node.index);
+	subdivide_bvh(node.index + 1);
 }
 
 void VulkanEngine::init_image() {
@@ -954,8 +1063,10 @@ void VulkanEngine::imgui_draw() {
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
+		ImGui::Checkbox("Debug", &rayTracerParams.debug);
 		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 1000);
 		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
+		ImGui::DragInt("Debug Cap", (int*) &rayTracerParams.debugCap, 1.f, 0);
 	}
 
 	if (ImGui::CollapsingHeader("Camera Info")) {
