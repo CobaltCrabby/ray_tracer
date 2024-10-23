@@ -632,6 +632,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial object;
 	object.albedoIndex = -1;
 	object.metalnessIndex = -1;
+	object.ior = 1.5f;
 
 	rayMaterials.push_back(dielectric);
 	rayMaterials.push_back(white);
@@ -644,29 +645,29 @@ void VulkanEngine::prepare_storage_buffers() {
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
-	ImGuiObject slosh;
-	slosh.name = "slosher";
-	slosh.position = glm::vec3(0.5f, 0.1f, 0.f);
+	ImGuiObject model;
+	model.name = "bunny";
+	//slosh.position = glm::vec3(0.5f, 0.1f, 0.f);
 	//slosh.rotation = glm::vec3(180.f, 0.f, 0.f);
 	//slosh.scale = glm::vec3(0.4f);
-	read_obj("../assets/bunny.obj", triPoints.size(), triangles.size(), slosh, 6);
+	read_obj("../assets/bunny_full.obj", triPoints.size(), triangles.size(), model, 6);
 
 	ImGuiObject light;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
 	light.scale = glm::vec3(0.3f);
-	// read_obj("../assets/light.obj", triPoints.size(), triangles.size(), light, 5);
+	//read_obj("../assets/light.obj", triPoints.size(), triangles.size(), light, 5);
 
 	ImGuiObject plane;
 	plane.name = "bottom";
 	plane.position = glm::vec3(0.f, 0.5f, 0.f);
 	plane.rotation = glm::vec3(0.f);
-	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	//read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
 
 	plane.name = "left";
 	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
+	//read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
 
 	plane.name = "right";
 	plane.position = glm::vec3(1.f, -0.5f, 0.f);
@@ -798,11 +799,28 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 				std::string vertex = fileLine.substr(space + 1, nextSpace - space - (i == 2 ? 0 : 1));
 
 				int firstSlash = vertex.find('/');
-				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + pointOffset - 1;
+				std::string vIndexStr = vertex.substr(0, firstSlash);
+				if (vIndexStr.empty()) {
+					cout << "error loading " << filePath << ": vertexIndex is empty" << endl;
+					exit(0);
+				}
+				vertexIndex[i] = stoi(vIndexStr) + pointOffset - 1;
+
 				int secondSlash = vertex.find('/', firstSlash + 1);
-				//glm::vec2 uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
-				//triPoints[vertexIndex[i]].position.w = uv.x; 
-				//triPoints[vertexIndex[i]].normal = glm::vec4(normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1), uv.y);
+				std::string uvIndexStr = vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+				if (!uvIndexStr.empty()) {
+					glm::vec2 uv = uvs.at(stoi(uvIndexStr) - 1);
+					triPoints[vertexIndex[i]].position.w = uv.x; 
+					triPoints[vertexIndex[i]].normal.w = uv.y;
+				}
+
+				std::string nIndexStr = vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1);
+				if (!nIndexStr.empty()) {
+					glm::vec3 normal = normals.at(stoi(nIndexStr) - 1);
+					triPoints[vertexIndex[i]].normal.x = normal.x;
+					triPoints[vertexIndex[i]].normal.y = normal.y;
+					triPoints[vertexIndex[i]].normal.z = normal.z;
+				}
 
 				index = nextSpace;
 			}
@@ -831,7 +849,7 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 	objects.push_back(object);
 
 	imGuiObjects.push_back(imGuiObj);
-	cout << "Object at " << filePath << ": " << object.triangleCount << " tris, " << uvs.size() << " verts" << endl;
+	cout << "Object at " << filePath << ": " << object.triangleCount << " tris, " << triPoints.size() - pointOffset << " verts" << endl;
 
 	build_bvh(object.triangleCount);
 }
