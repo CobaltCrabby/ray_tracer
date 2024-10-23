@@ -649,7 +649,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	slosh.position = glm::vec3(0.5f, 0.1f, 0.f);
 	//slosh.rotation = glm::vec3(180.f, 0.f, 0.f);
 	//slosh.scale = glm::vec3(0.4f);
-	read_obj("../assets/slosher.obj", triPoints.size(), triangles.size(), slosh, 0);
+	read_obj("../assets/bunny.obj", triPoints.size(), triangles.size(), slosh, 6);
 
 	ImGuiObject light;
 	light.name = "light";
@@ -800,9 +800,9 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 				int firstSlash = vertex.find('/');
 				vertexIndex[i] = stoi(vertex.substr(0, firstSlash)) + pointOffset - 1;
 				int secondSlash = vertex.find('/', firstSlash + 1);
-				glm::vec2 uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
-				triPoints[vertexIndex[i]].position.w = uv.x; 
-				triPoints[vertexIndex[i]].normal = glm::vec4(normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1), uv.y);
+				//glm::vec2 uv = uvs.at(stoi(vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1)) - 1);
+				//triPoints[vertexIndex[i]].position.w = uv.x; 
+				//triPoints[vertexIndex[i]].normal = glm::vec4(normals.at(stoi(vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1)) - 1), uv.y);
 
 				index = nextSpace;
 			}
@@ -843,27 +843,25 @@ void VulkanEngine::build_bvh(int size) {
 	root.triCount = size;
 
 	update_bvh_bounds(0);
-	cout << root.boundsX[0] << " " << root.boundsX[1] << endl;
-	cout << root.boundsY[0] << " " << root.boundsY[1] << endl;
-	cout << root.boundsZ[0] << " " << root.boundsZ[1] << endl;
-
-	subdivide_bvh(0);
+	subdivide_bvh(0, 0);
 	
 	BVHNode lol = root;
 	int depth = 0;
 	while (true) {
 		if (lol.triCount != 0) break;
-		lol = bvhNode[lol.index];
-		//cout << lol.triCount << endl;
+		lol = bvhNode[lol.index + 1];
 		depth++;	
 	}
-	cout << "depth " << nodesUsed << " " << (2 * size - 1) << endl;
 
 	copy_buffer(sizeof(BVHNode) * nodesUsed, bvhBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) bvhNode);
 }
 
 void VulkanEngine::update_bvh_bounds(uint index) {
 	BVHNode& node = bvhNode[index];
+	node.boundsX = glm::vec2(999999999, -9999999999);
+	node.boundsY = glm::vec2(999999999, -9999999999);
+	node.boundsZ = glm::vec2(999999999, -9999999999);
+
 	for (int i = 0; i < node.triCount; i++) {
 		Triangle& leafTri = triangles[node.index + i];
 		node.boundsX[0] = min(min(min(node.boundsX[0], triPoints.at(leafTri.v0).position.x), triPoints.at(leafTri.v1).position.x), triPoints.at(leafTri.v2).position.x);
@@ -875,10 +873,9 @@ void VulkanEngine::update_bvh_bounds(uint index) {
 	}
 }
 
-void VulkanEngine::subdivide_bvh(uint index) {
+void VulkanEngine::subdivide_bvh(uint index, uint depth) {
 	BVHNode& node = bvhNode[index];
-	if (node.triCount <= 2) {
-		cout << "tri count exit" << endl;
+	if (node.triCount <= 2 || depth > 32) {
 		return;
 	}
 	glm::vec3 extent = glm::vec3(node.boundsX[1] - node.boundsX[0], node.boundsY[1] - node.boundsY[0], node.boundsZ[1] - node.boundsZ[0]);
@@ -908,7 +905,7 @@ void VulkanEngine::subdivide_bvh(uint index) {
 		if (centroid[axis] < splitPos) {
 			i++;
 		} else {
-			iter_swap(triangles.begin() + i, triangles.begin() + j);
+			swap(triangles[i], triangles[j]);
 			j--;
 		}
 	}
@@ -917,23 +914,25 @@ void VulkanEngine::subdivide_bvh(uint index) {
 	int triIndex = node.index;
 	int leftCount = i - triIndex;
 	if (leftCount == 0 || leftCount == node.triCount) {
-		cout << "one side exit" << endl;
 		return;
 	}
 
 	//node.index is always at first a tri ifor (int index, only becomes a node index after a split
-	node.index = nodesUsed++;
-	nodesUsed++; //right node increase
+	node.index = nodesUsed;
+	nodesUsed += 2; //right node increase
 	bvhNode[node.index].index = triIndex;
 	bvhNode[node.index].triCount = leftCount;
 	bvhNode[node.index + 1].index = i;
 	bvhNode[node.index + 1].triCount = node.triCount - leftCount;
+
 	node.triCount = 0;
-	cout << "subdivide" << endl;
 	update_bvh_bounds(node.index);
 	update_bvh_bounds(node.index + 1);
-	subdivide_bvh(node.index);
-	subdivide_bvh(node.index + 1);
+
+	BVHNode n = bvhNode[node.index];
+
+	subdivide_bvh(node.index, depth + 1);
+	subdivide_bvh(node.index + 1, depth + 1);
 }
 
 void VulkanEngine::init_image() {
@@ -1062,8 +1061,8 @@ void VulkanEngine::imgui_draw() {
 	}
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
+		ImGui::SliderInt("Debug Mode", &rayTracerParams.debug, -1, 1, "%");
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
-		ImGui::Checkbox("Debug", &rayTracerParams.debug);
 		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 1000);
 		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
 		ImGui::DragInt("Debug Cap", (int*) &rayTracerParams.debugCap, 1.f, 0);

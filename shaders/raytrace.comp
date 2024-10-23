@@ -68,7 +68,6 @@ struct HitInfo {
     vec3 normal;
     vec2 uv;
     float dst;
-    float triangleDebug;
     uint materialIndex;
     bool didHit;
     bool frontFace;
@@ -91,7 +90,7 @@ struct EnvironmentData {
 
 struct RayTracerData {
     bool progressive;
-    bool debug;
+    int debugMode;
     uint raysPerPixel;
     uint bounceLimit;
     uint sphereCount;
@@ -235,34 +234,23 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
     return hit;
 }
 
-bool boxIntersection(BoundingBox box, Ray ray) {
-    float tmin, tmax, tymin, tymax, tzmin, tzmax;
-    tmin = (box.bounds[ray.dimSign.x].x - ray.origin.x) * ray.invDir.x;
-    tmax = (box.bounds[1 - ray.dimSign.x].x - ray.origin.x) * ray.invDir.x;
-    tymin = (box.bounds[ray.dimSign.y].y - ray.origin.y) * ray.invDir.y;
-    tymax = (box.bounds[1 - ray.dimSign.y].y - ray.origin.y) * ray.invDir.y;
-    if ((tmin > tymax) || (tymin > tmax))
-        return false;
-    if (tymin > tmin)
-        tmin = tymin;
-    if (tymax < tmax)
-        tmax = tymax;
-    tzmin = (box.bounds[ray.dimSign.z].z - ray.origin.z) * ray.invDir.z;
-    tzmax = (box.bounds[1-ray.dimSign.z].z - ray.origin.z) * ray.invDir.z;
-    if ((tmin > tzmax) || (tzmin > tmax))
-        return false;
-    if (tzmin > tmin)
-        tmin = tzmin;
-    if (tzmax < tmax)
-        tmax = tzmax;
-    return ((tmin < 9999) && (tmax > 0));
+float boxIntersection(BoundingBox box, Ray ray) {
+    vec3 tMin = (box.bounds[0].xyz - ray.origin) * ray.invDir;
+    vec3 tMax = (box.bounds[1].xyz - ray.origin) * ray.invDir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+
+    bool hit = tFar >= tNear && tFar > 0;
+    float dst = hit ? tNear > 0 ? tNear : 0 : 99999999;
+    return dst;
 }
 
-HitInfo calculateIntersections(Ray ray) {
-    float triangleTests = 0;
+HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
     HitInfo closestHit;
     closestHit.didHit = false;
-    closestHit.dst = 999999999;
+    closestHit.dst = 99999999;
     RayTracerData traceData = PushConstants.rayTracerParams;
 
     for (int i = 0; i < traceData.sphereCount; i++) {
@@ -283,23 +271,68 @@ HitInfo calculateIntersections(Ray ray) {
             transformRay.dimSign[j] = uint(transformRay.invDir[j] < 0);
         }
 
-        if (!boxIntersection(object.boundingBox, transformRay)) continue;
+        // if (!boxIntersection(object.boundingBox, transformRay)) continue;
 
-        for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
-            triangleTests += 1.f;
-            Triangle tri = triangles[j];
-            HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade), bool(tri.frontOnly));
-            hitInfo.materialIndex = object.materialIndex;
+        // for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
+        //     triangleTests += 1.f;
+        //     Triangle tri = triangles[j];
+        //     HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade), bool(tri.frontOnly));
+        //     hitInfo.materialIndex = object.materialIndex;
 
-            if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
-                closestHit = hitInfo;
-                closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
-                closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+        //     if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
+        //         closestHit = hitInfo;
+        //         closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
+        //         closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+        //     }
+        // }
+
+        uint stack[32];
+        uint stackIndex = 1;
+        stack[0] = 0;
+        while (stackIndex > 0) {
+            BVHNode currentNode = bvhNodes[stack[--stackIndex]];
+
+            if (currentNode.triCount != 0) {
+                //check for triangles
+                stats[1] += currentNode.triCount;
+                for (uint j = currentNode.index; j < currentNode.index + currentNode.triCount; j++) {
+                    Triangle tri = triangles[j];
+                    HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade), bool(tri.frontOnly));
+                    hitInfo.materialIndex = object.materialIndex;
+
+                    if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
+                        closestHit = hitInfo;
+                        closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
+                        closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+                    }
+                }
+            } else {
+                BVHNode child1 = bvhNodes[currentNode.index];
+                BVHNode child2 = bvhNodes[currentNode.index + 1];
+
+                BoundingBox box1;
+                box1.bounds[0].xyz = vec3(child1.boundsX[0], child1.boundsY[0], child1.boundsZ[0]);
+                box1.bounds[1].xyz = vec3(child1.boundsX[1], child1.boundsY[1], child1.boundsZ[1]);
+                BoundingBox box2;
+                box2.bounds[0].xyz = vec3(child2.boundsX[0], child2.boundsY[0], child2.boundsZ[0]);
+                box2.bounds[1].xyz = vec3(child2.boundsX[1], child2.boundsY[1], child2.boundsZ[1]);
+
+                float dst1 = boxIntersection(box1, transformRay);
+                float dst2 = boxIntersection(box2, transformRay);
+                stats[0] += 2;
+
+                bool isNearestA = dst1 <= dst2;
+                float dstNear = isNearestA ? dst1 : dst2;
+                float dstFar = isNearestA ? dst2 : dst1;
+                uint childIndexNear = isNearestA ? currentNode.index : currentNode.index + 1;
+                uint childIndexFar = isNearestA ? currentNode.index + 1 : currentNode.index;
+
+                if (dstFar < closestHit.dst) stack[stackIndex++] = childIndexFar;
+                if (dstNear < closestHit.dst) stack[stackIndex++] = childIndexNear;
             }
         }
     }
 
-    closestHit.triangleDebug = triangleTests;
     return closestHit;
 }
 
@@ -315,17 +348,14 @@ vec3 getEnvironmentLight(Ray ray) {
     return mix(env.groundColor, skyGradient, groundToSkyT) + sun * sunMask;
 }
 
-vec3 trace(Ray ray, inout uint state) {
+vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
     vec3 incomingLight = vec3(0.f);
     vec3 rayColor = vec3(1.f);
     RayTracerData traceData = PushConstants.rayTracerParams;
     Ray newRay = ray;
-    float currentIor = -1.f;
-    float triangleTests = 0.f;
 
     for (int j = 0; j <= traceData.bounceLimit; j++) {
-        HitInfo hitInfo = calculateIntersections(newRay);
-        triangleTests += hitInfo.triangleDebug;
+        HitInfo hitInfo = calculateIntersections(newRay, stats);
         if (hitInfo.didHit) {  
             Material material = materials[hitInfo.materialIndex];
             float reflectance = material.reflectance;
@@ -343,7 +373,6 @@ vec3 trace(Ray ray, inout uint state) {
                 newRay.dir = mix(diffuseDir, specularDir, reflectance);
                 newRay.origin += hitInfo.normal * 0.0001;
             }
-            currentIor = material.ior;
 
             vec3 emitted = material.emissionColor * material.emissionStrength;
             incomingLight += emitted * rayColor;
@@ -359,10 +388,6 @@ vec3 trace(Ray ray, inout uint state) {
             incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
             break;
         }
-    }
-    float cap = float(PushConstants.rayTracerParams.debugCap);
-    if (PushConstants.rayTracerParams.debug) {
-        return triangleTests < cap ? vec3(triangleTests) / cap : vec3(1.f, 0.f, 0.f);
     }
     return incomingLight;
 }
@@ -396,9 +421,10 @@ void main() {
 
     RayTracerData traceData = PushConstants.rayTracerParams;
 
+    float stats[2] = {0, 0};
     vec3 outColor = vec3(0.f);
     for (int i = 0; i < traceData.raysPerPixel; i++) {
-        outColor += trace(ray, state);
+        outColor += trace(ray, state, stats);
     }
     outColor /= traceData.raysPerPixel;
 
@@ -409,7 +435,13 @@ void main() {
         finalColor = vec3(1.f, 0.f, 1.f);
     }
 
-    imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));//vec4(finalColor, 1.f));
+    if (traceData.debugMode == 0) {
+        finalColor = stats[0] > traceData.debugCap ? vec3(1.f, 0.f, 0.f) : vec3(stats[0]) / traceData.debugCap;
+    } else if (traceData.debugMode == 1) {
+        finalColor = stats[1] > traceData.debugCap ? vec3(1.f, 0.f, 0.f) : vec3(stats[1]) / traceData.debugCap;
+    }
+
+    imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
 }
 // #ifndef rachIT was HERE
 // #define rachit WAS here!

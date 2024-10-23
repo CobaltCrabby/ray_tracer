@@ -112,7 +112,7 @@ struct EnvironmentData {
 
 struct RayTracerData {
 	alignas(4) bool progressive = false;
-	alignas(4) bool debug = false;
+	alignas(4) int debug = -1;
 	alignas(4) uint raysPerPixel = 1;
 	alignas(4) uint bounceLimit = 2;
 	alignas(4) uint sphereCount;
@@ -133,7 +133,7 @@ struct RenderStats {
 };
 
 struct BVHNode {
-	glm::vec2 boundsX, boundsY, boundsZ = glm::vec2(999999999, -9999999999);
+	glm::vec2 boundsX, boundsY, boundsZ;
 	uint index, triCount = 0;
 	//if triCount == 0: index is a node index, else: index is a triangle index
 };
@@ -160,7 +160,7 @@ private:
 	void read_obj(std::string filePath, int offset, int offset2, ImGuiObject imGui, int material);
 	void build_bvh(int size);
 	void update_bvh_bounds(uint index);
-	void subdivide_bvh(uint intex);
+	void subdivide_bvh(uint intex, uint depth);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
