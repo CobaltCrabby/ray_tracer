@@ -69,10 +69,8 @@ struct BoundingBox {
 
 struct RenderObject {
 	alignas(16) glm::mat4 transformMatrix;
-	alignas(16) BoundingBox boundingBox;
 	alignas(4) uint smoothShade; //0 = off, non-zero = on (bool weird on glsl)
-	alignas(4) uint triangleStart;
-	alignas(4) uint triangleCount;
+	alignas(4) uint bvhIndex;
 	alignas(4) uint materialIndex;
 };
 
@@ -107,7 +105,7 @@ struct EnvironmentData {
 	alignas(16) glm::vec4 horizonColor = glm::vec4(0.986f, 1.f, 0.902f, 1000.f); //w = sunFocus;
 	alignas(16) glm::vec4 zenithColor = glm::vec4(0.265f, 0.595f, 0.887f, 200.f); //w = sunIntensity
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
-	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 1.f); //w component = environment on
+	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 0.f); //w component = environment on
 };
 
 struct RayTracerData {
@@ -117,7 +115,8 @@ struct RayTracerData {
 	alignas(4) uint bounceLimit = 2;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
-	alignas(4) uint debugCap = 50;
+	alignas(4) uint triangleCap = 50;
+	alignas(4) uint boxCap = 200;
 };
 
 struct PushConstants {
@@ -157,8 +156,8 @@ private:
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
-	void read_obj(std::string filePath, int offset, int offset2, ImGuiObject imGui, int material);
-	void build_bvh(int size);
+	void read_obj(std::string filePath, ImGuiObject imGui, int material);
+	void build_bvh(int size, int triIndex);
 	void update_bvh_bounds(uint index);
 	void subdivide_bvh(uint intex, uint depth);
 
@@ -206,8 +205,8 @@ public:
 	std::vector<RenderObject> objects;
 	std::vector<ImGuiObject> imGuiObjects;
 
-	BVHNode* bvhNode;
-	uint nodesUsed = 1;
+	std::vector<BVHNode> bvhNodes;
+	uint nodesUsed = 0;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;
@@ -250,6 +249,11 @@ public:
 	CameraInfo cameraInfo;
 	EnvironmentData environment;
 	PushConstants constants;
+
+	glm::vec2 prevMouseScroll = glm::vec2(0.f);
+	float mouseSensitivity = 100; 
+	bool clicking = false;
+	float cameraSpeed = 10.f;
 
 	VkExtent2D _windowExtent{1728, 1117};
 

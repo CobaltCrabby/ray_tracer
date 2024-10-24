@@ -32,6 +32,8 @@ void VulkanEngine::init() {
 	SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
+	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1");
 
 	_window = SDL_CreateWindow(
 		"raytracer",
@@ -94,8 +96,6 @@ void VulkanEngine::init_vulkan() {
 	this->physicalDevice = physicalDevice.physical_device;
 	gpuProperties = vkbDevice.physical_device.properties;
 
-	cout << gpuProperties.limits.minUniformBufferOffsetAlignment << endl;
-
 	graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 	graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
@@ -118,7 +118,7 @@ void VulkanEngine::init_swapchain() {
 
 	vkb::SwapchainBuilder builder{ physicalDevice, device, surface };
 	vkb::Swapchain vkbSwapchain = builder.use_default_format_selection()
-		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+		.set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)
 		.set_desired_extent(_windowExtent.width, _windowExtent.height)
 		.set_desired_format(surfaceFormat)
 		.build()
@@ -577,7 +577,7 @@ void VulkanEngine::update_descriptors() {
 	VkDescriptorBufferInfo bvhBufferInfo;
 	bvhBufferInfo.buffer = bvhBuffer.buffer;
 	bvhBufferInfo.offset = 0;
-	bvhBufferInfo.range = sizeof(*bvhNode) * nodesUsed;
+	bvhBufferInfo.range = sizeof(BVHNode) * bvhNodes.size();
 
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
 	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, textureImageInfos, 1);
@@ -603,7 +603,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
 
-	spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
+	//pheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
@@ -632,7 +632,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial object;
 	object.albedoIndex = -1;
 	object.metalnessIndex = -1;
-	object.ior = 1.5f;
+	//object.ior = 1.5f;
 
 	rayMaterials.push_back(dielectric);
 	rayMaterials.push_back(white);
@@ -646,54 +646,54 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	//ccw
 	ImGuiObject model;
-	model.name = "bunny";
-	//slosh.position = glm::vec3(0.5f, 0.1f, 0.f);
-	//slosh.rotation = glm::vec3(180.f, 0.f, 0.f);
-	//slosh.scale = glm::vec3(0.4f);
-	read_obj("../assets/bunny_full.obj", triPoints.size(), triangles.size(), model, 6);
+	model.name = "stanford dragon";
+	model.position = glm::vec3(0.f, 0.5f, 0.f);
+	model.scale = glm::vec3(0.9f);
+	read_obj("../assets/dragon.obj", model, 6);
 
 	ImGuiObject light;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
 	light.scale = glm::vec3(0.3f);
-	//read_obj("../assets/light.obj", triPoints.size(), triangles.size(), light, 5);
+	read_obj("../assets/light.obj", light, 5);
 
 	ImGuiObject plane;
 	plane.name = "bottom";
 	plane.position = glm::vec3(0.f, 0.5f, 0.f);
 	plane.rotation = glm::vec3(0.f);
-	//read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	read_obj("../assets/plane.obj", plane, 1);
 
 	plane.name = "left";
 	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	//read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 3);
+	read_obj("../assets/plane.obj", plane, 3);
 
 	plane.name = "right";
 	plane.position = glm::vec3(1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 2);
+	read_obj("../assets/plane.obj", plane, 2);
 
 	plane.name = "top";
 	plane.position = glm::vec3(0.f, -1.5f, 0.f);
 	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	read_obj("../assets/plane.obj", plane, 1);
 
 	plane.name = "back";
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
 	plane.scale = glm::vec3(1.f);
-	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	read_obj("../assets/plane.obj", plane, 1);
 
 	plane.name = "front";
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
 	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
 	plane.frontOnly = true;
-	// read_obj("../assets/plane.obj", triPoints.size(), triangles.size(), plane, 1);
+	read_obj("../assets/plane.obj", plane, 1);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
 	copy_buffer(sizeof(RenderObject) * objects.size(), objectBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) objects.data());
+	copy_buffer(sizeof(BVHNode) * bvhNodes.size(), bvhBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) bvhNodes.data());
 }
 
 bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule) {
@@ -735,9 +735,12 @@ void VulkanEngine::generate_quad() {
 	copy_buffer(sizeof(uint32_t) * 6, indexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
 }
 
-void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset, ImGuiObject imGuiObj, int material) {
+void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int material) {
+	int pointOffset = triPoints.size();
+	int triOffset = triangles.size();
 	std::ifstream fileStream;
 	fileStream.open(filePath);
+	auto start = std::chrono::system_clock::now();
 
 	std::string fileLine;
 	bool vertex = false;
@@ -841,41 +844,41 @@ void VulkanEngine::read_obj(std::string filePath, int pointOffset, int triOffset
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
 		glm::scale(imGuiObj.scale);
-	object.triangleCount = triangles.size() - triOffset;
-	object.triangleStart = triOffset;
-	object.boundingBox.bounds[0] = glm::vec4(bounds[0], 0.f);
-	object.boundingBox.bounds[1] = glm::vec4(bounds[1], 0.f);
 	object.smoothShade = false;
+	object.bvhIndex = bvhNodes.size();
 	objects.push_back(object);
 
 	imGuiObjects.push_back(imGuiObj);
-	cout << "Object at " << filePath << ": " << object.triangleCount << " tris, " << triPoints.size() - pointOffset << " verts" << endl;
+	auto end = std::chrono::system_clock::now();    
+	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	cout << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
 
-	build_bvh(object.triangleCount);
+	build_bvh(triangles.size() - triOffset, triOffset);
 }
 
-void VulkanEngine::build_bvh(int size) {
-	bvhNode = new BVHNode[2 * size - 1];
-	BVHNode& root = bvhNode[0];
-	root.index = 0;
+void VulkanEngine::build_bvh(int size, int triIndex) {
+	auto start = std::chrono::system_clock::now();
+
+	nodesUsed++;
+	int offset = bvhNodes.size();
+	bvhNodes.resize(bvhNodes.size() + (size * 2 - 1));
+	BVHNode& root = bvhNodes[offset];
+	root.index = triIndex;
 	root.triCount = size;
 
-	update_bvh_bounds(0);
-	subdivide_bvh(0, 0);
-	
-	BVHNode lol = root;
-	int depth = 0;
-	while (true) {
-		if (lol.triCount != 0) break;
-		lol = bvhNode[lol.index + 1];
-		depth++;	
-	}
+	update_bvh_bounds(offset);
+	subdivide_bvh(offset, 0);
 
-	copy_buffer(sizeof(BVHNode) * nodesUsed, bvhBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) bvhNode);
+	bvhNodes.resize(nodesUsed);
+	bvhNodes.shrink_to_fit();	
+
+	auto end = std::chrono::system_clock::now();    
+	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	cout << "BVH Build Time: " << time.count() << "ms\n";
 }
 
 void VulkanEngine::update_bvh_bounds(uint index) {
-	BVHNode& node = bvhNode[index];
+	BVHNode& node = bvhNodes[index];
 	node.boundsX = glm::vec2(999999999, -9999999999);
 	node.boundsY = glm::vec2(999999999, -9999999999);
 	node.boundsZ = glm::vec2(999999999, -9999999999);
@@ -892,7 +895,7 @@ void VulkanEngine::update_bvh_bounds(uint index) {
 }
 
 void VulkanEngine::subdivide_bvh(uint index, uint depth) {
-	BVHNode& node = bvhNode[index];
+	BVHNode& node = bvhNodes[index];
 	if (node.triCount <= 2 || depth > 32) {
 		return;
 	}
@@ -938,16 +941,14 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth) {
 	//node.index is always at first a tri ifor (int index, only becomes a node index after a split
 	node.index = nodesUsed;
 	nodesUsed += 2; //right node increase
-	bvhNode[node.index].index = triIndex;
-	bvhNode[node.index].triCount = leftCount;
-	bvhNode[node.index + 1].index = i;
-	bvhNode[node.index + 1].triCount = node.triCount - leftCount;
+	bvhNodes[node.index].index = triIndex;
+	bvhNodes[node.index].triCount = leftCount;
+	bvhNodes[node.index + 1].index = i;
+	bvhNodes[node.index + 1].triCount = node.triCount - leftCount;
 
 	node.triCount = 0;
 	update_bvh_bounds(node.index);
 	update_bvh_bounds(node.index + 1);
-
-	BVHNode n = bvhNode[node.index];
 
 	subdivide_bvh(node.index, depth + 1);
 	subdivide_bvh(node.index + 1, depth + 1);
@@ -1079,11 +1080,12 @@ void VulkanEngine::imgui_draw() {
 	}
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
-		ImGui::SliderInt("Debug Mode", &rayTracerParams.debug, -1, 1, "%");
+		ImGui::SliderInt("Debug Mode", &rayTracerParams.debug, -1, 2, "%d");
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
 		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 1000);
 		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
-		ImGui::DragInt("Debug Cap", (int*) &rayTracerParams.debugCap, 1.f, 0);
+		ImGui::DragInt("Triangle Test Threshold", (int*) &rayTracerParams.triangleCap, 1.f, 0);
+		ImGui::DragInt("Box Test Threshold", (int*) &rayTracerParams.boxCap, 1.f, 0);
 	}
 
 	if (ImGui::CollapsingHeader("Camera Info")) {
@@ -1219,7 +1221,7 @@ void VulkanEngine::run_compute() {
 		glm::vec3(sin(thetaZ), cos(thetaZ), 0),
 		glm::vec3(0, 0, 1)
 	);
-	cameraInfo.cameraRotation = rotX * rotY * rotZ;
+	cameraInfo.cameraRotation = rotY * rotX * rotZ;
 
 	rayTracerParams.sphereCount = spheres.size();
 	rayTracerParams.objectCount = objects.size();
@@ -1373,7 +1375,6 @@ void VulkanEngine::draw() {
 	vkQueueWaitIdle(graphicsQueue);
 	end = std::chrono::system_clock::now();    
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-	//cout << "Frametime: " << elapsed.count() / 1000.f << "ms; fence wait: " << fence.count() / 1000.f << "ms\n";
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
 }
@@ -1394,9 +1395,58 @@ void VulkanEngine::run() {
 			if (e.type == SDL_QUIT) {
 				bQuit = true;
 			}
+			
+			if (e.type == SDL_MOUSEBUTTONDOWN) {
+				clicking = true;
+			} else if (e.type == SDL_MOUSEBUTTONUP) {
+				clicking = false;
+			}
+
+			ImGuiIO& io = ImGui::GetIO();
+
+			if (e.type == SDL_MULTIGESTURE) {
+				if (e.mgesture.numFingers == 2 && !clicking && !io.WantCaptureMouse) {
+					if (prevMouseScroll == glm::vec2(0.f)) {
+						prevMouseScroll.y = e.mgesture.y;
+						prevMouseScroll.x = e.mgesture.x;
+					}
+
+					float dy = e.mgesture.y - prevMouseScroll.y;
+					float dx = e.mgesture.x - prevMouseScroll.x;
+					cameraAngles[0] += dy * mouseSensitivity;
+					cameraAngles[1] += -dx * mouseSensitivity * 1.6667f;
+					prevMouseScroll.y = e.mgesture.y;
+					prevMouseScroll.x = e.mgesture.x;
+				}
+			} else if (e.type == SDL_FINGERUP) {
+				prevMouseScroll = glm::vec2(0.f);
+			}
 
 			keyState = SDL_GetKeyboardState(NULL);
 			ImGui_ImplSDL2_ProcessEvent(&e);
+		}
+
+		glm::vec3 movement = glm::vec3(0.f); 
+
+		if (keyState[SDL_SCANCODE_W]) {
+			movement.z++;
+		}
+
+		if (keyState[SDL_SCANCODE_S]) {
+			movement.z--;
+		}
+
+		if (keyState[SDL_SCANCODE_A]) {
+			movement.x--;
+		}
+
+		if (keyState[SDL_SCANCODE_D]) {
+			movement.x++;
+		}
+
+		if (movement != glm::vec3(0.f)) {
+			movement = normalize(cameraInfo.cameraRotation * glm::vec4(movement, 0.f));
+			cameraInfo.pos += movement * renderStats.frameTime * 0.001f * cameraSpeed;
 		}
 
 		ImGui_ImplVulkan_NewFrame();

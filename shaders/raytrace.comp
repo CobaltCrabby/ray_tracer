@@ -37,10 +37,8 @@ struct BoundingBox {
 
 struct RenderObject {
     mat4 transformMatrix;
-    BoundingBox boundingBox;
     uint smoothShade; //0 = off, 1 = on (bool weird on glsl)
-    uint triangleStart;
-    uint triangleCount;
+    uint bvhIndex;
     uint materialIndex;
 };
 
@@ -95,7 +93,8 @@ struct RayTracerData {
     uint bounceLimit;
     uint sphereCount;
     uint objectCount;
-    uint debugCap;
+    uint triCap;
+    uint boxCap;
 };
 
 layout (binding = 0, rgba8) uniform image2D outImage;
@@ -271,24 +270,10 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
             transformRay.dimSign[j] = uint(transformRay.invDir[j] < 0);
         }
 
-        // if (!boxIntersection(object.boundingBox, transformRay)) continue;
-
-        // for (uint j = object.triangleStart; j < object.triangleStart + object.triangleCount; j++) {
-        //     triangleTests += 1.f;
-        //     Triangle tri = triangles[j];
-        //     HitInfo hitInfo = triangleIntersection(transformRay, trianglePoints[tri.v0], trianglePoints[tri.v1], trianglePoints[tri.v2], bool(object.smoothShade), bool(tri.frontOnly));
-        //     hitInfo.materialIndex = object.materialIndex;
-
-        //     if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
-        //         closestHit = hitInfo;
-        //         closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
-        //         closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
-        //     }
-        // }
-
+        //bvh traversal
         uint stack[32];
         uint stackIndex = 1;
-        stack[0] = 0;
+        stack[0] = object.bvhIndex;
         while (stackIndex > 0) {
             BVHNode currentNode = bvhNodes[stack[--stackIndex]];
 
@@ -307,6 +292,7 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
                     }
                 }
             } else {
+                //push nodes based on which one is closer
                 BVHNode child1 = bvhNodes[currentNode.index];
                 BVHNode child2 = bvhNodes[currentNode.index + 1];
 
@@ -436,9 +422,13 @@ void main() {
     }
 
     if (traceData.debugMode == 0) {
-        finalColor = stats[0] > traceData.debugCap ? vec3(1.f, 0.f, 0.f) : vec3(stats[0]) / traceData.debugCap;
+        finalColor = stats[0] > traceData.boxCap ? vec3(1.f, 0.f, 0.f) : vec3(stats[0]) / traceData.boxCap;
     } else if (traceData.debugMode == 1) {
-        finalColor = stats[1] > traceData.debugCap ? vec3(1.f, 0.f, 0.f) : vec3(stats[1]) / traceData.debugCap;
+        finalColor = stats[1] > traceData.triCap ? vec3(1.f, 0.f, 0.f) : vec3(stats[1]) / traceData.triCap;
+    } else if (traceData.debugMode == 2) {
+        finalColor.r = stats[0] / traceData.boxCap;
+        finalColor.g = 0.f;
+        finalColor.b = stats[1] / traceData.triCap;
     }
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
