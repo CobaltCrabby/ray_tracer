@@ -603,7 +603,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
 
-	//pheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
+	//spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
@@ -649,7 +649,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.name = "stanford dragon";
 	model.position = glm::vec3(0.f, 0.5f, 0.f);
 	model.scale = glm::vec3(0.9f);
-	read_obj("../assets/dragon.obj", model, 6);
+	read_obj("../assets/bunny_full.obj", model, 6);
 
 	ImGuiObject light;
 	light.name = "light";
@@ -736,6 +736,22 @@ void VulkanEngine::generate_quad() {
 }
 
 void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int material) {
+	//dont store the same tris, reuse bvh
+	if (loadedObjects.count(filePath) != 0) {
+		RenderObject object;
+		object.materialIndex = material;
+		object.smoothShade = false;
+		object.bvhIndex = loadedObjects.at(filePath);
+		object.transformMatrix = glm::translate(imGuiObj.position) * 
+			glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
+			glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
+			glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
+			glm::scale(imGuiObj.scale);
+		objects.push_back(object);
+		imGuiObjects.push_back(imGuiObj);
+		return;
+	}
+
 	int pointOffset = triPoints.size();
 	int triOffset = triangles.size();
 	std::ifstream fileStream;
@@ -771,8 +787,8 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				index += size + 1;
 
 				//for bounding box
-				bounds[0][i] = min(bounds[0][i], position[i]);
-				bounds[1][i] = max(bounds[1][i], position[i]);
+				bounds[0][i] = iMin(bounds[0][i], position[i]);
+				bounds[1][i] = iMax(bounds[1][i], position[i]);
 			}
 			triPoints.push_back({glm::vec4(position, 0.f)});
 		} else if (prefix == "vt") { //uv
@@ -834,6 +850,9 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			tri.v2 = vertexIndex[2];
 			tri.frontOnly = imGuiObj.frontOnly;
 			triangles.push_back(tri);
+
+			glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
+			centroids.push_back(centroid / 3.f);
  		}
 	}
 
@@ -847,11 +866,13 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	object.smoothShade = false;
 	object.bvhIndex = bvhNodes.size();
 	objects.push_back(object);
-
 	imGuiObjects.push_back(imGuiObj);
+
+	loadedObjects.emplace(filePath, object.bvhIndex);
+
 	auto end = std::chrono::system_clock::now();    
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	cout << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
+	cout << endl << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
 
 	build_bvh(triangles.size() - triOffset, triOffset);
 }
@@ -866,8 +887,10 @@ void VulkanEngine::build_bvh(int size, int triIndex) {
 	root.index = triIndex;
 	root.triCount = size;
 
+	BVHStats stats;
+
 	update_bvh_bounds(offset);
-	subdivide_bvh(offset, 0);
+	subdivide_bvh(offset, 0, stats);
 
 	bvhNodes.resize(nodesUsed);
 	bvhNodes.shrink_to_fit();	
@@ -875,58 +898,73 @@ void VulkanEngine::build_bvh(int size, int triIndex) {
 	auto end = std::chrono::system_clock::now();    
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 	cout << "BVH Build Time: " << time.count() << "ms\n";
+	cout << "Max Depth: " << stats.maxDepth << endl;
+	cout << "Min Depth: " << stats.minDepth << endl;
+	cout << "Max Tris: " << stats.maxTri << endl;
 }
 
 void VulkanEngine::update_bvh_bounds(uint index) {
 	BVHNode& node = bvhNodes[index];
-	node.boundsX = glm::vec2(999999999, -9999999999);
-	node.boundsY = glm::vec2(999999999, -9999999999);
-	node.boundsZ = glm::vec2(999999999, -9999999999);
+	BoundingBox box;
 
 	for (int i = 0; i < node.triCount; i++) {
 		Triangle& leafTri = triangles[node.index + i];
-		node.boundsX[0] = min(min(min(node.boundsX[0], triPoints.at(leafTri.v0).position.x), triPoints.at(leafTri.v1).position.x), triPoints.at(leafTri.v2).position.x);
-		node.boundsY[0] = min(min(min(node.boundsY[0], triPoints.at(leafTri.v0).position.y), triPoints.at(leafTri.v1).position.y), triPoints.at(leafTri.v2).position.y);
-		node.boundsZ[0] = min(min(min(node.boundsZ[0], triPoints.at(leafTri.v0).position.z), triPoints.at(leafTri.v1).position.z), triPoints.at(leafTri.v2).position.z);
-		node.boundsX[1] = max(max(max(node.boundsX[1], triPoints.at(leafTri.v0).position.x), triPoints.at(leafTri.v1).position.x), triPoints.at(leafTri.v2).position.x);
-		node.boundsY[1] = max(max(max(node.boundsY[1], triPoints.at(leafTri.v0).position.y), triPoints.at(leafTri.v1).position.y), triPoints.at(leafTri.v2).position.y);
-		node.boundsZ[1] = max(max(max(node.boundsZ[1], triPoints.at(leafTri.v0).position.z), triPoints.at(leafTri.v1).position.z), triPoints.at(leafTri.v2).position.z);
+		box.grow(triPoints[leafTri.v0]);
+		box.grow(triPoints[leafTri.v1]);
+		box.grow(triPoints[leafTri.v2]);
 	}
+
+	node.boundsX = glm::vec2(box.bounds[0].x, box.bounds[1].x);
+	node.boundsY = glm::vec2(box.bounds[0].y, box.bounds[1].y);
+	node.boundsZ = glm::vec2(box.bounds[0].z, box.bounds[1].z);
 }
 
-void VulkanEngine::subdivide_bvh(uint index, uint depth) {
+void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats) {
 	BVHNode& node = bvhNodes[index];
-	if (node.triCount <= 2 || depth > 32) {
+	
+	if (node.triCount <= 2 || depth >= 32) {
+		stats.maxDepth = iMax(depth, stats.maxDepth);
+		stats.minDepth = iMin(depth, stats.minDepth);
+		stats.maxTri = iMax(node.triCount, stats.maxTri);
 		return;
 	}
-	glm::vec3 extent = glm::vec3(node.boundsX[1] - node.boundsX[0], node.boundsY[1] - node.boundsY[0], node.boundsZ[1] - node.boundsZ[0]);
-	
-	//find max axis to split across
+
 	int axis = 0;
-	float splitPos = node.boundsX[0] + extent.x * 0.5f;
-	if (extent.x < extent.y) {
-		axis = 1;
-		splitPos = node.boundsY[0] + extent.y * 0.5f;
-	}
-	if (extent[axis] < extent.z) {
-		axis = 2;
-		splitPos = node.boundsZ[0] + extent.z * 0.5f;	
+	float splitPos = 0.f;
+	float bestCost = find_bvh_split_plane(node, axis, splitPos);	
+	glm::vec3 e = glm::vec3(node.boundsX[1], node.boundsY[1], node.boundsZ[1]) - glm::vec3(node.boundsX[0], node.boundsY[0], node.boundsZ[0]);
+	
+	// axis = 0;
+	// splitPos = node.boundsX[0] + e.y * 0.5;
+	// if (e.y > e.x) {
+	// 	axis = 1;
+	// 	splitPos = node.boundsY[0] + e.y * 0.5;
+	// } if (e.z > e[axis]) {
+	// 	axis = 2;
+	// 	splitPos = node.boundsZ[0] + e.z * 0.5;
+	// }
+
+    float surfaceArea = e.x * e.y + e.y * e.z + e.z * e.x;
+    float noSplitCost = node.triCount * surfaceArea;
+	if (bestCost >= noSplitCost) {
+		stats.maxDepth = iMax(depth, stats.maxDepth);
+		stats.minDepth = iMin(depth, stats.minDepth);
+		stats.maxTri = iMax(node.triCount, stats.maxTri);
+		return;
 	}
 
 	//partition the triangles
 	int i = node.index;
 	int j = i + node.triCount - 1;
 	while (i <= j) {
-		uint v0 = triangles[i].v0;
-		uint v1 = triangles[i].v1;
-		uint v2 = triangles[i].v2;
-		glm::vec3 centroid = (triPoints[v0].position + triPoints[v1].position + triPoints[v2].position) / 3.f;
+		glm::vec3 centroid = centroids[i];
 
 		//swap so left side of array is less than splitPos
 		if (centroid[axis] < splitPos) {
 			i++;
 		} else {
 			swap(triangles[i], triangles[j]);
+			swap(centroids[i], centroids[j]);
 			j--;
 		}
 	}
@@ -935,6 +973,9 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth) {
 	int triIndex = node.index;
 	int leftCount = i - triIndex;
 	if (leftCount == 0 || leftCount == node.triCount) {
+		stats.maxDepth = iMax(depth, stats.maxDepth);
+		stats.minDepth = iMin(depth, stats.minDepth);
+		stats.maxTri = iMax(node.triCount, stats.maxTri);
 		return;
 	}
 
@@ -950,15 +991,112 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth) {
 	update_bvh_bounds(node.index);
 	update_bvh_bounds(node.index + 1);
 
-	subdivide_bvh(node.index, depth + 1);
-	subdivide_bvh(node.index + 1, depth + 1);
+	subdivide_bvh(node.index, depth + 1, stats);
+	subdivide_bvh(node.index + 1, depth + 1, stats);
+}
+
+float VulkanEngine::sah_cost(BVHNode& node, int axis, float split) {
+	BoundingBox left = {glm::vec4(1e30f), glm::vec4(-1e30f)};
+	BoundingBox right = {glm::vec4(1e30f), glm::vec4(-1e30f)};
+	int leftCount = 0;
+	int rightCount = 0;
+	
+	for (int i = 0; i < node.triCount; i++) {
+		Triangle triangle = triangles[node.index + i];
+		glm::vec3 centroid = centroids[node.index + i]; 
+		TrianglePoint v0 = triPoints[triangle.v0];
+		TrianglePoint v1 = triPoints[triangle.v1];
+		TrianglePoint v2 = triPoints[triangle.v2];
+
+		if (centroid[axis] < split) {
+			leftCount++;
+			for (int j = 0; j < 3; j++) {
+				left.grow(v0);
+				left.grow(v1);
+				left.grow(v2);
+			}
+		} else {
+			rightCount++;
+			for (int j = 0; j < 3; j++) {
+				right.grow(v0);
+				right.grow(v1);
+				right.grow(v2);
+			}
+		}
+	}
+	
+	glm::vec3 leftExtent = left.bounds[1] - left.bounds[0];
+	float leftArea = leftExtent.x * leftExtent.y + leftExtent.y * leftExtent.z + leftExtent.z * leftExtent.x;
+	glm::vec3 rightExtent = right.bounds[1] - right.bounds[0];
+	float rightArea = rightExtent.x * rightExtent.y + rightExtent.y * rightExtent.z + rightExtent.z * rightExtent.x;
+	float cost = leftCount * leftArea + rightCount * rightArea;
+	return cost > 0 ? cost : 1e30f;
+}
+
+float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos) {
+	float bestCost = 1e30f;
+	for (int a = 0; a < 3; a++) {
+		float min = 1e30f;
+		float max = -1e30f;
+		for (int i = 0; i < node.triCount; i++) {
+			min = iMin(min, centroids[node.index + i][a]);
+			max = iMax(max, centroids[node.index + i][a]);
+		}
+
+		if (min == max) continue;
+
+		//populate bins
+		BVHBin bins[BINS];
+		float scale = BINS / (max - min);
+		for (int i = 0; i < node.triCount; i++) {
+			Triangle tri = triangles[node.index + i];
+			int binIndex = iMin(BINS - 1, floor((centroids[node.index + i][a] - min) * scale));
+			bins[binIndex].triCount++;
+			bins[binIndex].box.grow(triPoints[tri.v0]);
+			bins[binIndex].box.grow(triPoints[tri.v1]);
+			bins[binIndex].box.grow(triPoints[tri.v2]);
+		}
+
+		//data for planes between the bins, loop through to find each
+		float leftArea[BINS - 1];
+		float rightArea[BINS - 1];
+		float leftCount[BINS - 1];
+		float rightCount[BINS - 1];
+		BoundingBox leftBox;
+		BoundingBox rightBox;
+		int leftSum = 0;
+		int rightSum = 0;
+		
+		for (int i = 0; i < BINS - 1; i++) {
+			leftSum += bins[i].triCount;
+			leftCount[i] = leftSum;
+			leftBox.grow(bins[i].box);
+			leftArea[i] = leftBox.surfaceArea();
+			rightSum += bins[BINS - 1 - i].triCount;
+			rightCount[BINS - 2 - i] = rightSum;
+			rightBox.grow(bins[BINS - 1 - i].box);
+			rightArea[BINS - 2 - i] = rightBox.surfaceArea();
+		}
+
+		scale = (max - min) / BINS;
+		for (int i = 0; i < BINS - 1; i++) {
+			float cost = leftCount[i] * leftArea[i] + rightCount[i] * rightArea[i];
+			if (cost < bestCost) {
+				axis = a;
+				splitPos = min + scale * (i + 1);
+				bestCost = cost;
+			}
+		}
+	}
+
+	return bestCost;
 }
 
 void VulkanEngine::init_image() {
 	textures.resize(2);
 
 	vkutil::create_empty_image(*this, computeImage.image, _windowExtent);
-	vkutil::load_image_from_file(*this, "../assets/rb_alb.png", textures[0].image);
+	vkutil::load_image_from_file(*this, "../assets/slosher_alb.png", textures[0].image);
 	vkutil::load_image_from_file(*this, "../assets/rb_mtl.png", textures[1].image);
 
 	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, computeImage.image.image, VK_IMAGE_ASPECT_COLOR_BIT);

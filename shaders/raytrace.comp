@@ -270,8 +270,38 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
             transformRay.dimSign[j] = uint(transformRay.invDir[j] < 0);
         }
 
+        //dont check for triangles if quad
+        BVHNode root = bvhNodes[object.bvhIndex];
+        if (root.triCount == 2) {
+            BoundingBox box;
+            box.bounds[0].xyz = vec3(root.boundsX[0], root.boundsY[0], root.boundsZ[0]);
+            box.bounds[1].xyz = vec3(root.boundsX[1], root.boundsY[1], root.boundsZ[1]);
+
+            float dst = boxIntersection(box, transformRay);
+            if (dst == 99999999 || dst > closestHit.dst) continue;
+
+            Triangle tri = triangles[root.index];
+            TrianglePoint v0 = trianglePoints[tri.v0];
+            TrianglePoint v1 = trianglePoints[tri.v1];
+            TrianglePoint v2 = trianglePoints[tri.v2];
+            vec3 v1v2 = v1.position.xyz - v2.position.xyz;
+            vec3 v1v0 = v1.position.xyz - v0.position.xyz;
+
+            //check for front face
+            vec3 n = cross(v1v2, v1v0);
+            float d0 = -dot(transformRay.dir, n);
+            if (d0 >= 0.00000001f) {
+                closestHit.didHit = true;
+                closestHit.materialIndex = object.materialIndex;
+                closestHit.normal = normalize((object.transformMatrix * vec4(n, 0.f))).xyz;
+                closestHit.hitPoint = transformRay.origin + transformRay.dir * dst;
+                closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+            }
+            continue;
+        }
+
         //bvh traversal
-        uint stack[32];
+        uint stack[64];
         uint stackIndex = 1;
         stack[0] = object.bvhIndex;
         while (stackIndex > 0) {
@@ -339,10 +369,11 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
     vec3 rayColor = vec3(1.f);
     RayTracerData traceData = PushConstants.rayTracerParams;
     Ray newRay = ray;
+    int dielectricBounce = 0;
 
     for (int j = 0; j <= traceData.bounceLimit; j++) {
         HitInfo hitInfo = calculateIntersections(newRay, stats);
-        if (hitInfo.didHit) {  
+        if (hitInfo.didHit && dielectricBounce < 100) {  
             Material material = materials[hitInfo.materialIndex];
             float reflectance = material.reflectance;
             if (material.metalnessIndex != -1) {
@@ -353,6 +384,8 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             newRay.origin = hitInfo.hitPoint;
             if (material.ior != -1.f) {
                 newRay = refraction(newRay, hitInfo.normal, hitInfo.frontFace ? 1.f / material.ior : material.ior, state);
+                dielectricBounce++;
+                j--;
             } else {
                 vec3 diffuseDir = normalize(hitInfo.normal + randomDirection(state));
                 vec3 specularDir = reflect(newRay.dir, hitInfo.normal);

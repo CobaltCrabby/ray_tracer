@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <vk_types.h>
 #include <vector>
 #include <deque>
@@ -35,6 +36,14 @@ struct DeletionQueue {
 	}
 };
 
+inline float iMax(float a, float b) {
+	return a < b ? b : a;
+} 
+
+inline float iMin(float a, float b) {
+	return a < b ? a : b;
+} 
+
 struct Sphere {
 	alignas(16) glm::vec3 position;
 	alignas(4) float radius;
@@ -64,7 +73,25 @@ struct RayMaterial {
 };
 
 struct BoundingBox {
-	glm::vec4 bounds[2];
+	glm::vec4 bounds[2] = {glm::vec4(1e30f), glm::vec4(-1e30f)};
+	void grow(TrianglePoint v0) {
+		for (int i = 0; i < 3; i++) {
+			bounds[0][i] = iMin(v0.position[i], bounds[0][i]);
+			bounds[1][i] = iMax(v0.position[i], bounds[1][i]);
+		}
+	}
+
+	void grow(BoundingBox box) {
+		bounds[0] = glm::min(bounds[0], box.bounds[0]);
+		bounds[1] = glm::max(bounds[1], box.bounds[1]);
+	}
+
+	float surfaceArea() {
+		float x = bounds[1].x - bounds[0].x;
+		float y = bounds[1].y - bounds[0].y;
+		float z = bounds[1].z - bounds[0].z;
+		return x * y + y * z + z * x;
+	}
 };
 
 struct RenderObject {
@@ -133,11 +160,23 @@ struct RenderStats {
 
 struct BVHNode {
 	glm::vec2 boundsX, boundsY, boundsZ;
-	uint index, triCount = 0;
+	uint index = 0, triCount = 0;
 	//if triCount == 0: index is a node index, else: index is a triangle index
 };
 
+struct BVHBin {
+	BoundingBox box;
+	uint triCount = 0;
+};
+
+struct BVHStats {
+	uint minDepth = 4294967295;
+	uint maxDepth = 0;
+	uint maxTri = 0;
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
+constexpr unsigned int BINS = 10;
 const unsigned int MAX_MATERIALS = 10;
 const unsigned int MAX_SPHERES = 10;
 
@@ -159,7 +198,9 @@ private:
 	void read_obj(std::string filePath, ImGuiObject imGui, int material);
 	void build_bvh(int size, int triIndex);
 	void update_bvh_bounds(uint index);
-	void subdivide_bvh(uint intex, uint depth);
+	void subdivide_bvh(uint intex, uint depth, BVHStats& stats);
+	float sah_cost(BVHNode& node, int axis, float split);
+	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
@@ -204,9 +245,13 @@ public:
 	std::vector<Triangle> triangles;
 	std::vector<RenderObject> objects;
 	std::vector<ImGuiObject> imGuiObjects;
+	std::vector<glm::vec3> centroids;
 
 	std::vector<BVHNode> bvhNodes;
 	uint nodesUsed = 0;
+	uint rot = 0;
+
+	std::unordered_map<std::string, int> loadedObjects;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;
