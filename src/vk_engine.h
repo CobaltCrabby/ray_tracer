@@ -92,6 +92,13 @@ struct BoundingBox {
 		float z = bounds[1].z - bounds[0].z;
 		return x * y + y * z + z * x;
 	}
+
+	float volume() {
+		float x = bounds[1].x - bounds[0].x;
+		float y = bounds[1].y - bounds[0].y;
+		float z = bounds[1].z - bounds[0].z;
+		return x * y * z;
+	}
 };
 
 struct RenderObject {
@@ -176,7 +183,7 @@ struct BVHStats {
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
-constexpr unsigned int BINS = 10;
+constexpr unsigned int BINS = 20;
 const unsigned int MAX_MATERIALS = 10;
 const unsigned int MAX_SPHERES = 10;
 
@@ -201,6 +208,7 @@ private:
 	void subdivide_bvh(uint intex, uint depth, BVHStats& stats);
 	float sah_cost(BVHNode& node, int axis, float split);
 	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos);
+	float scene_interior_cost(BoundingBox node);
 
 	void prepare_storage_buffers();
 	void update_descriptors();

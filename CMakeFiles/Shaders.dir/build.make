@@ -66,80 +66,26 @@ include CMakeFiles/Shaders.dir/compiler_depend.make
 # Include the progress variables for this target.
 include CMakeFiles/Shaders.dir/progress.make
 
-CMakeFiles/Shaders: shaders/bin/colored_triangle.frag.spv
-CMakeFiles/Shaders: shaders/bin/colored_triangle.vert.spv
-CMakeFiles/Shaders: shaders/bin/combined_mesh.frag.spv
-CMakeFiles/Shaders: shaders/bin/combined_mesh.vert.spv
-CMakeFiles/Shaders: shaders/bin/default_lit.frag.spv
 CMakeFiles/Shaders: shaders/bin/raytrace.comp.spv
 CMakeFiles/Shaders: shaders/bin/raytrace.frag.spv
 CMakeFiles/Shaders: shaders/bin/raytrace.vert.spv
-CMakeFiles/Shaders: shaders/bin/textured_mesh.frag.spv
-CMakeFiles/Shaders: shaders/bin/tri_mesh.vert.spv
-CMakeFiles/Shaders: shaders/bin/triangle.frag.spv
-CMakeFiles/Shaders: shaders/bin/triangle.vert.spv
-
-shaders/bin/colored_triangle.frag.spv: shaders/colored_triangle.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating shaders/bin/colored_triangle.frag.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/colored_triangle.frag -o /Users/cobalt/src/ray_tracer/shaders/bin/colored_triangle.frag.spv
-
-shaders/bin/colored_triangle.vert.spv: shaders/colored_triangle.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating shaders/bin/colored_triangle.vert.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/colored_triangle.vert -o /Users/cobalt/src/ray_tracer/shaders/bin/colored_triangle.vert.spv
-
-shaders/bin/combined_mesh.frag.spv: shaders/combined_mesh.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating shaders/bin/combined_mesh.frag.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/combined_mesh.frag -o /Users/cobalt/src/ray_tracer/shaders/bin/combined_mesh.frag.spv
-
-shaders/bin/combined_mesh.vert.spv: shaders/combined_mesh.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating shaders/bin/combined_mesh.vert.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/combined_mesh.vert -o /Users/cobalt/src/ray_tracer/shaders/bin/combined_mesh.vert.spv
-
-shaders/bin/default_lit.frag.spv: shaders/default_lit.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Generating shaders/bin/default_lit.frag.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/default_lit.frag -o /Users/cobalt/src/ray_tracer/shaders/bin/default_lit.frag.spv
 
 shaders/bin/raytrace.comp.spv: shaders/raytrace.comp
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Generating shaders/bin/raytrace.comp.spv"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating shaders/bin/raytrace.comp.spv"
 	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/raytrace.comp -o /Users/cobalt/src/ray_tracer/shaders/bin/raytrace.comp.spv
 
 shaders/bin/raytrace.frag.spv: shaders/raytrace.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Generating shaders/bin/raytrace.frag.spv"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating shaders/bin/raytrace.frag.spv"
 	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/raytrace.frag -o /Users/cobalt/src/ray_tracer/shaders/bin/raytrace.frag.spv
 
 shaders/bin/raytrace.vert.spv: shaders/raytrace.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Generating shaders/bin/raytrace.vert.spv"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating shaders/bin/raytrace.vert.spv"
 	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/raytrace.vert -o /Users/cobalt/src/ray_tracer/shaders/bin/raytrace.vert.spv
 
-shaders/bin/textured_mesh.frag.spv: shaders/textured_mesh.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Generating shaders/bin/textured_mesh.frag.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/textured_mesh.frag -o /Users/cobalt/src/ray_tracer/shaders/bin/textured_mesh.frag.spv
-
-shaders/bin/tri_mesh.vert.spv: shaders/tri_mesh.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Generating shaders/bin/tri_mesh.vert.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/tri_mesh.vert -o /Users/cobalt/src/ray_tracer/shaders/bin/tri_mesh.vert.spv
-
-shaders/bin/triangle.frag.spv: shaders/triangle.frag
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Generating shaders/bin/triangle.frag.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/triangle.frag -o /Users/cobalt/src/ray_tracer/shaders/bin/triangle.frag.spv
-
-shaders/bin/triangle.vert.spv: shaders/triangle.vert
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/Users/cobalt/src/ray_tracer/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Generating shaders/bin/triangle.vert.spv"
-	/usr/local/bin/glslangValidator -V /Users/cobalt/src/ray_tracer/shaders/triangle.vert -o /Users/cobalt/src/ray_tracer/shaders/bin/triangle.vert.spv
-
 Shaders: CMakeFiles/Shaders
-Shaders: shaders/bin/colored_triangle.frag.spv
-Shaders: shaders/bin/colored_triangle.vert.spv
-Shaders: shaders/bin/combined_mesh.frag.spv
-Shaders: shaders/bin/combined_mesh.vert.spv
-Shaders: shaders/bin/default_lit.frag.spv
 Shaders: shaders/bin/raytrace.comp.spv
 Shaders: shaders/bin/raytrace.frag.spv
 Shaders: shaders/bin/raytrace.vert.spv
-Shaders: shaders/bin/textured_mesh.frag.spv
-Shaders: shaders/bin/tri_mesh.vert.spv
-Shaders: shaders/bin/triangle.frag.spv
-Shaders: shaders/bin/triangle.vert.spv
 Shaders: CMakeFiles/Shaders.dir/build.make
 .PHONY : Shaders
 

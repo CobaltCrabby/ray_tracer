@@ -1092,6 +1092,42 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 	return bestCost;
 }
 
+//https://diglib.eg.org/server/api/core/bitstreams/0e178688-ff5b-44ff-b660-1c3259c23b0c/content
+float VulkanEngine::scene_interior_cost(BoundingBox node) {
+	BoundingBox scene;
+	scene.bounds[0] = glm::vec4(-1.f, -1.f, -1.f, 0.f);
+	scene.bounds[1] = glm::vec4(1.f, 1.f, 1.f, 0.f);
+
+	glm::vec4 extent = node.bounds[1] - node.bounds[0];
+
+	float inv_volume = 1 / scene.volume();
+	float ben = node.volume() * inv_volume; //ben goodman
+	
+	//i dont know man
+	float sum = 0.f;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 2; j++) {
+			float diffBounds = 0.f;
+			float surface = 0.f;
+			if (i == 0) {
+				surface = extent.y * extent.z;
+			} else if (i == 1) {
+				surface = extent.x * extent.z;
+			} else {
+				surface = extent.x * extent.y;
+			}
+
+			BoundingBox prime;
+			prime.bounds[0] = scene.bounds[0];
+			prime.bounds[1] = scene.bounds[1];
+			prime.bounds[j][i] = node.bounds[1 - j][i];
+			sum += prime.volume() * surface / prime.surfaceArea();
+		}
+	}
+
+	return ben + inv_volume * sum;
+}
+
 void VulkanEngine::init_image() {
 	textures.resize(2);
 
