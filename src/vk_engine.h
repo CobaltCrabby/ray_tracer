@@ -86,6 +86,13 @@ struct BoundingBox {
 		bounds[1] = glm::max(bounds[1], box.bounds[1]);
 	}
 
+	void grow(glm::vec3 v0) {
+		for (int i = 0; i < 3; i++) {
+			bounds[0][i] = iMin(v0[i], bounds[0][i]);
+			bounds[1][i] = iMax(v0[i], bounds[1][i]);
+		}
+	}
+
 	float surfaceArea() {
 		float x = bounds[1].x - bounds[0].x;
 		float y = bounds[1].y - bounds[0].y;
@@ -203,12 +210,12 @@ private:
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
 	void read_obj(std::string filePath, ImGuiObject imGui, int material);
-	void build_bvh(int size, int triIndex);
+	void build_bvh(int size, int triIndex, glm::mat4 transform);
 	void update_bvh_bounds(uint index);
-	void subdivide_bvh(uint intex, uint depth, BVHStats& stats);
+	void subdivide_bvh(uint intex, uint depth, BVHStats& stats, glm::mat4 transform);
 	float sah_cost(BVHNode& node, int axis, float split);
-	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos);
-	float scene_interior_cost(BoundingBox node);
+	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, glm::mat4 transform);
+	float scene_interior_cost(BoundingBox node, glm::mat4 transform);
 
 	void prepare_storage_buffers();
 	void update_descriptors();

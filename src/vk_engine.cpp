@@ -647,7 +647,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//ccw
 	ImGuiObject model;
 	model.name = "stanford dragon";
-	model.position = glm::vec3(0.f, 0.5f, 0.f);
+	model.position = glm::vec3(0.2f, 0.5f, 0.f);
 	model.scale = glm::vec3(0.9f);
 	read_obj("../assets/bunny_full.obj", model, 6);
 
@@ -700,6 +700,7 @@ bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outS
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 
 	if (!file.is_open()) {
+		cout << "cannot find file " << filePath << endl;
 		return false;
 	}
 
@@ -874,10 +875,10 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 	cout << endl << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
 
-	build_bvh(triangles.size() - triOffset, triOffset);
+	build_bvh(triangles.size() - triOffset, triOffset, glm::inverse(object.transformMatrix));
 }
 
-void VulkanEngine::build_bvh(int size, int triIndex) {
+void VulkanEngine::build_bvh(int size, int triIndex, glm::mat4 transform) {
 	auto start = std::chrono::system_clock::now();
 
 	nodesUsed++;
@@ -890,7 +891,7 @@ void VulkanEngine::build_bvh(int size, int triIndex) {
 	BVHStats stats;
 
 	update_bvh_bounds(offset);
-	subdivide_bvh(offset, 0, stats);
+	subdivide_bvh(offset, 0, stats, transform);
 
 	bvhNodes.resize(nodesUsed);
 	bvhNodes.shrink_to_fit();	
@@ -898,6 +899,7 @@ void VulkanEngine::build_bvh(int size, int triIndex) {
 	auto end = std::chrono::system_clock::now();    
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 	cout << "BVH Build Time: " << time.count() << "ms\n";
+	cout << "Node Count: " << nodesUsed - offset << endl;
 	cout << "Max Depth: " << stats.maxDepth << endl;
 	cout << "Min Depth: " << stats.minDepth << endl;
 	cout << "Max Tris: " << stats.maxTri << endl;
@@ -919,7 +921,7 @@ void VulkanEngine::update_bvh_bounds(uint index) {
 	node.boundsZ = glm::vec2(box.bounds[0].z, box.bounds[1].z);
 }
 
-void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats) {
+void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, glm::mat4 transform) {
 	BVHNode& node = bvhNodes[index];
 	
 	if (node.triCount <= 2 || depth >= 32) {
@@ -931,22 +933,14 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats) {
 
 	int axis = 0;
 	float splitPos = 0.f;
-	float bestCost = find_bvh_split_plane(node, axis, splitPos);	
-	glm::vec3 e = glm::vec3(node.boundsX[1], node.boundsY[1], node.boundsZ[1]) - glm::vec3(node.boundsX[0], node.boundsY[0], node.boundsZ[0]);
-	
-	// axis = 0;
-	// splitPos = node.boundsX[0] + e.y * 0.5;
-	// if (e.y > e.x) {
-	// 	axis = 1;
-	// 	splitPos = node.boundsY[0] + e.y * 0.5;
-	// } if (e.z > e[axis]) {
-	// 	axis = 2;
-	// 	splitPos = node.boundsZ[0] + e.z * 0.5;
-	// }
+	float bestCost = find_bvh_split_plane(node, axis, splitPos, transform);	
 
-    float surfaceArea = e.x * e.y + e.y * e.z + e.z * e.x;
-    float noSplitCost = node.triCount * surfaceArea;
+    BoundingBox parent;
+	parent.bounds[0] = glm::vec4(node.boundsX[0], node.boundsY[0], node.boundsZ[0], 0.f);
+	parent.bounds[1] = glm::vec4(node.boundsX[1], node.boundsY[1], node.boundsZ[1], 0.f);
+    float noSplitCost = node.triCount * scene_interior_cost(parent, transform);
 	if (bestCost >= noSplitCost) {
+		cout << bestCost << " " << noSplitCost << endl;
 		stats.maxDepth = iMax(depth, stats.maxDepth);
 		stats.minDepth = iMin(depth, stats.minDepth);
 		stats.maxTri = iMax(node.triCount, stats.maxTri);
@@ -991,8 +985,8 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats) {
 	update_bvh_bounds(node.index);
 	update_bvh_bounds(node.index + 1);
 
-	subdivide_bvh(node.index, depth + 1, stats);
-	subdivide_bvh(node.index + 1, depth + 1, stats);
+	subdivide_bvh(node.index, depth + 1, stats, transform);
+	subdivide_bvh(node.index + 1, depth + 1, stats, transform);
 }
 
 float VulkanEngine::sah_cost(BVHNode& node, int axis, float split) {
@@ -1033,7 +1027,7 @@ float VulkanEngine::sah_cost(BVHNode& node, int axis, float split) {
 	return cost > 0 ? cost : 1e30f;
 }
 
-float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos) {
+float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, glm::mat4 transform) {
 	float bestCost = 1e30f;
 	for (int a = 0; a < 3; a++) {
 		float min = 1e30f;
@@ -1071,11 +1065,12 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 			leftSum += bins[i].triCount;
 			leftCount[i] = leftSum;
 			leftBox.grow(bins[i].box);
-			leftArea[i] = leftBox.surfaceArea();
+			leftArea[i] = scene_interior_cost(leftBox, transform);
 			rightSum += bins[BINS - 1 - i].triCount;
 			rightCount[BINS - 2 - i] = rightSum;
 			rightBox.grow(bins[BINS - 1 - i].box);
-			rightArea[BINS - 2 - i] = rightBox.surfaceArea();
+			rightArea[i] = rightBox.surfaceArea();
+			rightArea[BINS - 2 - i] = scene_interior_cost(rightBox, transform);
 		}
 
 		scale = (max - min) / BINS;
@@ -1093,12 +1088,14 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 }
 
 //https://diglib.eg.org/server/api/core/bitstreams/0e178688-ff5b-44ff-b660-1c3259c23b0c/content
-float VulkanEngine::scene_interior_cost(BoundingBox node) {
+float VulkanEngine::scene_interior_cost(BoundingBox node, glm::mat4 transformation) {
+	//return node.surfaceArea();
+	// REMEMBER TO DO ROTATION
 	BoundingBox scene;
-	scene.bounds[0] = glm::vec4(-1.f, -1.f, -1.f, 0.f);
-	scene.bounds[1] = glm::vec4(1.f, 1.f, 1.f, 0.f);
+	scene.bounds[0] = transformation * glm::vec4(-1.f, -1.f, -1.f, 0.f);
+	scene.bounds[1] = transformation * glm::vec4(1.f, 1.f, 1.f, 0.f);
 
-	glm::vec4 extent = node.bounds[1] - node.bounds[0];
+	glm::vec4 extent = (node.bounds[1]) - (node.bounds[0]);
 
 	float inv_volume = 1 / scene.volume();
 	float ben = node.volume() * inv_volume; //ben goodman
@@ -1106,17 +1103,16 @@ float VulkanEngine::scene_interior_cost(BoundingBox node) {
 	//i dont know man
 	float sum = 0.f;
 	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 2; j++) {
-			float diffBounds = 0.f;
-			float surface = 0.f;
-			if (i == 0) {
-				surface = extent.y * extent.z;
-			} else if (i == 1) {
-				surface = extent.x * extent.z;
-			} else {
-				surface = extent.x * extent.y;
-			}
+		float surface = 0.f;
+		if (i == 0) {
+			surface = extent.y * extent.z;
+		} else if (i == 1) {
+			surface = extent.x * extent.z;
+		} else {
+			surface = extent.x * extent.y;
+		}
 
+		for (int j = 0; j < 2; j++) {
 			BoundingBox prime;
 			prime.bounds[0] = scene.bounds[0];
 			prime.bounds[1] = scene.bounds[1];
