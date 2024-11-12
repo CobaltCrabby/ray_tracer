@@ -655,7 +655,6 @@ void VulkanEngine::prepare_storage_buffers() {
 	// rayMaterials.push_back(li);
 	// rayMaterials.push_back(object);
 
-	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
 	ImGuiObject model;
@@ -703,6 +702,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	// plane.frontOnly = true;
 	// read_obj("../assets/plane.obj", plane, 1);
 
+	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
 	copy_buffer(sizeof(RenderObject) * objects.size(), objectBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) objects.data());
@@ -768,33 +768,28 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 	int pointOffset = triPoints.size();
 	int triOffset = triangles.size();
+	int objectTriOffset = triangles.size();
 	std::ifstream fileStream;
 	fileStream.open(filePath);
 	auto start = std::chrono::system_clock::now();
 
+	bool smoothShade = false;
+	std::string currentMat;
 	std::string fileLine;
-	bool vertex = false;
+	std::string materialFile;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
 	BoundingBox bounds;
 
 	if (!fileStream.is_open()) return;
 	while (fileStream) {
-		std::string prefix;
-
 		std::getline(fileStream, fileLine);
 		if (fileLine.find("mtllib") != std::string::npos) {
-			read_mtl("../assets/" + fileLine.substr(7, fileLine.size() - 7));
+			materialFile = fileLine.substr(7, fileLine.size() - 7);
+			read_mtl("../assets/" + materialFile);
 		}
 
-		if (fileLine.size() <= 1) break;
-		for (int i = 0; i < 2; i++) {
-			if (fileLine.at(i) != ' ') {
-				prefix += fileLine.at(i);
-			} else {
-				break;
-			} 
-		}
+		std::string prefix = fileLine.substr(0, fileLine.find(' '));
 
 		int index = 2;
 		if (prefix == "v") { //vertices
@@ -868,11 +863,50 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 			glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
 			centroids.push_back(centroid / 3.f);
+		} else if (prefix == "usemtl") {
+			int space = fileLine.find(' ');
+			std::string mat = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			if (currentMat.empty()) {
+				//currentMat = mat;
+				continue;
+			}
+
+			//create object
+			RenderObject object;
+			object.materialIndex = loadedMaterials.at("../assets/" + materialFile + "/" + currentMat);
+			object.transformMatrix = glm::translate(imGuiObj.position) * 
+				glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
+				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
+				glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
+				glm::scale(imGuiObj.scale);
+			object.smoothShade = false;
+			object.bvhIndex = bvhNodes.size();
+			objects.push_back(object);
+
+			imGuiObjects.push_back(imGuiObj);
+			imGuiObjects.at(imGuiObjects.size() - 1).name += "/" + currentMat;
+
+			loadedObjects.emplace(filePath + "/" + currentMat, object.bvhIndex);
+
+			glm::mat4 inverse = glm::inverse(object.transformMatrix);
+			bounds.bounds[0] = inverse * bounds.bounds[0];
+			bounds.bounds[1] = inverse * bounds.bounds[1];
+			cout << mat << endl;
+			build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
+			cout << endl;
+
+			//RESET
+			currentMat = mat;
+			objectTriOffset = triangles.size();
+			bounds = {};
+		} else if (prefix == "s") {
+			int smooth = fileLine.at(2) - '0'; //converts ascii to int
+			smoothShade = smooth == 1; //do this later
 		}
 	}
 
 	RenderObject object;
-	object.materialIndex = material;
+	object.materialIndex = 0;
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -887,13 +921,13 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 	auto end = std::chrono::system_clock::now();    
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	cout << endl << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
+	cout << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
 
 	glm::mat4 inverse = glm::inverse(object.transformMatrix);
 	bounds.bounds[0] = inverse * bounds.bounds[0];
 	bounds.bounds[1] = inverse * bounds.bounds[1];
 
-	build_bvh(triangles.size() - triOffset, triOffset, bounds);
+	build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
 }
 
 void VulkanEngine::read_mtl(std::string filePath) {
@@ -963,6 +997,10 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		}
 	}
 
+	//last material since it only pushes with new mtl line
+	loadedMaterials.emplace(filePath + "/" + materialName, rayMaterials.size());
+	rayMaterials.push_back(currentMaterial);
+
 	//string pointer jank idk
 	const char* chars[imageFilePaths.size()];
 	for (int i = 0; i < imageFilePaths.size(); i++) {
@@ -971,16 +1009,16 @@ void VulkanEngine::read_mtl(std::string filePath) {
 	}
 
 	vkutil::load_images_from_file(*this, chars, allocatedImages.data(), imageFilePaths.size());
+	for (int i = 0; i < MAX_TEXTURES; i++) {
+		VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[i].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
+		VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &textures[i].imageView));
+	}
 
 	deletionQueue.push_function([=]() {
         for (AllocatedImage* image : allocatedImages) {
             vmaDestroyImage(allocator, image->image, image->allocation);
 		}
     });
-
-	for (auto& pair : loadedMaterials) {
-		cout << pair.first << " " << pair.second << endl;
-	}
 }
 
 void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox scene) {
@@ -1202,8 +1240,6 @@ void VulkanEngine::init_image() {
 	vkutil::create_empty_images(*this, textureImages, _windowExtent, MAX_TEXTURES);
 	for (int i = 0; i < MAX_TEXTURES; i++) {
 		textures[i].image = textureImages[i];
-		VkImageViewCreateInfo viewInfo2 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[i].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
-		VK_CHECK(vkCreateImageView(device, &viewInfo2, nullptr, &textures[i].imageView));
 	}
 
 	deletionQueue.push_function([=]() {

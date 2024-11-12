@@ -68,8 +68,8 @@ struct RayMaterial {
 	alignas(4) float emissionStrength = 0.f;
 	alignas(4) float reflectance = 0.f;
 	alignas(4) float ior = -1.f;
-	alignas(4) uint albedoIndex = -1;
-	alignas(4) uint metalnessIndex = -1;
+	alignas(4) int albedoIndex = -1;
+	alignas(4) int metalnessIndex = -1;
 };
 
 struct BoundingBox {

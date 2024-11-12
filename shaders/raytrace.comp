@@ -25,8 +25,8 @@ struct Material {
     float emissionStrength;
 	float reflectance;
     float ior;
-    uint albedoIndex;
-    uint metalnessIndex;
+    int albedoIndex;
+    int metalnessIndex;
 };
 
 //objects
