@@ -12,6 +12,7 @@ A Vulkan-based compute raytracer written in C++. Code skeleton from *[VkGuide](h
 - Dynamic camera system
 - Importance sampling
 - Disney's BRDF
+- Wavefront path tracing
 
 ## Renders
 ![](renders/squeezer_mtlmap.png)

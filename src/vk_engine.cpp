@@ -906,7 +906,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	}
 
 	RenderObject object;
-	object.materialIndex = 0;
+	object.materialIndex = 6;
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
