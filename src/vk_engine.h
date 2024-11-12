@@ -144,9 +144,9 @@ struct CameraInfo {
 
 struct EnvironmentData {
 	alignas(16) glm::vec4 horizonColor = glm::vec4(0.986f, 1.f, 0.902f, 1000.f); //w = sunFocus;
-	alignas(16) glm::vec4 zenithColor = glm::vec4(0.265f, 0.595f, 0.887f, 200.f); //w = sunIntensity
+	alignas(16) glm::vec4 zenithColor = glm::vec4(0.265f, 0.595f, 0.887f, 10.f); //w = sunIntensity
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
-	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 0.f); //w component = environment on
+	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 1.f); //w component = environment on
 };
 
 struct RayTracerData {
@@ -191,6 +191,7 @@ struct BVHStats {
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int BINS = 20;
+constexpr unsigned int MAX_TEXTURES = 32;
 const unsigned int MAX_MATERIALS = 10;
 const unsigned int MAX_SPHERES = 10;
 
@@ -210,12 +211,12 @@ private:
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
 	void read_obj(std::string filePath, ImGuiObject imGui, int material);
-	void build_bvh(int size, int triIndex, glm::mat4 transform);
+	void read_mtl(std::string filePath);
+	void build_bvh(int size, int triIndex, BoundingBox scene);
 	void update_bvh_bounds(uint index);
-	void subdivide_bvh(uint intex, uint depth, BVHStats& stats, glm::mat4 transform);
-	float sah_cost(BVHNode& node, int axis, float split);
-	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, glm::mat4 transform);
-	float scene_interior_cost(BoundingBox node, glm::mat4 transform);
+	void subdivide_bvh(uint intex, uint depth, BVHStats& stats, BoundingBox scene);
+	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, BoundingBox scene);
+	float scene_interior_cost(BoundingBox node, BoundingBox scene);
 
 	void prepare_storage_buffers();
 	void update_descriptors();
@@ -262,11 +263,14 @@ public:
 	std::vector<ImGuiObject> imGuiObjects;
 	std::vector<glm::vec3> centroids;
 
+	uint texturesUsed = 0;
+
 	std::vector<BVHNode> bvhNodes;
 	uint nodesUsed = 0;
 	uint rot = 0;
 
 	std::unordered_map<std::string, int> loadedObjects;
+	std::unordered_map<std::string, int> loadedMaterials;
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;
@@ -313,7 +317,7 @@ public:
 	glm::vec2 prevMouseScroll = glm::vec2(0.f);
 	float mouseSensitivity = 100; 
 	bool clicking = false;
-	float cameraSpeed = 10.f;
+	float cameraSpeed = 100.f;
 
 	VkExtent2D _windowExtent{1728, 1117};
 

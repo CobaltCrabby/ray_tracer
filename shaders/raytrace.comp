@@ -99,7 +99,7 @@ struct RayTracerData {
 
 layout (binding = 0, rgba8) uniform image2D outImage;
 
-layout (binding = 1, rgba8) uniform readonly image2D TextureBuffer[2];
+layout (binding = 1) uniform texture2D TextureBuffer[32];
 
 layout (std140, binding = 2) readonly buffer SphereBuffer {
     Sphere spheres[];
@@ -124,6 +124,8 @@ layout (std140, binding = 6) readonly buffer ObjectBuffer {
 layout (std140, binding = 7) readonly buffer BVHBuffer {
     BVHNode bvhNodes[];
 };
+
+layout (binding = 8) uniform sampler TextureSampler;
 
 layout (push_constant) uniform constants {
     CameraInfo camInfo;
@@ -377,8 +379,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             Material material = materials[hitInfo.materialIndex];
             float reflectance = material.reflectance;
             if (material.metalnessIndex != -1) {
-                ivec2 size = imageSize(TextureBuffer[material.metalnessIndex]);
-                reflectance = imageLoad(TextureBuffer[material.metalnessIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).r;
+                reflectance = texture(sampler2D(TextureBuffer[material.metalnessIndex], TextureSampler), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).r;
             }
 
             newRay.origin = hitInfo.hitPoint;
@@ -397,8 +398,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             incomingLight += emitted * rayColor;
 
             if (material.albedoIndex != -1) {
-                ivec2 size = imageSize(TextureBuffer[material.albedoIndex]);
-                vec3 albedo = imageLoad(TextureBuffer[material.albedoIndex], ivec2(vec2(hitInfo.uv.x, 1 - hitInfo.uv.y) * size)).rgb;
+                vec3 albedo = texture(sampler2D(TextureBuffer[material.albedoIndex], TextureSampler), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).rgb;
                 rayColor *= albedo;
                 continue;
             } 

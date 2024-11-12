@@ -1,5 +1,4 @@
-﻿
-#include "vk_engine.h"
+﻿#include "vk_engine.h"
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
@@ -392,7 +391,9 @@ void VulkanEngine::init_descriptors() {
 		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10},
 		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10},
 		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10},
-		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10}
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 32},
+		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 32},
+		{VK_DESCRIPTOR_TYPE_SAMPLER, 1},
 	};
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -415,21 +416,22 @@ void VulkanEngine::init_descriptors() {
 
 	//compute descriptors
 	VkDescriptorSetLayoutBinding computeBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 0);
-	VkDescriptorSetLayoutBinding textureBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
+	VkDescriptorSetLayoutBinding textureBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1);
 	VkDescriptorSetLayoutBinding sphereBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 2);
 	VkDescriptorSetLayoutBinding materialBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 3);
 	VkDescriptorSetLayoutBinding triPointBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 4);
 	VkDescriptorSetLayoutBinding triangleBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 5);
 	VkDescriptorSetLayoutBinding objectBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 6);
 	VkDescriptorSetLayoutBinding bvhBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 7);
+	VkDescriptorSetLayoutBinding samplerBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 8);
 
-	textureBufferBinding.descriptorCount = 2;
+	textureBufferBinding.descriptorCount = MAX_TEXTURES;
 
-	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding, bvhBufferBinding};
+	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding, bvhBufferBinding, samplerBinding};
 
 	VkDescriptorSetLayoutCreateInfo computeSetInfo{};
 	computeSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	computeSetInfo.bindingCount = 8;
+	computeSetInfo.bindingCount = 9;
 	computeSetInfo.pBindings = computeBindings;
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
@@ -552,9 +554,9 @@ void VulkanEngine::update_descriptors() {
 	materialBufferInfo.offset = 0;
 	materialBufferInfo.range = sizeof(RayMaterial) * MAX_MATERIALS;
 
-	VkDescriptorImageInfo textureImageInfos[2];
-	for (int i = 0; i < 2; i++) {
-		textureImageInfos[i].sampler = sampler;
+	VkDescriptorImageInfo textureImageInfos[MAX_TEXTURES];
+	for (int i = 0; i < MAX_TEXTURES; i++) {
+		//textureImageInfos[i].sampler = sampler;
 		textureImageInfos[i].imageView = textures[i].imageView;
 		textureImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 	}
@@ -580,7 +582,7 @@ void VulkanEngine::update_descriptors() {
 	bvhBufferInfo.range = sizeof(BVHNode) * bvhNodes.size();
 
 	VkWriteDescriptorSet compTex = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, &compImageInfo, 0);
-	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, computeSet, textureImageInfos, 1);
+	VkWriteDescriptorSet textureWrite = vkinit::writeDescriptorImage(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, computeSet, textureImageInfos, 1);
 	VkWriteDescriptorSet sphereWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &sphereBufferInfo, 2);
 	VkWriteDescriptorSet materialWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &materialBufferInfo, 3);
 	VkWriteDescriptorSet triPointWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &triPointBufferInfo, 4);
@@ -588,11 +590,23 @@ void VulkanEngine::update_descriptors() {
 	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 6);
 	VkWriteDescriptorSet bvhWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &bvhBufferInfo, 7);
 
-	textureWrite.descriptorCount = 2;
-	
-	VkWriteDescriptorSet computeWrites[] = {compTex, textureWrite, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite, bvhWrite};
+	VkDescriptorImageInfo samplerImageInfo;
+	samplerImageInfo.sampler = sampler;
+	samplerImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	vkUpdateDescriptorSets(device, 8, computeWrites, 0, nullptr);
+	VkWriteDescriptorSet samplerSet{};
+	samplerSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	samplerSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	samplerSet.dstSet = computeSet;
+	samplerSet.dstBinding = 8;
+	samplerSet.pImageInfo = &samplerImageInfo;
+	samplerSet.descriptorCount = 1;
+
+	textureWrite.descriptorCount = MAX_TEXTURES;
+	
+	VkWriteDescriptorSet computeWrites[] = {compTex, textureWrite, sphereWrite, materialWrite, triPointWrite, triangleWrite, objectWrite, bvhWrite, samplerSet};
+
+	vkUpdateDescriptorSets(device, 9, computeWrites, 0, nullptr);
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
@@ -605,7 +619,6 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	//spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
-
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
 	//materials
@@ -634,61 +647,61 @@ void VulkanEngine::prepare_storage_buffers() {
 	object.metalnessIndex = -1;
 	//object.ior = 1.5f;
 
-	rayMaterials.push_back(dielectric);
+	// rayMaterials.push_back(dielectric);
 	rayMaterials.push_back(white);
-	rayMaterials.push_back(red);
-	rayMaterials.push_back(green);
-	rayMaterials.push_back(blue);
-	rayMaterials.push_back(li);
-	rayMaterials.push_back(object);
+	// rayMaterials.push_back(red);
+	// rayMaterials.push_back(green);
+	// rayMaterials.push_back(blue);
+	// rayMaterials.push_back(li);
+	// rayMaterials.push_back(object);
 
 	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 
 	//ccw
 	ImGuiObject model;
-	model.name = "stanford dragon";
-	model.position = glm::vec3(0.2f, 0.5f, 0.f);
-	model.scale = glm::vec3(0.9f);
-	read_obj("../assets/bunny_full.obj", model, 6);
+	model.name = "sponza";
+	//model.position = glm::vec3(0.2f, 0.5f, 0.f);
+	model.scale = glm::vec3(0.1f);
+	read_obj("../assets/sponza.obj", model, 0);
 
-	ImGuiObject light;
-	light.name = "light";
-	light.position = glm::vec3(0.f, -1.5f, 0.f);
-	light.scale = glm::vec3(0.3f);
-	read_obj("../assets/light.obj", light, 5);
+	// ImGuiObject light;
+	// light.name = "light";
+	// light.position = glm::vec3(0.f, -1.5f, 0.f);
+	// light.scale = glm::vec3(0.3f);
+	// read_obj("../assets/light.obj", light, 5);
 
-	ImGuiObject plane;
-	plane.name = "bottom";
-	plane.position = glm::vec3(0.f, 0.5f, 0.f);
-	plane.rotation = glm::vec3(0.f);
-	read_obj("../assets/plane.obj", plane, 1);
+	// ImGuiObject plane;
+	// plane.name = "bottom";
+	// plane.position = glm::vec3(0.f, 0.5f, 0.f);
+	// plane.rotation = glm::vec3(0.f);
+	// read_obj("../assets/plane.obj", plane, 1);
 
-	plane.name = "left";
-	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
-	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	read_obj("../assets/plane.obj", plane, 3);
+	// plane.name = "left";
+	// plane.position = glm::vec3(-1.f, -0.5f, 0.f);
+	// plane.rotation = glm::vec3(90.f, 0.f, 90.f);
+	// read_obj("../assets/plane.obj", plane, 3);
 
-	plane.name = "right";
-	plane.position = glm::vec3(1.f, -0.5f, 0.f);
-	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	read_obj("../assets/plane.obj", plane, 2);
+	// plane.name = "right";
+	// plane.position = glm::vec3(1.f, -0.5f, 0.f);
+	// plane.rotation = glm::vec3(90.f, 0.f, -90.f);
+	// read_obj("../assets/plane.obj", plane, 2);
 
-	plane.name = "top";
-	plane.position = glm::vec3(0.f, -1.5f, 0.f);
-	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", plane, 1);
+	// plane.name = "top";
+	// plane.position = glm::vec3(0.f, -1.5f, 0.f);
+	// plane.rotation = glm::vec3(180.f, 0.f, 0.f);
+	// read_obj("../assets/plane.obj", plane, 1);
 
-	plane.name = "back";
-	plane.position = glm::vec3(0.f, -0.5f, 1.f);
-	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
-	plane.scale = glm::vec3(1.f);
-	read_obj("../assets/plane.obj", plane, 1);
+	// plane.name = "back";
+	// plane.position = glm::vec3(0.f, -0.5f, 1.f);
+	// plane.rotation = glm::vec3(90.f, 0.f, 0.f);
+	// plane.scale = glm::vec3(1.f);
+	// read_obj("../assets/plane.obj", plane, 1);
 
-	plane.name = "front";
-	plane.position = glm::vec3(0.f, -0.5f, -1.f);
-	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
-	plane.frontOnly = true;
-	read_obj("../assets/plane.obj", plane, 1);
+	// plane.name = "front";
+	// plane.position = glm::vec3(0.f, -0.5f, -1.f);
+	// plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
+	// plane.frontOnly = true;
+	// read_obj("../assets/plane.obj", plane, 1);
 
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
@@ -763,13 +776,17 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	bool vertex = false;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
-	glm::vec3 bounds[2] = {glm::vec3(99999.f), glm::vec3(-99999.f)};
+	BoundingBox bounds;
 
 	if (!fileStream.is_open()) return;
 	while (fileStream) {
 		std::string prefix;
 
 		std::getline(fileStream, fileLine);
+		if (fileLine.find("mtllib") != std::string::npos) {
+			read_mtl("../assets/" + fileLine.substr(7, fileLine.size() - 7));
+		}
+
 		if (fileLine.size() <= 1) break;
 		for (int i = 0; i < 2; i++) {
 			if (fileLine.at(i) != ' ') {
@@ -783,14 +800,11 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 		if (prefix == "v") { //vertices
 			glm::vec3 position;
 			for (int i = 0; i < 3; i++) {
-				int size = fileLine.at(index) == '-' ? 9 : 8;
-				position[i] = stof(fileLine.substr(index, size));
-				index += size + 1;
-
-				//for bounding box
-				bounds[0][i] = iMin(bounds[0][i], position[i]);
-				bounds[1][i] = iMax(bounds[1][i], position[i]);
+				int nextSpace = fileLine.find(' ', index);
+				position[i] = stof(fileLine.substr(index, nextSpace - index));
+				index = nextSpace + 1;
 			}
+			bounds.grow(position);
 			triPoints.push_back({glm::vec4(position, 0.f)});
 		} else if (prefix == "vt") { //uv
 			index++;
@@ -854,7 +868,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 			glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
 			centroids.push_back(centroid / 3.f);
- 		}
+		}
 	}
 
 	RenderObject object;
@@ -875,10 +889,101 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 	cout << endl << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
 
-	build_bvh(triangles.size() - triOffset, triOffset, glm::inverse(object.transformMatrix));
+	glm::mat4 inverse = glm::inverse(object.transformMatrix);
+	bounds.bounds[0] = inverse * bounds.bounds[0];
+	bounds.bounds[1] = inverse * bounds.bounds[1];
+
+	build_bvh(triangles.size() - triOffset, triOffset, bounds);
 }
 
-void VulkanEngine::build_bvh(int size, int triIndex, glm::mat4 transform) {
+void VulkanEngine::read_mtl(std::string filePath) {
+	std::ifstream fileStream;
+	fileStream.open(filePath);
+
+	if (!fileStream.is_open()) {
+		cout << "Could not open material file: " << filePath << endl;
+		return;
+	}
+
+	std::string fileLine;
+	std::string materialName;
+	RayMaterial currentMaterial;
+	std::vector<std::string> imageFilePaths;
+	std::vector<AllocatedImage*> allocatedImages;
+
+	while (fileStream) {
+		std::getline(fileStream, fileLine);
+		if (fileLine.find("newmtl") != std::string::npos) {
+			if (!materialName.empty()) {
+				loadedMaterials.emplace(filePath + "/" + materialName, rayMaterials.size());
+				rayMaterials.push_back(currentMaterial);
+				currentMaterial = {};
+			}
+			materialName = fileLine.substr(7, fileLine.size() - 7);
+			continue;
+		}
+
+		fileLine.erase(remove(fileLine.begin(), fileLine.end(), '\t'), fileLine.end()); //remove tabs from the beggining
+		std::string prefix = fileLine.substr(0, fileLine.find(' '));
+		if (prefix == "Ka" || prefix == "Kd") {
+			int space1 = fileLine.find(' ');
+			int space2 = fileLine.find(' ', space1 + 1);
+			int space3 = fileLine.find(' ', space2 + 1);
+
+			std::string r = fileLine.substr(space1 + 1, space2 - space1 - 1);
+			std::string g = fileLine.substr(space2 + 1, space3 - space2 - 1);
+			std::string b = fileLine.substr(space3 + 1, fileLine.size() - space3 - 1);
+
+			glm::vec3 color = glm::vec3(stof(r), stof(g), stof(b));
+			currentMaterial.albedo *= color;
+		} else if (prefix == "Ni") {
+			int space = fileLine.find(' ');
+			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			//currentMaterial.ior = stof(value);
+		} else if (prefix == "d") {
+			int space = fileLine.find(' ');
+			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			//alpha = stof(value);
+		} else if (prefix == "map_Ka" || prefix == "map_Kd") {
+			int space = fileLine.find(' ');
+			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			std::string path = "../assets/sponza_textures/" + value;
+			imageFilePaths.push_back(path);
+			allocatedImages.push_back(&textures[texturesUsed].image);
+			currentMaterial.albedoIndex = texturesUsed;
+			texturesUsed++;
+		} else if (prefix == "map_Ks") {
+			int space = fileLine.find(' ');
+			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			std::string path = "../assets/sponza_textures/" + value;
+			imageFilePaths.push_back(path);
+			allocatedImages.push_back(&textures[texturesUsed].image);
+			currentMaterial.metalnessIndex = texturesUsed;
+			texturesUsed++;
+		}
+	}
+
+	//string pointer jank idk
+	const char* chars[imageFilePaths.size()];
+	for (int i = 0; i < imageFilePaths.size(); i++) {
+		const char* c = imageFilePaths[i].c_str();
+		chars[i] = c; 
+	}
+
+	vkutil::load_images_from_file(*this, chars, allocatedImages.data(), imageFilePaths.size());
+
+	deletionQueue.push_function([=]() {
+        for (AllocatedImage* image : allocatedImages) {
+            vmaDestroyImage(allocator, image->image, image->allocation);
+		}
+    });
+
+	for (auto& pair : loadedMaterials) {
+		cout << pair.first << " " << pair.second << endl;
+	}
+}
+
+void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox scene) {
 	auto start = std::chrono::system_clock::now();
 
 	nodesUsed++;
@@ -891,7 +996,7 @@ void VulkanEngine::build_bvh(int size, int triIndex, glm::mat4 transform) {
 	BVHStats stats;
 
 	update_bvh_bounds(offset);
-	subdivide_bvh(offset, 0, stats, transform);
+	subdivide_bvh(offset, 0, stats, scene);
 
 	bvhNodes.resize(nodesUsed);
 	bvhNodes.shrink_to_fit();	
@@ -921,10 +1026,10 @@ void VulkanEngine::update_bvh_bounds(uint index) {
 	node.boundsZ = glm::vec2(box.bounds[0].z, box.bounds[1].z);
 }
 
-void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, glm::mat4 transform) {
+void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, BoundingBox scene) {
 	BVHNode& node = bvhNodes[index];
 	
-	if (node.triCount <= 2 || depth >= 32) {
+	if (node.triCount <= 2 || depth >= 64) {
 		stats.maxDepth = iMax(depth, stats.maxDepth);
 		stats.minDepth = iMin(depth, stats.minDepth);
 		stats.maxTri = iMax(node.triCount, stats.maxTri);
@@ -933,14 +1038,13 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, glm::m
 
 	int axis = 0;
 	float splitPos = 0.f;
-	float bestCost = find_bvh_split_plane(node, axis, splitPos, transform);	
+	float bestCost = find_bvh_split_plane(node, axis, splitPos, scene);	
 
     BoundingBox parent;
 	parent.bounds[0] = glm::vec4(node.boundsX[0], node.boundsY[0], node.boundsZ[0], 0.f);
 	parent.bounds[1] = glm::vec4(node.boundsX[1], node.boundsY[1], node.boundsZ[1], 0.f);
-    float noSplitCost = node.triCount * scene_interior_cost(parent, transform);
+    float noSplitCost = node.triCount * scene_interior_cost(parent, scene);
 	if (bestCost >= noSplitCost) {
-		cout << bestCost << " " << noSplitCost << endl;
 		stats.maxDepth = iMax(depth, stats.maxDepth);
 		stats.minDepth = iMin(depth, stats.minDepth);
 		stats.maxTri = iMax(node.triCount, stats.maxTri);
@@ -985,49 +1089,11 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, glm::m
 	update_bvh_bounds(node.index);
 	update_bvh_bounds(node.index + 1);
 
-	subdivide_bvh(node.index, depth + 1, stats, transform);
-	subdivide_bvh(node.index + 1, depth + 1, stats, transform);
+	subdivide_bvh(node.index, depth + 1, stats, scene);
+	subdivide_bvh(node.index + 1, depth + 1, stats, scene);
 }
 
-float VulkanEngine::sah_cost(BVHNode& node, int axis, float split) {
-	BoundingBox left = {glm::vec4(1e30f), glm::vec4(-1e30f)};
-	BoundingBox right = {glm::vec4(1e30f), glm::vec4(-1e30f)};
-	int leftCount = 0;
-	int rightCount = 0;
-	
-	for (int i = 0; i < node.triCount; i++) {
-		Triangle triangle = triangles[node.index + i];
-		glm::vec3 centroid = centroids[node.index + i]; 
-		TrianglePoint v0 = triPoints[triangle.v0];
-		TrianglePoint v1 = triPoints[triangle.v1];
-		TrianglePoint v2 = triPoints[triangle.v2];
-
-		if (centroid[axis] < split) {
-			leftCount++;
-			for (int j = 0; j < 3; j++) {
-				left.grow(v0);
-				left.grow(v1);
-				left.grow(v2);
-			}
-		} else {
-			rightCount++;
-			for (int j = 0; j < 3; j++) {
-				right.grow(v0);
-				right.grow(v1);
-				right.grow(v2);
-			}
-		}
-	}
-	
-	glm::vec3 leftExtent = left.bounds[1] - left.bounds[0];
-	float leftArea = leftExtent.x * leftExtent.y + leftExtent.y * leftExtent.z + leftExtent.z * leftExtent.x;
-	glm::vec3 rightExtent = right.bounds[1] - right.bounds[0];
-	float rightArea = rightExtent.x * rightExtent.y + rightExtent.y * rightExtent.z + rightExtent.z * rightExtent.x;
-	float cost = leftCount * leftArea + rightCount * rightArea;
-	return cost > 0 ? cost : 1e30f;
-}
-
-float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, glm::mat4 transform) {
+float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, BoundingBox scene) {
 	float bestCost = 1e30f;
 	for (int a = 0; a < 3; a++) {
 		float min = 1e30f;
@@ -1065,12 +1131,12 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 			leftSum += bins[i].triCount;
 			leftCount[i] = leftSum;
 			leftBox.grow(bins[i].box);
-			leftArea[i] = scene_interior_cost(leftBox, transform);
+			leftArea[i] = scene_interior_cost(leftBox, scene);
 			rightSum += bins[BINS - 1 - i].triCount;
 			rightCount[BINS - 2 - i] = rightSum;
 			rightBox.grow(bins[BINS - 1 - i].box);
 			rightArea[i] = rightBox.surfaceArea();
-			rightArea[BINS - 2 - i] = scene_interior_cost(rightBox, transform);
+			rightArea[BINS - 2 - i] = scene_interior_cost(rightBox, scene);
 		}
 
 		scale = (max - min) / BINS;
@@ -1088,20 +1154,16 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 }
 
 //https://diglib.eg.org/server/api/core/bitstreams/0e178688-ff5b-44ff-b660-1c3259c23b0c/content
-float VulkanEngine::scene_interior_cost(BoundingBox node, glm::mat4 transformation) {
-	//return node.surfaceArea();
+float VulkanEngine::scene_interior_cost(BoundingBox node, BoundingBox scene) {
+	return node.surfaceArea();
 	// REMEMBER TO DO ROTATION
-	BoundingBox scene;
-	scene.bounds[0] = transformation * glm::vec4(-1.f, -1.f, -1.f, 0.f);
-	scene.bounds[1] = transformation * glm::vec4(1.f, 1.f, 1.f, 0.f);
-
 	glm::vec4 extent = (node.bounds[1]) - (node.bounds[0]);
 
 	float inv_volume = 1 / scene.volume();
 	float ben = node.volume() * inv_volume; //ben goodman
 	
 	//i dont know man
-	float sum = 0.f;
+	long double sum = 0.0;
 	for (int i = 0; i < 3; i++) {
 		float surface = 0.f;
 		if (i == 0) {
@@ -1118,32 +1180,38 @@ float VulkanEngine::scene_interior_cost(BoundingBox node, glm::mat4 transformati
 			prime.bounds[1] = scene.bounds[1];
 			prime.bounds[j][i] = node.bounds[1 - j][i];
 			sum += prime.volume() * surface / prime.surfaceArea();
+			if (prime.volume() * surface / prime.surfaceArea() < 0) {
+				cout << prime.volume() << "BAD" << endl;
+				exit(0);
+			} 
 		}
 	}
-
 	return ben + inv_volume * sum;
 }
 
 void VulkanEngine::init_image() {
-	textures.resize(2);
+	textures.resize(MAX_TEXTURES);
 
 	vkutil::create_empty_image(*this, computeImage.image, _windowExtent);
-	vkutil::load_image_from_file(*this, "../assets/slosher_alb.png", textures[0].image);
-	vkutil::load_image_from_file(*this, "../assets/rb_mtl.png", textures[1].image);
 
 	VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, computeImage.image.image, VK_IMAGE_ASPECT_COLOR_BIT);
 	VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &computeImage.imageView));
 
-	VkImageViewCreateInfo viewInfo2 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[0].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
-	VK_CHECK(vkCreateImageView(device, &viewInfo2, nullptr, &textures[0].imageView));
-
-	VkImageViewCreateInfo viewInfo3 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[1].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
-	VK_CHECK(vkCreateImageView(device, &viewInfo3, nullptr, &textures[1].imageView));
+	//im stupid and bad at memory
+	AllocatedImage textureImages[MAX_TEXTURES];
+	vkutil::create_empty_images(*this, textureImages, _windowExtent, MAX_TEXTURES);
+	for (int i = 0; i < MAX_TEXTURES; i++) {
+		textures[i].image = textureImages[i];
+		VkImageViewCreateInfo viewInfo2 = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[i].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
+		VK_CHECK(vkCreateImageView(device, &viewInfo2, nullptr, &textures[i].imageView));
+	}
 
 	deletionQueue.push_function([=]() {
 		vkDestroyImageView(device, computeImage.imageView, nullptr);
-		vkDestroyImageView(device, textures[0].imageView, nullptr);
-		vkDestroyImageView(device, textures[1].imageView, nullptr);
+		for (int i = 0; i < MAX_TEXTURES; i++) {
+			vmaDestroyImage(allocator, textureImages[i].image, textureImages[i].allocation);
+			vkDestroyImageView(device, textures[i].imageView, nullptr);
+		}
 	});
 }
 
