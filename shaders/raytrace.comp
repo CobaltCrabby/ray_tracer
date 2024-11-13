@@ -27,6 +27,7 @@ struct Material {
     float ior;
     int albedoIndex;
     int metalnessIndex;
+    int alphaIndex;
 };
 
 //objects
@@ -377,6 +378,17 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
         HitInfo hitInfo = calculateIntersections(newRay, stats);
         if (hitInfo.didHit && dielectricBounce < 100) {  
             Material material = materials[hitInfo.materialIndex];
+
+            if (material.alphaIndex != -1) {
+                float alpha = texture(sampler2D(TextureBuffer[material.alphaIndex], TextureSampler), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).r;
+                if (alpha == 0) {
+                    newRay.origin = hitInfo.hitPoint - hitInfo.normal * 0.001;
+                    newRay.dir;
+                    j--;
+                    continue;
+                }
+            }
+
             float reflectance = material.reflectance;
             if (material.metalnessIndex != -1) {
                 reflectance = texture(sampler2D(TextureBuffer[material.metalnessIndex], TextureSampler), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).r;
@@ -405,6 +417,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             rayColor *= material.albedo.rgb;
         } else {
             incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
+            if (j != 0) incomingLight *= 10.f;
             break;
         }
     }

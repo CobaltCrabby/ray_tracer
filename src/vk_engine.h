@@ -70,6 +70,7 @@ struct RayMaterial {
 	alignas(4) float ior = -1.f;
 	alignas(4) int albedoIndex = -1;
 	alignas(4) int metalnessIndex = -1;
+	alignas(4) int alphaIndex = -1;
 };
 
 struct BoundingBox {
@@ -144,7 +145,7 @@ struct CameraInfo {
 
 struct EnvironmentData {
 	alignas(16) glm::vec4 horizonColor = glm::vec4(0.986f, 1.f, 0.902f, 1000.f); //w = sunFocus;
-	alignas(16) glm::vec4 zenithColor = glm::vec4(0.265f, 0.595f, 0.887f, 10.f) * 10.f; //w = sunIntensity
+	alignas(16) glm::vec4 zenithColor = glm::vec4(0.265f, 0.595f, 0.887f, 10.f); //w = sunIntensity
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.431f);
 	alignas(16) glm::vec4 lightDir = glm::vec4(normalize(glm::vec3(2.f, 0.8f, -3.f)), 1.f); //w component = environment on
 };

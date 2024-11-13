@@ -392,7 +392,7 @@ void VulkanEngine::init_descriptors() {
 		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10},
 		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10},
 		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 32},
-		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 32},
+		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 128},
 		{VK_DESCRIPTOR_TYPE_SAMPLER, 1},
 	};
 
@@ -910,7 +910,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	}
 
 	RenderObject object;
-	object.materialIndex = 6;
+	object.materialIndex = loadedMaterials.at("../assets/" + materialFile + "/" + currentMat);
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -930,11 +930,11 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	glm::mat4 inverse = glm::inverse(object.transformMatrix);
 	bounds.bounds[0] = glm::vec4(-1920.95f, -1429.43f, -1105.43f, 1.f); 
 	bounds.bounds[1] = glm::vec4(1799.91f, 126.433f, 1182.81f, 1.f); 
-	
+
 	bounds.bounds[0] = inverse * bounds.bounds[0];
 	bounds.bounds[1] = inverse * bounds.bounds[1];
 
-	cout << endl << filePath << currentMat << endl; 
+	cout << endl << filePath << " " << currentMat << endl; 
 	build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
 }
 
@@ -1001,6 +1001,14 @@ void VulkanEngine::read_mtl(std::string filePath) {
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.metalnessIndex = texturesUsed;
+			texturesUsed++;
+		} else if (prefix == "map_d") {
+			int space = fileLine.find(' ');
+			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			std::string path = "../assets/sponza_textures/" + value;
+			imageFilePaths.push_back(path);
+			allocatedImages.push_back(&textures[texturesUsed].image);
+			currentMaterial.alphaIndex = texturesUsed;
 			texturesUsed++;
 		}
 	}
@@ -1201,7 +1209,7 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 
 //https://diglib.eg.org/server/api/core/bitstreams/0e178688-ff5b-44ff-b660-1c3259c23b0c/content
 float VulkanEngine::scene_interior_cost(BoundingBox node, BoundingBox scene) {
-	//return node.surfaceArea();
+	return node.surfaceArea();
 	// REMEMBER TO DO ROTATION
 	glm::vec4 extent = (node.bounds[1]) - (node.bounds[0]);
 
