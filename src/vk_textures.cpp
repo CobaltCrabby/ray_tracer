@@ -109,7 +109,7 @@ bool vkutil::load_images_from_file(VulkanEngine& engine, const char* files[], Al
             stbi_uc* pixels = stbi_load(files[i], &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
             if (!pixels) {
-                std::cout << "failed to load texture in batch: " << files[i] << std::endl;
+                std::cout << "failed to load texture in batch: " << files[i] << "!!!" << std::endl;
                 exit(0);
             }
 

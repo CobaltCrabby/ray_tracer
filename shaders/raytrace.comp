@@ -398,8 +398,8 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             incomingLight += emitted * rayColor;
 
             if (material.albedoIndex != -1) {
-                vec3 albedo = texture(sampler2D(TextureBuffer[material.albedoIndex], TextureSampler), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).rgb;
-                rayColor *= albedo;
+                vec4 albedo = texture(sampler2D(TextureBuffer[material.albedoIndex], TextureSampler), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y));
+                rayColor *= albedo.rgb;
                 continue;
             } 
             rayColor *= material.albedo.rgb;

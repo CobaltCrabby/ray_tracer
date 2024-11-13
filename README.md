@@ -18,6 +18,8 @@ A Vulkan-based compute raytracer written in C++. Code skeleton from *[VkGuide](h
 ![](renders/squeezer_mtlmap.png)
 <sup>Model and textures from *[The Model's Resource](https://www.models-resource.com/nintendo_switch/splatoon3/model/59382/)*</sup>
 ![](renders/bunny_dielectric.png)
-<sup>Model from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>
+<sup>Bunny from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>
 ![](renders/dragon_gold.png)
-<sup>Model from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>
+<sup>Dragon from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>
+![](renders/sponza.png)
+<sup>Crytek Sponza from *[McGuire Computer Graphics Archive](https://casual-effects.com/data/)*</sup>

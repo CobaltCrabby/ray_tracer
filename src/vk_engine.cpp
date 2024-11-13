@@ -648,7 +648,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//object.ior = 1.5f;
 
 	// rayMaterials.push_back(dielectric);
-	rayMaterials.push_back(white);
+	// rayMaterials.push_back(white);
 	// rayMaterials.push_back(red);
 	// rayMaterials.push_back(green);
 	// rayMaterials.push_back(blue);
@@ -702,7 +702,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	// plane.frontOnly = true;
 	// read_obj("../assets/plane.obj", plane, 1);
 
-	copy_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
+	copy_buffer(sizeof(RayMaterial) * rayMaterials.size(), materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
 	copy_buffer(sizeof(Triangle) * triangles.size(), triangleBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triangles.data());
 	copy_buffer(sizeof(RenderObject) * objects.size(), objectBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) objects.data());
@@ -800,6 +800,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				index = nextSpace + 1;
 			}
 			bounds.grow(position);
+			scene.grow(position);
 			triPoints.push_back({glm::vec4(position, 0.f)});
 		} else if (prefix == "vt") { //uv
 			index++;
@@ -867,7 +868,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			int space = fileLine.find(' ');
 			std::string mat = fileLine.substr(space + 1, fileLine.size() - space - 1);
 			if (currentMat.empty()) {
-				//currentMat = mat;
+				currentMat = mat;
 				continue;
 			}
 
@@ -889,11 +890,14 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			loadedObjects.emplace(filePath + "/" + currentMat, object.bvhIndex);
 
 			glm::mat4 inverse = glm::inverse(object.transformMatrix);
-			bounds.bounds[0] = inverse * bounds.bounds[0];
-			bounds.bounds[1] = inverse * bounds.bounds[1];
-			cout << mat << endl;
+			bounds.bounds[0] = glm::vec4(-1920.95f, -1429.43f, -1105.43f, 1.f); 
+			bounds.bounds[1] = glm::vec4(1799.91f, 126.433f, 1182.81f, 1.f); 
+
+			bounds.bounds[0] = inverse * scene.bounds[0];
+			bounds.bounds[1] = inverse * scene.bounds[1];
+
+			cout << endl << filePath << " " << currentMat << endl; 
 			build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
-			cout << endl;
 
 			//RESET
 			currentMat = mat;
@@ -924,9 +928,13 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	cout << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
 
 	glm::mat4 inverse = glm::inverse(object.transformMatrix);
+	bounds.bounds[0] = glm::vec4(-1920.95f, -1429.43f, -1105.43f, 1.f); 
+	bounds.bounds[1] = glm::vec4(1799.91f, 126.433f, 1182.81f, 1.f); 
+	
 	bounds.bounds[0] = inverse * bounds.bounds[0];
 	bounds.bounds[1] = inverse * bounds.bounds[1];
 
+	cout << endl << filePath << currentMat << endl; 
 	build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
 }
 
@@ -1005,7 +1013,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 	const char* chars[imageFilePaths.size()];
 	for (int i = 0; i < imageFilePaths.size(); i++) {
 		const char* c = imageFilePaths[i].c_str();
-		chars[i] = c; 
+		chars[i] = c;
 	}
 
 	vkutil::load_images_from_file(*this, chars, allocatedImages.data(), imageFilePaths.size());
@@ -1193,7 +1201,7 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 
 //https://diglib.eg.org/server/api/core/bitstreams/0e178688-ff5b-44ff-b660-1c3259c23b0c/content
 float VulkanEngine::scene_interior_cost(BoundingBox node, BoundingBox scene) {
-	return node.surfaceArea();
+	//return node.surfaceArea();
 	// REMEMBER TO DO ROTATION
 	glm::vec4 extent = (node.bounds[1]) - (node.bounds[0]);
 
