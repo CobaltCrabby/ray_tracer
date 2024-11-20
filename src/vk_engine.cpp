@@ -552,7 +552,7 @@ void VulkanEngine::update_descriptors() {
 	VkDescriptorBufferInfo materialBufferInfo;
 	materialBufferInfo.buffer = materialBuffer.buffer;
 	materialBufferInfo.offset = 0;
-	materialBufferInfo.range = sizeof(RayMaterial) * MAX_MATERIALS;
+	materialBufferInfo.range = sizeof(RayMaterial) * rayMaterials.size();
 
 	VkDescriptorImageInfo textureImageInfos[MAX_TEXTURES];
 	for (int i = 0; i < MAX_TEXTURES; i++) {
@@ -661,7 +661,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.name = "sponza";
 	//model.position = glm::vec3(0.2f, 0.5f, 0.f);
 	model.scale = glm::vec3(0.1f);
-	read_obj("../assets/sponza.obj", model, 0);
+	read_obj("../assets/sponza_tri.obj", model, 0);
 
 	// ImGuiObject light;
 	// light.name = "light";
@@ -791,79 +791,114 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 		std::string prefix = fileLine.substr(0, fileLine.find(' '));
 
-		int index = 2;
 		if (prefix == "v") { //vertices
+			int index = 2;
 			glm::vec3 position;
 			for (int i = 0; i < 3; i++) {
 				int nextSpace = fileLine.find(' ', index);
 				position[i] = stof(fileLine.substr(index, nextSpace - index));
 				index = nextSpace + 1;
 			}
+			//position.y *= -1;
 			bounds.grow(position);
 			scene.grow(position);
 			triPoints.push_back({glm::vec4(position, 0.f)});
 		} else if (prefix == "vt") { //uv
-			index++;
 			glm::vec2 uv;
-			for (int i = 0; i < 2; i++) {
-				int size = 8;
-				uv[i] = stof(fileLine.substr(index, size));
-				index += size + 1;
-			}
+			int firstSpace = fileLine.find(' ', 2);
+			int secondSpace = fileLine.find(' ', firstSpace + 1);
+			float u = stof(fileLine.substr(firstSpace + 1, secondSpace - firstSpace - 1));
+			float v = stof(fileLine.substr(secondSpace, fileLine.length() - secondSpace));
+			uv.x = u;
+			uv.y = v;
 			uvs.push_back(uv);
 		} else if (prefix == "vn") { //normal
-			index++;
+			int index = 3;
 			glm::vec3 normal;
 			for (int i = 0; i < 3; i++) {
-				int size = fileLine.at(index) == '-' ? 7 : 6;
-				normal[i] = stof(fileLine.substr(index, size));
-				index += size + 1;
+				int nextSpace = fileLine.find(' ', index);
+				normal[i] = stof(fileLine.substr(index, nextSpace - index));
+				index = nextSpace + 1;
 			}
 			normals.push_back(normal);
 		} else if (prefix == "f") { //triangles
-			index = 0;
-			glm::uvec3 vertexIndex;
-			for (int i = 0; i < 3; i++) {
+			int index = 0;
+
+			std::vector<uint> vertexInd;
+			std::vector<uint> normalInd;
+			std::vector<uint> textureInd;
+
+			int pointCount = 0;
+			for (int i = 0; i < fileLine.size() - 1; i++) {
+				if (fileLine.at(i) == ' ') pointCount++;
+			}
+
+			for (int i = 0; i < pointCount; i++) {
 				int space = fileLine.find(' ', index);
 				int nextSpace = fileLine.find(' ', space + 1);
-				std::string vertex = fileLine.substr(space + 1, nextSpace - space - (i == 2 ? 0 : 1));
+				std::string vertex = fileLine.substr(space + 1, nextSpace - space - (i == pointCount - 1 ? 0 : 1));
 
 				int firstSlash = vertex.find('/');
-				std::string vIndexStr = vertex.substr(0, firstSlash);
-				if (vIndexStr.empty()) {
-					cout << "error loading " << filePath << ": vertexIndex is empty" << endl;
-					exit(0);
-				}
-				vertexIndex[i] = stoi(vIndexStr) + pointOffset - 1;
-
 				int secondSlash = vertex.find('/', firstSlash + 1);
+
+				std::string vIndexStr = vertex.substr(0, firstSlash);
+				if (!vIndexStr.empty()) {
+					vertexInd.push_back(stoi(vIndexStr) + pointOffset - 1);
+				}
+
 				std::string uvIndexStr = vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1);
 				if (!uvIndexStr.empty()) {
-					glm::vec2 uv = uvs.at(stoi(uvIndexStr) - 1);
-					triPoints[vertexIndex[i]].position.w = uv.x; 
-					triPoints[vertexIndex[i]].normal.w = uv.y;
+					textureInd.push_back(stoi(uvIndexStr) - 1);
 				}
 
 				std::string nIndexStr = vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1);
 				if (!nIndexStr.empty()) {
-					glm::vec3 normal = normals.at(stoi(nIndexStr) - 1);
-					triPoints[vertexIndex[i]].normal.x = normal.x;
-					triPoints[vertexIndex[i]].normal.y = normal.y;
-					triPoints[vertexIndex[i]].normal.z = normal.z;
+					normalInd.push_back(stoi(nIndexStr) - 1);
 				}
 
 				index = nextSpace;
 			}
+			
+			//put uv in the vec4s
+			for (int i = 0; i < pointCount; i++) {
+				int vInd = vertexInd[i];
+				glm::vec3 normal = normals[normalInd[i]];
+				glm::vec2 uv = uvs[textureInd[i]];
+				triPoints[vInd].normal = glm::vec4(normal, uv.y);
+				triPoints[vInd].position.w = uv.x;
+			}
+			
+			glm::vec3 tangent, bitangent;
+
+			calculate_binormal(vertexInd[0], vertexInd[1], vertexInd[2], tangent, bitangent);
 
 			Triangle tri;
-			tri.v0 = vertexIndex[0];
-			tri.v1 = vertexIndex[1];
-			tri.v2 = vertexIndex[2];
+			tri.v0 = vertexInd[0];
+			tri.v1 = vertexInd[1];
+			tri.v2 = vertexInd[2];
 			tri.frontOnly = imGuiObj.frontOnly;
+			tri.tangent = tangent;
+			tri.binormal = bitangent;
 			triangles.push_back(tri);
 
 			glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
 			centroids.push_back(centroid / 3.f);
+
+			if (pointCount == 4) {
+				calculate_binormal(vertexInd[2], vertexInd[3], vertexInd[0], tangent, bitangent);
+
+				Triangle tri;
+				tri.v0 = vertexInd[2];
+				tri.v1 = vertexInd[3];
+				tri.v2 = vertexInd[0];
+				tri.frontOnly = imGuiObj.frontOnly;
+				tri.tangent = tangent;
+				tri.binormal = bitangent;
+				triangles.push_back(tri);
+
+				glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
+				centroids.push_back(centroid / 3.f);	
+			}
 		} else if (prefix == "usemtl") {
 			int space = fileLine.find(' ');
 			std::string mat = fileLine.substr(space + 1, fileLine.size() - space - 1);
@@ -923,10 +958,6 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 	loadedObjects.emplace(filePath, object.bvhIndex);
 
-	auto end = std::chrono::system_clock::now();    
-	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	cout << "Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms load time " << endl;
-
 	glm::mat4 inverse = glm::inverse(object.transformMatrix);
 	bounds.bounds[0] = glm::vec4(-1920.95f, -1429.43f, -1105.43f, 1.f); 
 	bounds.bounds[1] = glm::vec4(1799.91f, 126.433f, 1182.81f, 1.f); 
@@ -936,6 +967,36 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 	cout << endl << filePath << " " << currentMat << endl; 
 	build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
+
+	auto end = std::chrono::system_clock::now();    
+	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	cout << "> Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms total load time " << endl;
+}
+
+//https://stackoverflow.com/questions/5255806/how-to-calculate-tangent-and-binormal/5257471#5257471
+void VulkanEngine::calculate_binormal(int v1, int v2, int v3, glm::vec3& tangent, glm::vec3& binormal) {
+	glm::vec4 a = triPoints[v1].position;
+	glm::vec4 b = triPoints[v2].position;
+	glm::vec4 c = triPoints[v3].position;
+
+	glm::vec2 h = glm::vec2(a.w, triPoints[v1].normal.w);
+	glm::vec2 k = glm::vec2(b.w, triPoints[v2].normal.w);
+	glm::vec2 l = glm::vec2(c.w, triPoints[v3].normal.w);
+
+	glm::vec3 edge1 = glm::vec3(b.x, b.y, b.z) - glm::vec3(a.x, a.y, a.z); 
+	glm::vec3 edge2 = glm::vec3(c.x, c.y, c.z) - glm::vec3(a.x, a.y, a.z);
+	glm::vec2 uv1 = k - h;
+	glm::vec2 uv2 = l - h;
+
+	float f = 1.0f / (uv1.x * uv2.y - uv2.x * uv1.y);
+
+	tangent.x = f * (uv2.y * edge1.x - uv1.y * edge2.x);
+	tangent.y = f * (uv2.y * edge1.y - uv1.y * edge2.y);
+	tangent.z = f * (uv2.y * edge1.z - uv1.y * edge2.z);
+
+	binormal.x = f * (-uv2.x * edge1.x + uv1.x * edge2.x);
+	binormal.y = f * (-uv2.x * edge1.y + uv1.x * edge2.y);
+	binormal.z = f * (-uv2.x * edge1.z + uv1.x * edge2.z);
 }
 
 void VulkanEngine::read_mtl(std::string filePath) {
@@ -1009,6 +1070,14 @@ void VulkanEngine::read_mtl(std::string filePath) {
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.alphaIndex = texturesUsed;
+			texturesUsed++;
+		} else if (prefix == "map_Bump") {
+			int space = fileLine.find(' ');
+			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
+			std::string path = "../assets/sponza_textures/" + value;
+			imageFilePaths.push_back(path);
+			allocatedImages.push_back(&textures[texturesUsed].image);
+			currentMaterial.bumpIndex = texturesUsed;
 			texturesUsed++;
 		}
 	}

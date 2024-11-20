@@ -179,7 +179,7 @@ bool vkutil::load_images_from_file(VulkanEngine& engine, const char* files[], Al
             imageBarrier_toReadable.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 
             imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_GENERAL;
             imageBarrier_toReadable.image = outImages[i]->image;
             imageBarrier_toReadable.subresourceRange = range;
 

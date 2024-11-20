@@ -55,6 +55,8 @@ struct Triangle {
    	uint v1;
    	uint v2;
 	uint frontOnly;
+	alignas(16) glm::vec3 binormal;
+	alignas(16) glm::vec3 tangent;
 };
 
 struct TrianglePoint {
@@ -71,6 +73,7 @@ struct RayMaterial {
 	alignas(4) int albedoIndex = -1;
 	alignas(4) int metalnessIndex = -1;
 	alignas(4) int alphaIndex = -1;
+	alignas(4) int bumpIndex = -1;
 };
 
 struct BoundingBox {
@@ -154,7 +157,7 @@ struct RayTracerData {
 	alignas(4) bool progressive = false;
 	alignas(4) int debug = -1;
 	alignas(4) uint raysPerPixel = 1;
-	alignas(4) uint bounceLimit = 2;
+	alignas(4) uint bounceLimit = 0;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
 	alignas(4) uint triangleCap = 50;
@@ -192,7 +195,7 @@ struct BVHStats {
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int BINS = 20;
-constexpr unsigned int MAX_TEXTURES = 32;
+constexpr unsigned int MAX_TEXTURES = 64;
 const unsigned int MAX_MATERIALS = 10;
 const unsigned int MAX_SPHERES = 10;
 
@@ -212,6 +215,7 @@ private:
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
 	void read_obj(std::string filePath, ImGuiObject imGui, int material);
+	void calculate_binormal(int v1, int v2, int v3, glm::vec3& tangent, glm::vec3& binormal);
 	void read_mtl(std::string filePath);
 	void build_bvh(int size, int triIndex, BoundingBox scene);
 	void update_bvh_bounds(uint index);

@@ -28,6 +28,7 @@ struct Material {
     int albedoIndex;
     int metalnessIndex;
     int alphaIndex;
+    int bumpIndex;
 };
 
 //objects
@@ -55,6 +56,8 @@ struct Triangle {
     uint v1;
     uint v2;
     uint frontOnly;
+    vec3 binormal;
+    vec3 tangent;
 };
 
 struct TrianglePoint {
@@ -67,6 +70,8 @@ struct HitInfo {
     vec3 normal;
     vec2 uv;
     float dst;
+    uint objectHitIndex;
+    uint triHitIndex;
     uint materialIndex;
     bool didHit;
     bool frontFace;
@@ -100,7 +105,7 @@ struct RayTracerData {
 
 layout (binding = 0, rgba8) uniform image2D outImage;
 
-layout (binding = 1) uniform texture2D TextureBuffer[32];
+layout (binding = 1) uniform texture2D TextureBuffer[64];
 
 layout (std140, binding = 2) readonly buffer SphereBuffer {
     Sphere spheres[];
@@ -275,33 +280,33 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
 
         //dont check for triangles if quad
         BVHNode root = bvhNodes[object.bvhIndex];
-        if (root.triCount == 2) {
-            BoundingBox box;
-            box.bounds[0].xyz = vec3(root.boundsX[0], root.boundsY[0], root.boundsZ[0]);
-            box.bounds[1].xyz = vec3(root.boundsX[1], root.boundsY[1], root.boundsZ[1]);
+        // if (root.triCount == 2) {
+        //     BoundingBox box;
+        //     box.bounds[0].xyz = vec3(root.boundsX[0], root.boundsY[0], root.boundsZ[0]);
+        //     box.bounds[1].xyz = vec3(root.boundsX[1], root.boundsY[1], root.boundsZ[1]);
 
-            float dst = boxIntersection(box, transformRay);
-            if (dst == 99999999 || dst > closestHit.dst) continue;
+        //     float dst = boxIntersection(box, transformRay);
+        //     if (dst == 99999999 || dst > closestHit.dst) continue;
 
-            Triangle tri = triangles[root.index];
-            TrianglePoint v0 = trianglePoints[tri.v0];
-            TrianglePoint v1 = trianglePoints[tri.v1];
-            TrianglePoint v2 = trianglePoints[tri.v2];
-            vec3 v1v2 = v1.position.xyz - v2.position.xyz;
-            vec3 v1v0 = v1.position.xyz - v0.position.xyz;
+        //     Triangle tri = triangles[root.index];
+        //     TrianglePoint v0 = trianglePoints[tri.v0];
+        //     TrianglePoint v1 = trianglePoints[tri.v1];
+        //     TrianglePoint v2 = trianglePoints[tri.v2];
+        //     vec3 v1v2 = v1.position.xyz - v2.position.xyz;
+        //     vec3 v1v0 = v1.position.xyz - v0.position.xyz;
 
-            //check for front face
-            vec3 n = cross(v1v2, v1v0);
-            float d0 = -dot(transformRay.dir, n);
-            if (d0 >= 0.00000001f) {
-                closestHit.didHit = true;
-                closestHit.materialIndex = object.materialIndex;
-                closestHit.normal = normalize((object.transformMatrix * vec4(n, 0.f))).xyz;
-                closestHit.hitPoint = transformRay.origin + transformRay.dir * dst;
-                closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
-            }
-            continue;
-        }
+        //     //check for front face
+        //     vec3 n = cross(v1v2, v1v0);
+        //     float d0 = -dot(transformRay.dir, n);
+        //     if (d0 >= 0.00000001f) {
+        //         closestHit.didHit = true;
+        //         closestHit.materialIndex = object.materialIndex;
+        //         closestHit.normal = normalize((object.transformMatrix * vec4(n, 0.f))).xyz;
+        //         closestHit.hitPoint = transformRay.origin + transformRay.dir * dst;
+        //         closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+        //     }
+        //     continue;
+        // }
 
         //bvh traversal
         uint stack[64];
@@ -322,6 +327,8 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
                         closestHit = hitInfo;
                         closestHit.normal = normalize((object.transformMatrix * vec4(closestHit.normal, 0.f))).xyz;
                         closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+                        closestHit.triHitIndex = j;
+                        closestHit.objectHitIndex = i;
                     }
                 }
             } else {
@@ -387,6 +394,31 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
                     j--;
                     continue;
                 }
+            }
+
+            //https://stackoverflow.com/questions/5255806/how-to-calculate-tangent-and-binormal/5257471#5257471
+            if (material.bumpIndex != -1) {
+                float height = 0.1f;
+                float width = 0.01f;
+                ivec2 dim = textureSize(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler), 0);
+
+                vec2 uv = vec2(hitInfo.uv.x, 1 - hitInfo.uv.y);
+                float base = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler), uv).r;
+                float x = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler), uv + vec2(1.0 / dim.x, 0.f)).r;
+                float y = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler), uv + vec2(0.f, 1.0 / dim.y)).r;
+                Triangle tri = triangles[hitInfo.triHitIndex];
+
+                vec3 tangent = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(1.f, 0.f, 0.f, 0.f)).rgb;
+                vec3 binormal = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(0.f, 1.f, 0.f, 0.f)).rgb;
+
+                vec3 deltaX = (tangent * width + hitInfo.normal * (x - base) * height);
+                vec3 deltaY = (binormal * width + hitInfo.normal * (y - base) * height);
+
+                //return binormal;
+                vec3 bumpNormal = normalize(cross(deltaX, deltaY)) * (hitInfo.frontFace ? 1 : -1);
+                //int flip = int(sign(dot(cross(tangent, binormal), hitInfo.normal)));
+                hitInfo.normal = bumpNormal;// * flip;
+                //return vec3(hitInfo.uv, 0.f);// * tangent;
             }
 
             float reflectance = material.reflectance;
@@ -476,6 +508,8 @@ void main() {
         finalColor.g = 0.f;
         finalColor.b = stats[1] / traceData.triCap;
     }
+
+    //finalColor = texture(sampler2D(TextureBuffer[1], TextureSampler), uv).rgb;
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
 }
