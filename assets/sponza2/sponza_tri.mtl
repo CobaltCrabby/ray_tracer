@@ -1,0 +1,220 @@
+# Blender 4.2.2 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl sp_00_luk_mal1
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/01_ST_KP.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/01_St_kp-bump.jpg
+
+newmtl sp_00_luk_mali
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/SP_LUK.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/sp_luk-bump.JPG
+
+newmtl sp_00_pod
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/KAMEN.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/KAMEN-bump.jpg
+
+newmtl sp_00_prozor
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/PROZOR1.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/PROZOR1.JPG
+
+newmtl sp_00_stup
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/01_STUB.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/01_STUB-bump.jpg
+
+newmtl sp_00_svod
+Ns 0.999999
+Ka 1.000000 1.000000 1.000000
+Ks 0.031895 0.031895 0.031895
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd /Users/cobalt/Downloads/sponza(1)/KAMEN-stup.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/KAMEN-stup.jpg
+
+newmtl sp_00_vrata_kock
+Ns 19.999990
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/VRATA_KO.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/VRATA_KO.JPG
+
+newmtl sp_00_vrata_krug
+Ns 19.999990
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/VRATA_KR.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/VRATA_KR.JPG
+
+newmtl sp_00_zid
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/KAMEN.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/KAMEN-bump.jpg
+
+newmtl sp_01_luk_a
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/SP_LUK.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/sp_luk-bump.JPG
+
+newmtl sp_01_stub
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/01_STUB.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/01_STUB-bump.jpg
+
+newmtl sp_01_stub_baza
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/01_S_BA.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/01_S_BA.JPG
+
+newmtl sp_01_stub_baza_
+Ns 19.999990
+Ka 1.000000 1.000000 1.000000
+Kd 0.784314 0.784314 0.784314
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+
+newmtl sp_01_stub_kut
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/01_STUB.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/01_STUB-bump.jpg
+
+newmtl sp_01_stup
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/X01_ST.JPG
+
+newmtl sp_01_stup_baza
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/01_S_BA.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/01_S_BA.JPG
+
+newmtl sp_02_reljef
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/RELJEF.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/reljef-bump.jpg
+
+newmtl sp_svod_kapitel
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/00_SKAP.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/00_SKAP.JPG
+
+newmtl sp_vijenac
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/00_SKAP.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/00_SKAP.JPG
+
+newmtl sp_zid_vani
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd /Users/cobalt/Downloads/sponza(1)/KAMEN.JPG
+map_Bump /Users/cobalt/Downloads/sponza(1)/KAMEN-bump.jpg

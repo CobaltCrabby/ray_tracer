@@ -57,6 +57,20 @@ void VulkanEngine::init() {
 	prepare_storage_buffers();
 	update_descriptors();
 
+	// for (int i = 0; i < triangles.size(); i++) {
+	// 	TrianglePoint v0 = triPoints[triangles[i].v0];
+	// 	TrianglePoint v1 = triPoints[triangles[i].v1];
+	// 	TrianglePoint v2 = triPoints[triangles[i].v2];
+	// 	TrianglePoint tris[] = {v0, v1, v2};
+	// 	for (int j = 0; j < 3; j++) {
+	// 		glm::vec4 p = tris[j].position;
+	// 		glm::vec2 uv = {tris[j].position.w, tris[j].normal.w};
+	// 		if (abs(p.x + 10.9128f) < 0.01f && abs(p.y + 5.72331f) < 0.01f && abs(p.z - 2.51851f) < 0.01f && j == 2) {
+	// 			cout << uv.x << " " << uv.y << " " << i << endl;
+	// 		}
+	// 	}
+	// }
+
 	// everything went fine
 	_isInitialized = true;
 }
@@ -508,7 +522,7 @@ void VulkanEngine::init_imgui() {
 
 void VulkanEngine::update_descriptors() {
 	VkSampler sampler;
-	VkSamplerCreateInfo samplerInfo = vkinit::samplerCreateInfo(VK_FILTER_NEAREST);
+	VkSamplerCreateInfo samplerInfo = vkinit::samplerCreateInfo(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT);
 	vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
 
 	//allocate the descriptor set for single-texture
@@ -659,9 +673,8 @@ void VulkanEngine::prepare_storage_buffers() {
 	//ccw
 	ImGuiObject model;
 	model.name = "sponza";
-	//model.position = glm::vec3(0.2f, 0.5f, 0.f);
-	model.scale = glm::vec3(0.1f);
-	read_obj("../assets/sponza_tri.obj", model, 0);
+	model.scale = glm::vec3(1.f);
+	read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
 
 	// ImGuiObject light;
 	// light.name = "light";
@@ -777,6 +790,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	std::string currentMat;
 	std::string fileLine;
 	std::string materialFile;
+	std::vector<glm::vec3> positions;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
 	BoundingBox bounds;
@@ -786,7 +800,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 		std::getline(fileStream, fileLine);
 		if (fileLine.find("mtllib") != std::string::npos) {
 			materialFile = fileLine.substr(7, fileLine.size() - 7);
-			read_mtl("../assets/" + materialFile);
+			read_mtl("../assets/sponza2/" + materialFile);
 		}
 
 		std::string prefix = fileLine.substr(0, fileLine.find(' '));
@@ -799,10 +813,9 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				position[i] = stof(fileLine.substr(index, nextSpace - index));
 				index = nextSpace + 1;
 			}
-			//position.y *= -1;
 			bounds.grow(position);
 			scene.grow(position);
-			triPoints.push_back({glm::vec4(position, 0.f)});
+			positions.push_back(glm::vec4(position, 0.f));
 		} else if (prefix == "vt") { //uv
 			glm::vec2 uv;
 			int firstSpace = fileLine.find(' ', 2);
@@ -843,7 +856,8 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 				std::string vIndexStr = vertex.substr(0, firstSlash);
 				if (!vIndexStr.empty()) {
-					vertexInd.push_back(stoi(vIndexStr) + pointOffset - 1);
+					vertexInd.push_back(stoi(vIndexStr) - 1);
+					//POINT OFFSET
 				}
 
 				std::string uvIndexStr = vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1);
@@ -851,6 +865,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 					textureInd.push_back(stoi(uvIndexStr) - 1);
 				}
 
+				if (normals.size() == 0) continue;
 				std::string nIndexStr = vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1);
 				if (!nIndexStr.empty()) {
 					normalInd.push_back(stoi(nIndexStr) - 1);
@@ -858,47 +873,76 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 				index = nextSpace;
 			}
+
+			glm::uvec4 pointIndex;
 			
 			//put uv in the vec4s
 			for (int i = 0; i < pointCount; i++) {
-				int vInd = vertexInd[i];
-				glm::vec3 normal = normals[normalInd[i]];
+				glm::vec3 normal;
+				if (normals.size() == 0) {
+					normal = glm::vec3(0.f);
+				} else {
+					normal = normals[normalInd[i]];
+				}
 				glm::vec2 uv = uvs[textureInd[i]];
-				triPoints[vInd].normal = glm::vec4(normal, uv.y);
-				triPoints[vInd].position.w = uv.x;
+				glm::vec3 p = positions[vertexInd[i]];
+
+				TrianglePoint point;
+				point.position = glm::vec4(p, uv.x);
+				point.normal = glm::vec4(normal, uv.y);
+
+				pointIndex[i] = triPoints.size();
+				triPoints.push_back(point);
+
+				if (abs(p.x + 10.9128f) < 0.01f && abs(p.y + 5.72331f) < 0.01f && abs(p.z - 2.51851f) < 0.01f && i == 2) {
+					// cout << endl;
+					for (int j = 0; j < 3; j++) {
+						glm::vec4 p2 = triPoints[vertexInd[j]].position;
+						// cout << p2.x << " " << p2.y << " " << p2.z << endl;
+					}
+					//cout << textureInd[i] << " " << vInd << " " << triangles.size() << endl;
+				}
 			}
 			
-			glm::vec3 tangent, bitangent;
+			glm::vec3 tangent, binormal;
 
-			calculate_binormal(vertexInd[0], vertexInd[1], vertexInd[2], tangent, bitangent);
+			calculate_binormal(vertexInd[0], vertexInd[1], vertexInd[2], tangent, binormal);
 
 			Triangle tri;
-			tri.v0 = vertexInd[0];
-			tri.v1 = vertexInd[1];
-			tri.v2 = vertexInd[2];
+			tri.v0 = pointIndex[0];
+			tri.v1 = pointIndex[1];
+			tri.v2 = pointIndex[2];
 			tri.frontOnly = imGuiObj.frontOnly;
 			tri.tangent = tangent;
-			tri.binormal = bitangent;
-			triangles.push_back(tri);
+			tri.binormal = binormal;
+			
+			TrianglePoint tp[] = {triPoints[pointIndex[0]], triPoints[pointIndex[1]], triPoints[pointIndex[2]]};
+			glm::vec3 centroid = glm::vec3(0.f);
+			for (int i = 0; i < 3; i++) {
+				glm::vec4 p = tp[i].position;
+				centroid.x += p.x;
+				centroid.y += p.y;
+				centroid.z += p.z;
+			}
 
-			glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
+			triangles.push_back(tri);
 			centroids.push_back(centroid / 3.f);
 
-			if (pointCount == 4) {
-				calculate_binormal(vertexInd[2], vertexInd[3], vertexInd[0], tangent, bitangent);
+			// if (pointCount == 4) {
+			// 	calculate_binormal(vertexInd[2], vertexInd[3], vertexInd[0], tangent, bitangent);
 
-				Triangle tri;
-				tri.v0 = vertexInd[2];
-				tri.v1 = vertexInd[3];
-				tri.v2 = vertexInd[0];
-				tri.frontOnly = imGuiObj.frontOnly;
-				tri.tangent = tangent;
-				tri.binormal = bitangent;
-				triangles.push_back(tri);
+			// 	Triangle tri;
+			// 	tri.v0 = vertexInd[2];
+			// 	tri.v1 = vertexInd[3];
+			// 	tri.v2 = vertexInd[0];
+			// 	tri.frontOnly = imGuiObj.frontOnly;
+			// 	tri.tangent = tangent;
+			// 	tri.binormal = bitangent;
+			// 	triangles.push_back(tri);
 
-				glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
-				centroids.push_back(centroid / 3.f);	
-			}
+			// 	glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
+			// 	centroids.push_back(centroid / 3.f);	
+			// }
 		} else if (prefix == "usemtl") {
 			int space = fileLine.find(' ');
 			std::string mat = fileLine.substr(space + 1, fileLine.size() - space - 1);
@@ -906,10 +950,9 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				currentMat = mat;
 				continue;
 			}
-
 			//create object
 			RenderObject object;
-			object.materialIndex = loadedMaterials.at("../assets/" + materialFile + "/" + currentMat);
+			object.materialIndex = loadedMaterials.at("../assets/sponza2/" + materialFile + "/" + currentMat);
 			object.transformMatrix = glm::translate(imGuiObj.position) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -932,6 +975,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			bounds.bounds[1] = inverse * scene.bounds[1];
 
 			cout << endl << filePath << " " << currentMat << endl; 
+
 			build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
 
 			//RESET
@@ -945,7 +989,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	}
 
 	RenderObject object;
-	object.materialIndex = loadedMaterials.at("../assets/" + materialFile + "/" + currentMat);
+	object.materialIndex = loadedMaterials.at("../assets/sponza2/" + materialFile + "/" + currentMat);
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -1050,7 +1094,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_Ka" || prefix == "map_Kd") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza_textures/" + value;
+			std::string path = "../assets/sponza2/" + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.albedoIndex = texturesUsed;
@@ -1058,7 +1102,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_Ks") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza_textures/" + value;
+			std::string path = "../assets/sponza2/" + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.metalnessIndex = texturesUsed;
@@ -1066,15 +1110,15 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_d") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza_textures/" + value;
+			std::string path = "../assets/sponza2/" + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.alphaIndex = texturesUsed;
 			texturesUsed++;
-		} else if (prefix == "map_Bump") {
+		} else if (prefix == "map_bump") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza_textures/" + value;
+			std::string path = "../assets/sponza2/" + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.bumpIndex = texturesUsed;
@@ -1104,6 +1148,10 @@ void VulkanEngine::read_mtl(std::string filePath) {
             vmaDestroyImage(allocator, image->image, image->allocation);
 		}
     });
+
+	for (auto& mat : loadedMaterials) {
+		cout << mat.first << endl;
+	}
 }
 
 void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox scene) {

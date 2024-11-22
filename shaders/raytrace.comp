@@ -237,6 +237,7 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
     vec2 v2uv = vec2(v2.position.w, v2.normal.w);
     hit.uv = w * v0uv + u * v1uv + v * v2uv;
 
+    hit.hitPoint = v2.position.xyz;
     hit.normal = (smoothShade ? w * v0.normal.xyz + u * v1.normal.xyz + v * v2.normal.xyz : normalize(n)) * (hit.frontFace ? 1 : -1);
     return hit;
 }
@@ -408,17 +409,20 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
                 float y = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler), uv + vec2(0.f, 1.0 / dim.y)).r;
                 Triangle tri = triangles[hitInfo.triHitIndex];
 
-                vec3 tangent = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(1.f, 0.f, 0.f, 0.f)).rgb;
-                vec3 binormal = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(0.f, 1.f, 0.f, 0.f)).rgb;
+                vec3 tangent = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(tri.tangent, 0.f)).rgb;
+                vec3 binormal = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(tri.binormal, 0.f)).rgb;
 
                 vec3 deltaX = (tangent * width + hitInfo.normal * (x - base) * height);
                 vec3 deltaY = (binormal * width + hitInfo.normal * (y - base) * height);
 
-                //return binormal;
-                vec3 bumpNormal = normalize(cross(deltaX, deltaY)) * (hitInfo.frontFace ? 1 : -1);
+                return tri.binormal;
+                //vec3 bumpNormal = normalize(cross(deltaX, deltaY)) * (hitInfo.frontFace ? 1 : -1);
                 //int flip = int(sign(dot(cross(tangent, binormal), hitInfo.normal)));
-                hitInfo.normal = bumpNormal;// * flip;
-                //return vec3(hitInfo.uv, 0.f);// * tangent;
+                //hitInfo.normal = bumpNormal;// * flip;
+                //return hitInfo.normal;
+                //return (abs(hitInfo.hitPoint.x + 10.9128f) < 0.01f && abs(hitInfo.hitPoint.y + 5.72331f) < 0.01f && abs(hitInfo.hitPoint.z - 2.51851f) < 0.01f) ? vec3(1.f) : vec3(hitInfo.normal);
+                // * tangent;
+                //return bumpNormal;
             }
 
             float reflectance = material.reflectance;
