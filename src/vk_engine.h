@@ -15,6 +15,8 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
+#define GLM_ENABLE_EXPERIMENT
+#include <glm/gtx/string_cast.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
@@ -117,6 +119,7 @@ struct RenderObject {
 	alignas(4) uint smoothShade; //0 = off, non-zero = on (bool weird on glsl)
 	alignas(4) uint bvhIndex;
 	alignas(4) uint materialIndex;
+	alignas(4) uint samplerIndex = 0;
 };
 
 struct ImGuiObject {
@@ -124,6 +127,7 @@ struct ImGuiObject {
 	glm::vec3 position = glm::vec3(0.f);
 	glm::vec3 rotation = glm::vec3(0.f);
 	glm::vec3 scale = glm::vec3(1.f);
+	uint samplerIndex = 0;
 	bool frontOnly = false;
 };
 

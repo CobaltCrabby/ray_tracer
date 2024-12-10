@@ -888,10 +888,21 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   src/vk_mesh.h \
   src/vk_types.h \
   third_party/glm/glm/common.hpp \
+  third_party/glm/glm/common.hpp \
+  third_party/glm/glm/detail/type_mat3x3.hpp \
+  third_party/glm/glm/detail/type_mat4x4.hpp \
+  third_party/glm/glm/detail/type_vec3.hpp \
+  third_party/glm/glm/detail/type_vec4.hpp \
   third_party/glm/glm/exponential.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
+  third_party/glm/glm/ext/quaternion_relational.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
   third_party/glm/glm/geometric.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
+  third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/simd/platform.h \
+  third_party/glm/glm/trigonometric.hpp \
   third_party/glm/glm/vector_relational.hpp \
   third_party/glm/glm/detail/compute_vector_relational.hpp \
   third_party/glm/glm/detail/_vectorize.hpp \
@@ -899,6 +910,7 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/detail/compute_vector_relational.hpp \
   third_party/glm/glm/detail/qualifier.hpp \
   third_party/glm/glm/detail/setup.hpp \
+  third_party/glm/glm/detail/type_float.hpp \
   third_party/glm/glm/detail/type_half.hpp \
   third_party/glm/glm/detail/type_half.inl \
   third_party/glm/glm/detail/type_mat2x2.hpp \
@@ -919,6 +931,8 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/detail/type_mat4x3.inl \
   third_party/glm/glm/detail/type_mat4x4.hpp \
   third_party/glm/glm/detail/type_mat4x4.inl \
+  third_party/glm/glm/detail/type_quat.hpp \
+  third_party/glm/glm/detail/type_quat.inl \
   third_party/glm/glm/detail/type_vec1.hpp \
   third_party/glm/glm/detail/type_vec1.inl \
   third_party/glm/glm/detail/type_vec2.hpp \
@@ -927,11 +941,15 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/detail/type_vec3.inl \
   third_party/glm/glm/detail/type_vec4.hpp \
   third_party/glm/glm/detail/type_vec4.inl \
+  third_party/glm/glm/exponential.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
   third_party/glm/glm/ext/scalar_constants.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/gtc/constants.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/trigonometric.hpp \
+  third_party/glm/glm/vector_relational.hpp \
   third_party/glm/glm/ext/matrix_clip_space.inl \
   third_party/glm/glm/ext/matrix_double2x2.hpp \
   third_party/glm/glm/ext/matrix_double2x2_precision.hpp \
@@ -971,6 +989,12 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/ext/matrix_float4x4_precision.hpp \
   third_party/glm/glm/ext/matrix_projection.inl \
   third_party/glm/glm/ext/matrix_transform.inl \
+  third_party/glm/glm/ext/quaternion_common.inl \
+  third_party/glm/glm/ext/quaternion_geometric.inl \
+  third_party/glm/glm/ext/quaternion_relational.inl \
+  third_party/glm/glm/ext/quaternion_transform.inl \
+  third_party/glm/glm/ext/quaternion_trigonometric.inl \
+  third_party/glm/glm/ext/scalar_constants.hpp \
   third_party/glm/glm/ext/scalar_constants.inl \
   third_party/glm/glm/ext/vector_bool2.hpp \
   third_party/glm/glm/ext/vector_bool2_precision.hpp \
@@ -996,6 +1020,8 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/ext/vector_int3_precision.hpp \
   third_party/glm/glm/ext/vector_int4.hpp \
   third_party/glm/glm/ext/vector_int4_precision.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
+  third_party/glm/glm/ext/vector_relational.inl \
   third_party/glm/glm/ext/vector_uint2.hpp \
   third_party/glm/glm/ext/vector_uint2_precision.hpp \
   third_party/glm/glm/ext/vector_uint3.hpp \
@@ -1022,21 +1048,76 @@ src/CMakeFiles/raytracer.dir/main.cpp.o: src/main.cpp \
   third_party/glm/glm/fwd.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/common.hpp \
+  third_party/glm/glm/detail/qualifier.hpp \
+  third_party/glm/glm/detail/setup.hpp \
+  third_party/glm/glm/detail/type_mat2x2.hpp \
+  third_party/glm/glm/detail/type_mat2x3.hpp \
+  third_party/glm/glm/detail/type_mat2x4.hpp \
+  third_party/glm/glm/detail/type_mat3x2.hpp \
+  third_party/glm/glm/detail/type_mat3x3.hpp \
+  third_party/glm/glm/detail/type_mat3x4.hpp \
+  third_party/glm/glm/detail/type_mat4x2.hpp \
+  third_party/glm/glm/detail/type_mat4x3.hpp \
+  third_party/glm/glm/detail/type_mat4x4.hpp \
+  third_party/glm/glm/detail/type_vec2.hpp \
+  third_party/glm/glm/detail/type_vec3.hpp \
+  third_party/glm/glm/detail/type_vec4.hpp \
+  third_party/glm/glm/exponential.hpp \
   third_party/glm/glm/ext/matrix_clip_space.hpp \
   third_party/glm/glm/ext/matrix_projection.hpp \
   third_party/glm/glm/ext/matrix_transform.hpp \
+  third_party/glm/glm/ext/quaternion_common.hpp \
+  third_party/glm/glm/ext/quaternion_double.hpp \
+  third_party/glm/glm/ext/quaternion_double_precision.hpp \
+  third_party/glm/glm/ext/quaternion_float.hpp \
+  third_party/glm/glm/ext/quaternion_float_precision.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
+  third_party/glm/glm/ext/quaternion_relational.hpp \
+  third_party/glm/glm/ext/quaternion_transform.hpp \
+  third_party/glm/glm/ext/quaternion_trigonometric.hpp \
   third_party/glm/glm/ext/scalar_constants.hpp \
+  third_party/glm/glm/ext/scalar_int_sized.hpp \
+  third_party/glm/glm/ext/scalar_uint_sized.hpp \
+  third_party/glm/glm/ext/vector_bool1.hpp \
+  third_party/glm/glm/ext/vector_bool1_precision.hpp \
+  third_party/glm/glm/ext/vector_double1.hpp \
+  third_party/glm/glm/ext/vector_double1_precision.hpp \
+  third_party/glm/glm/ext/vector_float1.hpp \
+  third_party/glm/glm/ext/vector_float1_precision.hpp \
+  third_party/glm/glm/ext/vector_int1.hpp \
+  third_party/glm/glm/ext/vector_int1_precision.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
+  third_party/glm/glm/ext/vector_uint1.hpp \
+  third_party/glm/glm/ext/vector_uint1_precision.hpp \
   third_party/glm/glm/geometric.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
+  third_party/glm/glm/gtc/matrix_transform.hpp \
+  third_party/glm/glm/gtc/quaternion.hpp \
+  third_party/glm/glm/gtc/vec1.hpp \
   third_party/glm/glm/mat4x4.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/trigonometric.hpp \
   third_party/glm/glm/vec2.hpp \
   third_party/glm/glm/vec3.hpp \
   third_party/glm/glm/vec4.hpp \
+  third_party/glm/glm/vector_relational.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
   third_party/glm/glm/gtc/constants.inl \
+  third_party/glm/glm/gtc/epsilon.hpp \
+  third_party/glm/glm/gtc/epsilon.inl \
   third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/gtc/matrix_transform.inl \
+  third_party/glm/glm/gtc/quaternion.hpp \
+  third_party/glm/glm/gtc/quaternion.inl \
+  third_party/glm/glm/gtc/type_precision.hpp \
+  third_party/glm/glm/gtc/type_precision.inl \
+  third_party/glm/glm/gtx/dual_quaternion.hpp \
+  third_party/glm/glm/gtx/dual_quaternion.inl \
+  third_party/glm/glm/gtx/string_cast.hpp \
+  third_party/glm/glm/gtx/string_cast.inl \
   third_party/glm/glm/gtx/transform.hpp \
   third_party/glm/glm/gtx/transform.inl \
   third_party/glm/glm/integer.hpp \
@@ -1992,10 +2073,21 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   src/vk_textures.h \
   src/vk_types.h \
   third_party/glm/glm/common.hpp \
+  third_party/glm/glm/common.hpp \
+  third_party/glm/glm/detail/type_mat3x3.hpp \
+  third_party/glm/glm/detail/type_mat4x4.hpp \
+  third_party/glm/glm/detail/type_vec3.hpp \
+  third_party/glm/glm/detail/type_vec4.hpp \
   third_party/glm/glm/exponential.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
+  third_party/glm/glm/ext/quaternion_relational.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
   third_party/glm/glm/geometric.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
+  third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/simd/platform.h \
+  third_party/glm/glm/trigonometric.hpp \
   third_party/glm/glm/vector_relational.hpp \
   third_party/glm/glm/detail/compute_vector_relational.hpp \
   third_party/glm/glm/detail/_vectorize.hpp \
@@ -2003,6 +2095,7 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/detail/compute_vector_relational.hpp \
   third_party/glm/glm/detail/qualifier.hpp \
   third_party/glm/glm/detail/setup.hpp \
+  third_party/glm/glm/detail/type_float.hpp \
   third_party/glm/glm/detail/type_half.hpp \
   third_party/glm/glm/detail/type_half.inl \
   third_party/glm/glm/detail/type_mat2x2.hpp \
@@ -2023,6 +2116,8 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/detail/type_mat4x3.inl \
   third_party/glm/glm/detail/type_mat4x4.hpp \
   third_party/glm/glm/detail/type_mat4x4.inl \
+  third_party/glm/glm/detail/type_quat.hpp \
+  third_party/glm/glm/detail/type_quat.inl \
   third_party/glm/glm/detail/type_vec1.hpp \
   third_party/glm/glm/detail/type_vec1.inl \
   third_party/glm/glm/detail/type_vec2.hpp \
@@ -2031,11 +2126,15 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/detail/type_vec3.inl \
   third_party/glm/glm/detail/type_vec4.hpp \
   third_party/glm/glm/detail/type_vec4.inl \
+  third_party/glm/glm/exponential.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
   third_party/glm/glm/ext/scalar_constants.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/gtc/constants.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/trigonometric.hpp \
+  third_party/glm/glm/vector_relational.hpp \
   third_party/glm/glm/ext/matrix_clip_space.inl \
   third_party/glm/glm/ext/matrix_double2x2.hpp \
   third_party/glm/glm/ext/matrix_double2x2_precision.hpp \
@@ -2075,6 +2174,12 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/ext/matrix_float4x4_precision.hpp \
   third_party/glm/glm/ext/matrix_projection.inl \
   third_party/glm/glm/ext/matrix_transform.inl \
+  third_party/glm/glm/ext/quaternion_common.inl \
+  third_party/glm/glm/ext/quaternion_geometric.inl \
+  third_party/glm/glm/ext/quaternion_relational.inl \
+  third_party/glm/glm/ext/quaternion_transform.inl \
+  third_party/glm/glm/ext/quaternion_trigonometric.inl \
+  third_party/glm/glm/ext/scalar_constants.hpp \
   third_party/glm/glm/ext/scalar_constants.inl \
   third_party/glm/glm/ext/vector_bool2.hpp \
   third_party/glm/glm/ext/vector_bool2_precision.hpp \
@@ -2100,6 +2205,8 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/ext/vector_int3_precision.hpp \
   third_party/glm/glm/ext/vector_int4.hpp \
   third_party/glm/glm/ext/vector_int4_precision.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
+  third_party/glm/glm/ext/vector_relational.inl \
   third_party/glm/glm/ext/vector_uint2.hpp \
   third_party/glm/glm/ext/vector_uint2_precision.hpp \
   third_party/glm/glm/ext/vector_uint3.hpp \
@@ -2126,21 +2233,76 @@ src/CMakeFiles/raytracer.dir/vk_engine.cpp.o: src/vk_engine.cpp \
   third_party/glm/glm/fwd.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/common.hpp \
+  third_party/glm/glm/detail/qualifier.hpp \
+  third_party/glm/glm/detail/setup.hpp \
+  third_party/glm/glm/detail/type_mat2x2.hpp \
+  third_party/glm/glm/detail/type_mat2x3.hpp \
+  third_party/glm/glm/detail/type_mat2x4.hpp \
+  third_party/glm/glm/detail/type_mat3x2.hpp \
+  third_party/glm/glm/detail/type_mat3x3.hpp \
+  third_party/glm/glm/detail/type_mat3x4.hpp \
+  third_party/glm/glm/detail/type_mat4x2.hpp \
+  third_party/glm/glm/detail/type_mat4x3.hpp \
+  third_party/glm/glm/detail/type_mat4x4.hpp \
+  third_party/glm/glm/detail/type_vec2.hpp \
+  third_party/glm/glm/detail/type_vec3.hpp \
+  third_party/glm/glm/detail/type_vec4.hpp \
+  third_party/glm/glm/exponential.hpp \
   third_party/glm/glm/ext/matrix_clip_space.hpp \
   third_party/glm/glm/ext/matrix_projection.hpp \
   third_party/glm/glm/ext/matrix_transform.hpp \
+  third_party/glm/glm/ext/quaternion_common.hpp \
+  third_party/glm/glm/ext/quaternion_double.hpp \
+  third_party/glm/glm/ext/quaternion_double_precision.hpp \
+  third_party/glm/glm/ext/quaternion_float.hpp \
+  third_party/glm/glm/ext/quaternion_float_precision.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
+  third_party/glm/glm/ext/quaternion_relational.hpp \
+  third_party/glm/glm/ext/quaternion_transform.hpp \
+  third_party/glm/glm/ext/quaternion_trigonometric.hpp \
   third_party/glm/glm/ext/scalar_constants.hpp \
+  third_party/glm/glm/ext/scalar_int_sized.hpp \
+  third_party/glm/glm/ext/scalar_uint_sized.hpp \
+  third_party/glm/glm/ext/vector_bool1.hpp \
+  third_party/glm/glm/ext/vector_bool1_precision.hpp \
+  third_party/glm/glm/ext/vector_double1.hpp \
+  third_party/glm/glm/ext/vector_double1_precision.hpp \
+  third_party/glm/glm/ext/vector_float1.hpp \
+  third_party/glm/glm/ext/vector_float1_precision.hpp \
+  third_party/glm/glm/ext/vector_int1.hpp \
+  third_party/glm/glm/ext/vector_int1_precision.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
+  third_party/glm/glm/ext/vector_uint1.hpp \
+  third_party/glm/glm/ext/vector_uint1_precision.hpp \
   third_party/glm/glm/geometric.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
+  third_party/glm/glm/gtc/matrix_transform.hpp \
+  third_party/glm/glm/gtc/quaternion.hpp \
+  third_party/glm/glm/gtc/vec1.hpp \
   third_party/glm/glm/mat4x4.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/trigonometric.hpp \
   third_party/glm/glm/vec2.hpp \
   third_party/glm/glm/vec3.hpp \
   third_party/glm/glm/vec4.hpp \
+  third_party/glm/glm/vector_relational.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
   third_party/glm/glm/gtc/constants.inl \
+  third_party/glm/glm/gtc/epsilon.hpp \
+  third_party/glm/glm/gtc/epsilon.inl \
   third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/gtc/matrix_transform.inl \
+  third_party/glm/glm/gtc/quaternion.hpp \
+  third_party/glm/glm/gtc/quaternion.inl \
+  third_party/glm/glm/gtc/type_precision.hpp \
+  third_party/glm/glm/gtc/type_precision.inl \
+  third_party/glm/glm/gtx/dual_quaternion.hpp \
+  third_party/glm/glm/gtx/dual_quaternion.inl \
+  third_party/glm/glm/gtx/string_cast.hpp \
+  third_party/glm/glm/gtx/string_cast.inl \
   third_party/glm/glm/gtx/transform.hpp \
   third_party/glm/glm/gtx/transform.inl \
   third_party/glm/glm/integer.hpp \
@@ -4097,10 +4259,21 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   src/vk_textures.h \
   src/vk_types.h \
   third_party/glm/glm/common.hpp \
+  third_party/glm/glm/common.hpp \
+  third_party/glm/glm/detail/type_mat3x3.hpp \
+  third_party/glm/glm/detail/type_mat4x4.hpp \
+  third_party/glm/glm/detail/type_vec3.hpp \
+  third_party/glm/glm/detail/type_vec4.hpp \
   third_party/glm/glm/exponential.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
+  third_party/glm/glm/ext/quaternion_relational.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
   third_party/glm/glm/geometric.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
+  third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/simd/platform.h \
+  third_party/glm/glm/trigonometric.hpp \
   third_party/glm/glm/vector_relational.hpp \
   third_party/glm/glm/detail/compute_vector_relational.hpp \
   third_party/glm/glm/detail/_vectorize.hpp \
@@ -4108,6 +4281,7 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/detail/compute_vector_relational.hpp \
   third_party/glm/glm/detail/qualifier.hpp \
   third_party/glm/glm/detail/setup.hpp \
+  third_party/glm/glm/detail/type_float.hpp \
   third_party/glm/glm/detail/type_half.hpp \
   third_party/glm/glm/detail/type_half.inl \
   third_party/glm/glm/detail/type_mat2x2.hpp \
@@ -4128,6 +4302,8 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/detail/type_mat4x3.inl \
   third_party/glm/glm/detail/type_mat4x4.hpp \
   third_party/glm/glm/detail/type_mat4x4.inl \
+  third_party/glm/glm/detail/type_quat.hpp \
+  third_party/glm/glm/detail/type_quat.inl \
   third_party/glm/glm/detail/type_vec1.hpp \
   third_party/glm/glm/detail/type_vec1.inl \
   third_party/glm/glm/detail/type_vec2.hpp \
@@ -4136,11 +4312,15 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/detail/type_vec3.inl \
   third_party/glm/glm/detail/type_vec4.hpp \
   third_party/glm/glm/detail/type_vec4.inl \
+  third_party/glm/glm/exponential.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
   third_party/glm/glm/ext/scalar_constants.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/gtc/constants.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/trigonometric.hpp \
+  third_party/glm/glm/vector_relational.hpp \
   third_party/glm/glm/ext/matrix_clip_space.inl \
   third_party/glm/glm/ext/matrix_double2x2.hpp \
   third_party/glm/glm/ext/matrix_double2x2_precision.hpp \
@@ -4180,6 +4360,12 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/ext/matrix_float4x4_precision.hpp \
   third_party/glm/glm/ext/matrix_projection.inl \
   third_party/glm/glm/ext/matrix_transform.inl \
+  third_party/glm/glm/ext/quaternion_common.inl \
+  third_party/glm/glm/ext/quaternion_geometric.inl \
+  third_party/glm/glm/ext/quaternion_relational.inl \
+  third_party/glm/glm/ext/quaternion_transform.inl \
+  third_party/glm/glm/ext/quaternion_trigonometric.inl \
+  third_party/glm/glm/ext/scalar_constants.hpp \
   third_party/glm/glm/ext/scalar_constants.inl \
   third_party/glm/glm/ext/vector_bool2.hpp \
   third_party/glm/glm/ext/vector_bool2_precision.hpp \
@@ -4205,6 +4391,8 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/ext/vector_int3_precision.hpp \
   third_party/glm/glm/ext/vector_int4.hpp \
   third_party/glm/glm/ext/vector_int4_precision.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
+  third_party/glm/glm/ext/vector_relational.inl \
   third_party/glm/glm/ext/vector_uint2.hpp \
   third_party/glm/glm/ext/vector_uint2_precision.hpp \
   third_party/glm/glm/ext/vector_uint3.hpp \
@@ -4231,21 +4419,76 @@ src/CMakeFiles/raytracer.dir/vk_textures.cpp.o: src/vk_textures.cpp \
   third_party/glm/glm/fwd.hpp \
   third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/geometric.hpp \
   third_party/glm/glm/glm.hpp \
+  third_party/glm/glm/common.hpp \
+  third_party/glm/glm/detail/qualifier.hpp \
+  third_party/glm/glm/detail/setup.hpp \
+  third_party/glm/glm/detail/type_mat2x2.hpp \
+  third_party/glm/glm/detail/type_mat2x3.hpp \
+  third_party/glm/glm/detail/type_mat2x4.hpp \
+  third_party/glm/glm/detail/type_mat3x2.hpp \
+  third_party/glm/glm/detail/type_mat3x3.hpp \
+  third_party/glm/glm/detail/type_mat3x4.hpp \
+  third_party/glm/glm/detail/type_mat4x2.hpp \
+  third_party/glm/glm/detail/type_mat4x3.hpp \
+  third_party/glm/glm/detail/type_mat4x4.hpp \
+  third_party/glm/glm/detail/type_vec2.hpp \
+  third_party/glm/glm/detail/type_vec3.hpp \
+  third_party/glm/glm/detail/type_vec4.hpp \
+  third_party/glm/glm/exponential.hpp \
   third_party/glm/glm/ext/matrix_clip_space.hpp \
   third_party/glm/glm/ext/matrix_projection.hpp \
   third_party/glm/glm/ext/matrix_transform.hpp \
+  third_party/glm/glm/ext/quaternion_common.hpp \
+  third_party/glm/glm/ext/quaternion_double.hpp \
+  third_party/glm/glm/ext/quaternion_double_precision.hpp \
+  third_party/glm/glm/ext/quaternion_float.hpp \
+  third_party/glm/glm/ext/quaternion_float_precision.hpp \
+  third_party/glm/glm/ext/quaternion_geometric.hpp \
+  third_party/glm/glm/ext/quaternion_relational.hpp \
+  third_party/glm/glm/ext/quaternion_transform.hpp \
+  third_party/glm/glm/ext/quaternion_trigonometric.hpp \
   third_party/glm/glm/ext/scalar_constants.hpp \
+  third_party/glm/glm/ext/scalar_int_sized.hpp \
+  third_party/glm/glm/ext/scalar_uint_sized.hpp \
+  third_party/glm/glm/ext/vector_bool1.hpp \
+  third_party/glm/glm/ext/vector_bool1_precision.hpp \
+  third_party/glm/glm/ext/vector_double1.hpp \
+  third_party/glm/glm/ext/vector_double1_precision.hpp \
+  third_party/glm/glm/ext/vector_float1.hpp \
+  third_party/glm/glm/ext/vector_float1_precision.hpp \
+  third_party/glm/glm/ext/vector_int1.hpp \
+  third_party/glm/glm/ext/vector_int1_precision.hpp \
+  third_party/glm/glm/ext/vector_relational.hpp \
+  third_party/glm/glm/ext/vector_uint1.hpp \
+  third_party/glm/glm/ext/vector_uint1_precision.hpp \
   third_party/glm/glm/geometric.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
+  third_party/glm/glm/gtc/matrix_transform.hpp \
+  third_party/glm/glm/gtc/quaternion.hpp \
+  third_party/glm/glm/gtc/vec1.hpp \
   third_party/glm/glm/mat4x4.hpp \
   third_party/glm/glm/matrix.hpp \
   third_party/glm/glm/trigonometric.hpp \
   third_party/glm/glm/vec2.hpp \
   third_party/glm/glm/vec3.hpp \
   third_party/glm/glm/vec4.hpp \
+  third_party/glm/glm/vector_relational.hpp \
+  third_party/glm/glm/gtc/constants.hpp \
   third_party/glm/glm/gtc/constants.inl \
+  third_party/glm/glm/gtc/epsilon.hpp \
+  third_party/glm/glm/gtc/epsilon.inl \
   third_party/glm/glm/gtc/matrix_transform.hpp \
   third_party/glm/glm/gtc/matrix_transform.inl \
+  third_party/glm/glm/gtc/quaternion.hpp \
+  third_party/glm/glm/gtc/quaternion.inl \
+  third_party/glm/glm/gtc/type_precision.hpp \
+  third_party/glm/glm/gtc/type_precision.inl \
+  third_party/glm/glm/gtx/dual_quaternion.hpp \
+  third_party/glm/glm/gtx/dual_quaternion.inl \
+  third_party/glm/glm/gtx/string_cast.hpp \
+  third_party/glm/glm/gtx/string_cast.inl \
   third_party/glm/glm/gtx/transform.hpp \
   third_party/glm/glm/gtx/transform.inl \
   third_party/glm/glm/integer.hpp \
@@ -4413,11 +4656,41 @@ third_party/glm/glm/mat2x2.hpp:
 
 third_party/glm/glm/gtx/transform.inl:
 
+third_party/glm/glm/gtx/dual_quaternion.inl:
+
+third_party/glm/glm/gtx/dual_quaternion.hpp:
+
+third_party/glm/glm/gtc/quaternion.inl:
+
+third_party/glm/glm/gtc/epsilon.inl:
+
+third_party/glm/glm/gtc/epsilon.hpp:
+
 third_party/glm/glm/gtc/constants.inl:
 
 third_party/glm/glm/vec3.hpp:
 
 third_party/glm/glm/vec2.hpp:
+
+third_party/glm/glm/gtc/vec1.hpp:
+
+third_party/glm/glm/ext/vector_uint1_precision.hpp:
+
+third_party/glm/glm/ext/vector_uint1.hpp:
+
+third_party/glm/glm/ext/vector_int1_precision.hpp:
+
+third_party/glm/glm/ext/vector_double1.hpp:
+
+third_party/glm/glm/ext/vector_bool1_precision.hpp:
+
+third_party/glm/glm/ext/quaternion_transform.hpp:
+
+third_party/glm/glm/ext/quaternion_float_precision.hpp:
+
+third_party/glm/glm/ext/quaternion_double_precision.hpp:
+
+third_party/glm/glm/ext/quaternion_common.hpp:
 
 third_party/glm/glm/ext/matrix_transform.hpp:
 
@@ -4431,6 +4704,8 @@ third_party/glm/glm/detail/func_trigonometric.inl:
 
 third_party/glm/glm/detail/func_matrix.inl:
 
+third_party/glm/glm/ext/scalar_int_sized.hpp:
+
 third_party/glm/glm/detail/func_geometric.inl:
 
 third_party/glm/glm/detail/_fixes.hpp:
@@ -4442,6 +4717,8 @@ third_party/glm/glm/ext/vector_uint4_precision.hpp:
 third_party/glm/glm/ext/vector_uint4.hpp:
 
 third_party/glm/glm/ext/vector_uint3.hpp:
+
+third_party/glm/glm/ext/vector_relational.inl:
 
 third_party/glm/glm/ext/vector_int4.hpp:
 
@@ -4471,6 +4748,12 @@ third_party/glm/glm/ext/vector_bool2.hpp:
 
 third_party/glm/glm/ext/scalar_constants.inl:
 
+third_party/glm/glm/ext/quaternion_trigonometric.inl:
+
+third_party/glm/glm/ext/quaternion_relational.inl:
+
+third_party/glm/glm/ext/quaternion_common.inl:
+
 /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_locale.h:
 
 third_party/glm/glm/ext/matrix_transform.inl:
@@ -4480,6 +4763,8 @@ src/vk_initializers.h:
 third_party/glm/glm/ext/matrix_float4x4.hpp:
 
 third_party/glm/glm/ext/matrix_float4x3.hpp:
+
+third_party/glm/glm/ext/quaternion_transform.inl:
 
 third_party/glm/glm/ext/matrix_float4x2.hpp:
 
@@ -4527,21 +4812,15 @@ third_party/glm/glm/ext/matrix_double2x2.hpp:
 
 third_party/glm/glm/ext/matrix_clip_space.inl:
 
-third_party/glm/glm/trigonometric.hpp:
-
-third_party/glm/glm/gtc/constants.hpp:
-
 third_party/glm/glm/ext/scalar_constants.hpp:
 
 third_party/glm/glm/detail/type_vec4.inl:
 
 third_party/glm/glm/detail/type_vec3.inl:
 
-third_party/glm/glm/detail/type_vec3.hpp:
-
 third_party/glm/glm/detail/type_vec1.hpp:
 
-third_party/glm/glm/detail/type_mat4x4.hpp:
+third_party/glm/glm/detail/type_quat.inl:
 
 third_party/glm/glm/detail/type_mat4x3.hpp:
 
@@ -4554,8 +4833,6 @@ third_party/glm/glm/detail/type_mat3x4.inl:
 third_party/glm/glm/detail/type_mat3x4.hpp:
 
 third_party/glm/glm/detail/type_mat3x3.inl:
-
-third_party/glm/glm/detail/type_mat3x3.hpp:
 
 third_party/glm/glm/detail/type_mat3x2.hpp:
 
@@ -4575,9 +4852,21 @@ third_party/glm/glm/detail/compute_vector_relational.hpp:
 
 third_party/glm/glm/vector_relational.hpp:
 
+third_party/glm/glm/trigonometric.hpp:
+
+third_party/glm/glm/gtc/constants.hpp:
+
 third_party/glm/glm/geometric.hpp:
 
+third_party/glm/glm/ext/quaternion_geometric.hpp:
+
 third_party/glm/glm/exponential.hpp:
+
+third_party/glm/glm/detail/type_vec3.hpp:
+
+third_party/glm/glm/detail/type_mat4x4.hpp:
+
+third_party/glm/glm/detail/type_mat3x3.hpp:
 
 third_party/glm/glm/common.hpp:
 
@@ -4604,6 +4893,8 @@ third_party/glm/glm/detail/func_exponential.inl:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/xlocale/_stdio.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/xlocale/_ctype.h:
+
+third_party/glm/glm/ext/vector_relational.hpp:
 
 src/vk_mesh.h:
 
@@ -4636,6 +4927,8 @@ third_party/glm/glm/detail/qualifier.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_u_int8_t.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_u_int32_t.h:
+
+third_party/glm/glm/ext/scalar_uint_sized.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/sys/_types/_u_int16_t.h:
 
@@ -4737,6 +5030,8 @@ third_party/glm/glm/detail/type_mat4x2.inl:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/malloc/_ptrcheck.h:
 
+third_party/glm/glm/detail/type_quat.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/machine/types.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/machine/signal.h:
@@ -4837,6 +5132,8 @@ third_party/imgui/imconfig.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/float.h:
 
+third_party/glm/glm/ext/quaternion_trigonometric.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/cwchar:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/sift_down.h:
@@ -4868,6 +5165,8 @@ third_party/glm/glm/ext/vector_bool3_precision.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__type_traits/common_reference.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__utility/to_underlying.h:
+
+third_party/glm/glm/gtc/type_precision.inl:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__utility/priority_tag.h:
 
@@ -5529,6 +5828,8 @@ third_party/glm/glm/simd/platform.h:
 
 /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_haptic.h:
 
+third_party/glm/glm/ext/quaternion_relational.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/iter_swap.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_find_end.h:
@@ -5652,6 +5953,8 @@ third_party/glm/glm/detail/setup.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/tuple:
 
 /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_events.h:
+
+third_party/glm/glm/detail/type_float.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/find_if_not.h:
 
@@ -5827,6 +6130,8 @@ third_party/glm/glm/ext/matrix_double2x2_precision.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__functional/boyer_moore_searcher.h:
 
+third_party/glm/glm/ext/quaternion_double.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/xlocale/_wctype.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/three_way_comp_ref_type.h:
@@ -5838,6 +6143,8 @@ third_party/glm/glm/ext/matrix_double2x2_precision.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__ranges/access.h:
 
 /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2/SDL_stdinc.h:
+
+third_party/glm/glm/ext/quaternion_float.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/shift_left.h:
 
@@ -5893,6 +6200,8 @@ third_party/glm/glm/matrix.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/reverse_copy.h:
 
+third_party/glm/glm/gtx/string_cast.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/reverse.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/replace_if.h:
@@ -5935,9 +6244,13 @@ third_party/glm/glm/detail/func_packing.inl:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_sort.h:
 
+third_party/glm/glm/gtc/type_precision.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/make_projected.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/for_each_n.h:
+
+third_party/glm/glm/ext/vector_float1_precision.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/stable_partition.h:
 
@@ -6011,6 +6324,8 @@ third_party/glm/glm/gtc/matrix_transform.inl:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__atomic/atomic_base.h:
 
+third_party/glm/glm/ext/vector_double1_precision.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/limits.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_partition_copy.h:
@@ -6022,6 +6337,8 @@ third_party/glm/glm/gtc/matrix_transform.inl:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_next_permutation.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/find.h:
+
+third_party/glm/glm/ext/vector_int1.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/xlocale.h:
 
@@ -6048,6 +6365,8 @@ third_party/glm/glm/ext/vector_double4.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_make_heap.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/ranges_lower_bound.h:
+
+third_party/glm/glm/ext/quaternion_geometric.inl:
 
 third_party/glm/glm/detail/compute_common.hpp:
 
@@ -6134,6 +6453,8 @@ third_party/glm/glm/ext/vector_double4_precision.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/half_positive.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__exception/nested_exception.h:
+
+third_party/glm/glm/gtc/quaternion.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__type_traits/make_signed.h:
 
@@ -6250,6 +6571,8 @@ third_party/glm/glm/ext/vector_int3_precision.hpp:
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/AvailabilityInternal.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__bit/bit_cast.h:
+
+third_party/glm/glm/gtx/string_cast.inl:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__type_traits/is_nothrow_assignable.h:
 
@@ -6371,6 +6694,8 @@ third_party/glm/glm/ext/matrix_float4x4_precision.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__algorithm/pstl_backends/cpu_backends/stable_sort.h:
 
+third_party/glm/glm/ext/vector_float1.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__type_traits/noexcept_move_assign_container.h:
 
 third_party/glm/glm/ext/vector_float3_precision.hpp:
@@ -6488,6 +6813,8 @@ third_party/glm/glm/ext/vector_float3.hpp:
 third_party/glm/glm/ext/matrix_projection.inl:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__iterator/insert_iterator.h:
+
+third_party/glm/glm/ext/vector_bool1.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/usr/include/c++/v1/__functional/operations.h:
 

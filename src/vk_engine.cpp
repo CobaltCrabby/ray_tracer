@@ -407,7 +407,7 @@ void VulkanEngine::init_descriptors() {
 		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10},
 		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 32},
 		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 128},
-		{VK_DESCRIPTOR_TYPE_SAMPLER, 1},
+		{VK_DESCRIPTOR_TYPE_SAMPLER, 2},
 	};
 
 	VkDescriptorPoolCreateInfo poolInfo{};
@@ -440,6 +440,7 @@ void VulkanEngine::init_descriptors() {
 	VkDescriptorSetLayoutBinding samplerBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 8);
 
 	textureBufferBinding.descriptorCount = MAX_TEXTURES;
+	samplerBinding.descriptorCount = 2;
 
 	VkDescriptorSetLayoutBinding computeBindings[] = {computeBinding, sphereBufferBinding, materialBufferBinding, textureBufferBinding, triPointBufferBinding, triangleBufferBinding, objectBufferBinding, bvhBufferBinding, samplerBinding};
 
@@ -522,8 +523,12 @@ void VulkanEngine::init_imgui() {
 
 void VulkanEngine::update_descriptors() {
 	VkSampler sampler;
-	VkSamplerCreateInfo samplerInfo = vkinit::samplerCreateInfo(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT);
+	VkSamplerCreateInfo samplerInfo = vkinit::samplerCreateInfo(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_REPEAT);
 	vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
+
+	VkSampler clampSampler;
+	VkSamplerCreateInfo clampSamplerInfo = vkinit::samplerCreateInfo(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+	vkCreateSampler(device, &clampSamplerInfo, nullptr, &clampSampler);
 
 	//allocate the descriptor set for single-texture
 	VkDescriptorSetAllocateInfo allocInfo = {};
@@ -604,17 +609,19 @@ void VulkanEngine::update_descriptors() {
 	VkWriteDescriptorSet objectWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &objectBufferInfo, 6);
 	VkWriteDescriptorSet bvhWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, computeSet, &bvhBufferInfo, 7);
 
-	VkDescriptorImageInfo samplerImageInfo;
-	samplerImageInfo.sampler = sampler;
-	samplerImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	VkDescriptorImageInfo samplerImageInfos[2];
+	for (int i = 0; i < 2; i++) {
+		samplerImageInfos[i].sampler = i == 0 ? sampler : clampSampler;
+		samplerImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	}
 
 	VkWriteDescriptorSet samplerSet{};
 	samplerSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	samplerSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 	samplerSet.dstSet = computeSet;
 	samplerSet.dstBinding = 8;
-	samplerSet.pImageInfo = &samplerImageInfo;
-	samplerSet.descriptorCount = 1;
+	samplerSet.pImageInfo = samplerImageInfos;
+	samplerSet.descriptorCount = 2;
 
 	textureWrite.descriptorCount = MAX_TEXTURES;
 	
@@ -675,6 +682,11 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.name = "sponza";
 	model.scale = glm::vec3(1.f);
 	read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
+
+	model.name = "boba";
+	model.scale = glm::vec3(1.f);
+	model.samplerIndex = 1;
+	read_obj("../assets/bobadog/bobadog.obj", model, 0);
 
 	// ImGuiObject light;
 	// light.name = "light";
@@ -800,7 +812,8 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 		std::getline(fileStream, fileLine);
 		if (fileLine.find("mtllib") != std::string::npos) {
 			materialFile = fileLine.substr(7, fileLine.size() - 7);
-			read_mtl("../assets/sponza2/" + materialFile);
+			std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
+			read_mtl(mtlPath + materialFile);
 		}
 
 		std::string prefix = fileLine.substr(0, fileLine.find(' '));
@@ -893,20 +906,11 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 				pointIndex[i] = triPoints.size();
 				triPoints.push_back(point);
-
-				if (abs(p.x + 10.9128f) < 0.01f && abs(p.y + 5.72331f) < 0.01f && abs(p.z - 2.51851f) < 0.01f && i == 2) {
-					// cout << endl;
-					for (int j = 0; j < 3; j++) {
-						glm::vec4 p2 = triPoints[vertexInd[j]].position;
-						// cout << p2.x << " " << p2.y << " " << p2.z << endl;
-					}
-					//cout << textureInd[i] << " " << vInd << " " << triangles.size() << endl;
-				}
 			}
 			
 			glm::vec3 tangent, binormal;
 
-			calculate_binormal(vertexInd[0], vertexInd[1], vertexInd[2], tangent, binormal);
+			calculate_binormal(pointIndex[0], pointIndex[1], pointIndex[2], tangent, binormal);
 
 			Triangle tri;
 			tri.v0 = pointIndex[0];
@@ -927,22 +931,6 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 			triangles.push_back(tri);
 			centroids.push_back(centroid / 3.f);
-
-			// if (pointCount == 4) {
-			// 	calculate_binormal(vertexInd[2], vertexInd[3], vertexInd[0], tangent, bitangent);
-
-			// 	Triangle tri;
-			// 	tri.v0 = vertexInd[2];
-			// 	tri.v1 = vertexInd[3];
-			// 	tri.v2 = vertexInd[0];
-			// 	tri.frontOnly = imGuiObj.frontOnly;
-			// 	tri.tangent = tangent;
-			// 	tri.binormal = bitangent;
-			// 	triangles.push_back(tri);
-
-			// 	glm::vec3 centroid = triPoints[tri.v0].position + triPoints[tri.v1].position + triPoints[tri.v2].position;
-			// 	centroids.push_back(centroid / 3.f);	
-			// }
 		} else if (prefix == "usemtl") {
 			int space = fileLine.find(' ');
 			std::string mat = fileLine.substr(space + 1, fileLine.size() - space - 1);
@@ -952,14 +940,17 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			}
 			//create object
 			RenderObject object;
-			object.materialIndex = loadedMaterials.at("../assets/sponza2/" + materialFile + "/" + currentMat);
+
+			std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
+			object.materialIndex = loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
 			object.transformMatrix = glm::translate(imGuiObj.position) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
 				glm::scale(imGuiObj.scale);
-			object.smoothShade = false;
+			object.smoothShade = smoothShade;
 			object.bvhIndex = bvhNodes.size();
+			object.samplerIndex = imGuiObj.samplerIndex;
 			objects.push_back(object);
 
 			imGuiObjects.push_back(imGuiObj);
@@ -982,6 +973,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			currentMat = mat;
 			objectTriOffset = triangles.size();
 			bounds = {};
+			smoothShade = false;
 		} else if (prefix == "s") {
 			int smooth = fileLine.at(2) - '0'; //converts ascii to int
 			smoothShade = smooth == 1; //do this later
@@ -989,13 +981,14 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	}
 
 	RenderObject object;
-	object.materialIndex = loadedMaterials.at("../assets/sponza2/" + materialFile + "/" + currentMat);
+	std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
+	object.materialIndex = loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
 		glm::scale(imGuiObj.scale);
-	object.smoothShade = false;
+	object.smoothShade = smoothShade;
 	object.bvhIndex = bvhNodes.size();
 	objects.push_back(object);
 	imGuiObjects.push_back(imGuiObj);
@@ -1032,15 +1025,10 @@ void VulkanEngine::calculate_binormal(int v1, int v2, int v3, glm::vec3& tangent
 	glm::vec2 uv1 = k - h;
 	glm::vec2 uv2 = l - h;
 
-	float f = 1.0f / (uv1.x * uv2.y - uv2.x * uv1.y);
-
-	tangent.x = f * (uv2.y * edge1.x - uv1.y * edge2.x);
-	tangent.y = f * (uv2.y * edge1.y - uv1.y * edge2.y);
-	tangent.z = f * (uv2.y * edge1.z - uv1.y * edge2.z);
-
-	binormal.x = f * (-uv2.x * edge1.x + uv1.x * edge2.x);
-	binormal.y = f * (-uv2.x * edge1.y + uv1.x * edge2.y);
-	binormal.z = f * (-uv2.x * edge1.z + uv1.x * edge2.z);
+	glm::mat2 cup = glm::transpose(glm::mat2(uv1, uv2));
+	// if (h == k || k == l || l == h) {
+	// 	cout << glm::to_string(h) << " " << glm::to_string(k) << " " << glm::to_string(l) << endl;
+	// }
 }
 
 void VulkanEngine::read_mtl(std::string filePath) {
@@ -1070,6 +1058,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 			continue;
 		}
 
+		std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
 		fileLine.erase(remove(fileLine.begin(), fileLine.end(), '\t'), fileLine.end()); //remove tabs from the beggining
 		std::string prefix = fileLine.substr(0, fileLine.find(' '));
 		if (prefix == "Ka" || prefix == "Kd") {
@@ -1094,7 +1083,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_Ka" || prefix == "map_Kd") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza2/" + value;
+			std::string path = mtlPath + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.albedoIndex = texturesUsed;
@@ -1102,7 +1091,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_Ks") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza2/" + value;
+			std::string path = mtlPath + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.metalnessIndex = texturesUsed;
@@ -1110,7 +1099,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_d") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza2/" + value;
+			std::string path = mtlPath + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.alphaIndex = texturesUsed;
@@ -1118,7 +1107,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		} else if (prefix == "map_bump") {
 			int space = fileLine.find(' ');
 			std::string value = fileLine.substr(space + 1, fileLine.size() - space - 1);
-			std::string path = "../assets/sponza2/" + value;
+			std::string path = mtlPath + value;
 			imageFilePaths.push_back(path);
 			allocatedImages.push_back(&textures[texturesUsed].image);
 			currentMaterial.bumpIndex = texturesUsed;
@@ -1138,7 +1127,8 @@ void VulkanEngine::read_mtl(std::string filePath) {
 	}
 
 	vkutil::load_images_from_file(*this, chars, allocatedImages.data(), imageFilePaths.size());
-	for (int i = 0; i < MAX_TEXTURES; i++) {
+	for (int i = texturesUsed - allocatedImages.size(); i < texturesUsed; i++) {
+		vkDestroyImageView(device, textures[i].imageView, nullptr);
 		VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[i].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
 		VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &textures[i].imageView));
 	}
@@ -1148,10 +1138,6 @@ void VulkanEngine::read_mtl(std::string filePath) {
             vmaDestroyImage(allocator, image->image, image->allocation);
 		}
     });
-
-	for (auto& mat : loadedMaterials) {
-		cout << mat.first << endl;
-	}
 }
 
 void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox scene) {
@@ -1373,6 +1359,8 @@ void VulkanEngine::init_image() {
 	vkutil::create_empty_images(*this, textureImages, _windowExtent, MAX_TEXTURES);
 	for (int i = 0; i < MAX_TEXTURES; i++) {
 		textures[i].image = textureImages[i];
+		VkImageViewCreateInfo viewInfo = vkinit::imageViewCreateInfo(VK_FORMAT_R8G8B8A8_SRGB, textures[i].image.image, VK_IMAGE_ASPECT_COLOR_BIT);
+		VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &textures[i].imageView));
 	}
 
 	deletionQueue.push_function([=]() {
