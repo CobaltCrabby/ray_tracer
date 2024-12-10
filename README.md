@@ -17,6 +17,8 @@ A Vulkan-based compute path tracer written in C++. Code skeleton from *[VkGuide]
 ## Renders
 ![](renders/sponza.png)
 <sup>Crytek Sponza from *[McGuire Computer Graphics Archive](https://casual-effects.com/data/)*</sup>
+![](renders/bobadog.png)
+<sup>Eggplant dog model by *[puuulppp](https://twitter.com/puuulppp?lang=en)*</sup>
 ![](renders/dragon_gold.png)
 <sup>Dragon from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>
 ![](renders/squeezer_mtlmap.png)
