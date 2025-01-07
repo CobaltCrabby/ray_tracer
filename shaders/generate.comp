@@ -1,0 +1,45 @@
+#version 450
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+struct CameraInfo {
+    mat4 cameraRotation;
+    vec3 pos;
+    float nearPlane;
+    float aspectRatio;
+    float fov;
+};
+
+struct Ray {
+    vec3 origin;
+    vec3 dir;
+    vec3 invDir;
+};
+
+layout (std140, binding = 0) writeonly buffer RayBuffer {
+    Ray rays[];
+};
+
+layout (push_constant) uniform constants {
+    CameraInfo camInfo;
+} PushConstants;
+
+void main() {
+    ivec2 dim = imageSize(outImage);
+	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
+
+    //from sebastian lague (the goat)
+    float planeHeight = cam.nearPlane * tan(radians(cam.fov * 0.5f)) * 2.f;
+    float planeWidth = planeHeight * cam.aspectRatio;
+
+    vec3 bottomLeft = vec3(-planeWidth / 2.f, -planeHeight / 2.f, 0.1f);
+    vec3 point = bottomLeft + vec3(planeWidth * uv.x, planeHeight * uv.y, 0.f);
+    vec3 dir = normalize(point); 
+
+    Ray ray;
+    ray.dir = (cam.cameraRotation * vec4(dir, 0.f)).xyz;
+    ray.origin = cam.pos;
+    ray.invDir = 1.f / ray.dir;
+
+    rays[gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x] = ray;
+}

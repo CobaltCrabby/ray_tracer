@@ -490,5 +490,3 @@ void main() {
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
 }
-// #ifndef rachIT was HERE
-// #define rachit WAS here!

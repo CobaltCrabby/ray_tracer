@@ -631,6 +631,7 @@ void VulkanEngine::update_descriptors() {
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
+		vkDestroySampler(device, clampSampler, nullptr);
 	});
 }
 
@@ -1629,7 +1630,8 @@ void VulkanEngine::run_compute() {
 	vkCmdPushConstants(computeCmdBuffer, computePipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants), &constants);
 
 	vkCmdDispatch(computeCmdBuffer, ceil(_windowExtent.width / 8.f), ceil(_windowExtent.height / 8.f), 1);
-
+	//pipeline barrier between each dispatch
+	
 	vkEndCommandBuffer(computeCmdBuffer);
 
 	VkSubmitInfo computeSubmit = vkinit::submitInfo(&computeCmdBuffer);
