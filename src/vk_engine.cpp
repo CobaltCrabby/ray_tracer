@@ -631,6 +631,7 @@ void VulkanEngine::update_descriptors() {
 
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
+		vkDestroySampler(device, clampSampler, nullptr);
 	});
 }
 
@@ -669,11 +670,11 @@ void VulkanEngine::prepare_storage_buffers() {
 	//object.ior = 1.5f;
 
 	// rayMaterials.push_back(dielectric);
-	// rayMaterials.push_back(white);
-	// rayMaterials.push_back(red);
-	// rayMaterials.push_back(green);
+	rayMaterials.push_back(white);
+	rayMaterials.push_back(red);
+	rayMaterials.push_back(green);
+	rayMaterials.push_back(li);
 	// rayMaterials.push_back(blue);
-	// rayMaterials.push_back(li);
 	// rayMaterials.push_back(object);
 
 
@@ -681,51 +682,52 @@ void VulkanEngine::prepare_storage_buffers() {
 	ImGuiObject model;
 	model.name = "sponza";
 	model.scale = glm::vec3(1.f);
-	read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
+	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
 
 	model.name = "boba";
-	model.scale = glm::vec3(1.f);
+	model.scale = glm::vec3(0.3f);
 	model.samplerIndex = 1;
+	model.position = glm::vec3(-0.3f, 0.5f, 0.f);
 	read_obj("../assets/bobadog/bobadog.obj", model, 0);
 
-	// ImGuiObject light;
-	// light.name = "light";
-	// light.position = glm::vec3(0.f, -1.5f, 0.f);
-	// light.scale = glm::vec3(0.3f);
-	// read_obj("../assets/light.obj", light, 5);
+	ImGuiObject light;
+	light.name = "light";
+	light.position = glm::vec3(0.f, -1.5f, 0.f);
+	light.scale = glm::vec3(0.3f);
+	read_obj("../assets/light.obj", light, 3);
 
-	// ImGuiObject plane;
-	// plane.name = "bottom";
-	// plane.position = glm::vec3(0.f, 0.5f, 0.f);
-	// plane.rotation = glm::vec3(0.f);
-	// read_obj("../assets/plane.obj", plane, 1);
+	ImGuiObject plane;
+	plane.frontOnly = true;
+	plane.name = "bottom";
+	plane.position = glm::vec3(0.f, 0.5f, 0.f);
+	plane.rotation = glm::vec3(0.f);
+	read_obj("../assets/plane.obj", plane, 0);
 
-	// plane.name = "left";
-	// plane.position = glm::vec3(-1.f, -0.5f, 0.f);
-	// plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	// read_obj("../assets/plane.obj", plane, 3);
+	plane.name = "left";
+	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
+	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
+	read_obj("../assets/plane.obj", plane, 2);
 
-	// plane.name = "right";
-	// plane.position = glm::vec3(1.f, -0.5f, 0.f);
-	// plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	// read_obj("../assets/plane.obj", plane, 2);
+	plane.name = "right";
+	plane.position = glm::vec3(1.f, -0.5f, 0.f);
+	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
+	read_obj("../assets/plane.obj", plane, 1);
 
-	// plane.name = "top";
-	// plane.position = glm::vec3(0.f, -1.5f, 0.f);
-	// plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	// read_obj("../assets/plane.obj", plane, 1);
+	plane.name = "top";
+	plane.position = glm::vec3(0.f, -1.5f, 0.f);
+	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
+	read_obj("../assets/plane.obj", plane, 0);
 
-	// plane.name = "back";
-	// plane.position = glm::vec3(0.f, -0.5f, 1.f);
-	// plane.rotation = glm::vec3(90.f, 0.f, 0.f);
-	// plane.scale = glm::vec3(1.f);
-	// read_obj("../assets/plane.obj", plane, 1);
+	plane.name = "back";
+	plane.position = glm::vec3(0.f, -0.5f, 1.f);
+	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
+	plane.scale = glm::vec3(1.f);
+	read_obj("../assets/plane.obj", plane, 0);
 
-	// plane.name = "front";
-	// plane.position = glm::vec3(0.f, -0.5f, -1.f);
-	// plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
-	// plane.frontOnly = true;
-	// read_obj("../assets/plane.obj", plane, 1);
+	plane.name = "front";
+	plane.position = glm::vec3(0.f, -0.5f, -1.f);
+	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
+	read_obj("../assets/plane.obj", plane, 0);
 
 	copy_buffer(sizeof(RayMaterial) * rayMaterials.size(), materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
@@ -942,7 +944,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			RenderObject object;
 
 			std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
-			object.materialIndex = loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
+			object.materialIndex = currentMat.empty() ? material : loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
 			object.transformMatrix = glm::translate(imGuiObj.position) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -982,7 +984,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 
 	RenderObject object;
 	std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
-	object.materialIndex = loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
+	object.materialIndex = currentMat.empty() ? material : loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -1508,7 +1510,7 @@ void VulkanEngine::imgui_draw() {
 		}
 
 		if (ImGui::Button("Update Buffer")) {
-			update_buffer(sizeof(RayMaterial) * MAX_MATERIALS, materialBuffer, rayMaterials.data());
+			update_buffer(sizeof(RayMaterial) * rayMaterials.size(), materialBuffer, rayMaterials.data());
 		}
 		ImGui::Indent(4.f);
 

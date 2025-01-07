@@ -361,7 +361,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
         HitInfo hitInfo = calculateIntersections(newRay, stats);
         if (hitInfo.didHit && dielectricBounce < 100) {  
             Material material = materials[hitInfo.materialIndex];
-
+            
             if (material.alphaIndex != -1) {
                 float alpha = texture(sampler2D(TextureBuffer[material.alphaIndex], TextureSampler[0]), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).r;
                 if (alpha == 0) {
@@ -413,12 +413,10 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
                 newRay.dir = mix(diffuseDir, specularDir, reflectance);
                 newRay.origin += hitInfo.normal * 0.0001;
             }
-            //in the loop
 
             vec3 emitted = material.emissionColor * material.emissionStrength;
             incomingLight += emitted * rayColor;
 
-            // TODO: ADD MULTIPLE SAMPLERS
             if (material.albedoIndex != -1) {
                 uint samp = objects[hitInfo.objectHitIndex].samplerIndex;
                 vec4 albedo = texture(sampler2D(TextureBuffer[material.albedoIndex], TextureSampler[samp]), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y));
@@ -428,7 +426,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             rayColor *= material.albedo.rgb;
         } else {
             incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
-            if (j != 0) incomingLight *= 10.f;
+            //if (j != 0) incomingLight *= 10.f;
             break;
         }
     }
