@@ -95,6 +95,7 @@ struct EnvironmentData {
 
 struct RayTracerData {
     bool progressive;
+    bool singleRender;
     int debugMode;
     uint raysPerPixel;
     uint bounceLimit;
@@ -102,6 +103,7 @@ struct RayTracerData {
     uint objectCount;
     uint triCap;
     uint boxCap;
+    uint sampleLimit;
 };
 
 layout (binding = 0, rgba8) uniform image2D outImage;

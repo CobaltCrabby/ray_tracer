@@ -1479,10 +1479,12 @@ void VulkanEngine::imgui_draw() {
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
 		ImGui::SliderInt("Debug Mode", &rayTracerParams.debug, -1, 2, "%d");
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
+		ImGui::Checkbox("Single Rendering", &rayTracerParams.singleRender);
 		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 1000);
 		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
 		ImGui::DragInt("Triangle Test Threshold", (int*) &rayTracerParams.triangleCap, 1.f, 0);
 		ImGui::DragInt("Box Test Threshold", (int*) &rayTracerParams.boxCap, 1.f, 0);
+		ImGui::DragInt("Sample Limit", (int*) &rayTracerParams.sampleLimit, 1.f, 0);
 	}
 
 	if (ImGui::CollapsingHeader("Camera Info")) {
@@ -1692,14 +1694,14 @@ void VulkanEngine::run_graphics(uint ind) {
 	vkEndCommandBuffer(currentCmdBuffer);
 
 	VkPipelineStageFlags graphicsWaitStageMasks[] = {VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	VkSemaphore graphicsWaitSemaphores[] = {computeSemaphore, presentSemaphore};
-	VkSemaphore graphicsSignalSemaphores[] = {graphicsSemaphore, renderSemaphore};
+	VkSemaphore graphicsWaitSemaphores[] = {presentSemaphore, computeSemaphore};
+	VkSemaphore graphicsSignalSemaphores[] = {renderSemaphore, graphicsSemaphore};
 	
 	VkSubmitInfo submit = vkinit::submitInfo(&drawCmdBuffers[ind]);
-	submit.waitSemaphoreCount = 2;
+	submit.waitSemaphoreCount = totalSamples < rayTracerParams.sampleLimit ? 2 : 1;
 	submit.pWaitSemaphores = graphicsWaitSemaphores;
 	submit.pWaitDstStageMask = graphicsWaitStageMasks;
-	submit.signalSemaphoreCount = 2;
+	submit.signalSemaphoreCount = totalSamples < rayTracerParams.sampleLimit ? 2 : 0;
 	submit.pSignalSemaphores = graphicsSignalSemaphores;
 	vkQueueSubmit(graphicsQueue, 1, &submit, renderFence);
 }
@@ -1747,8 +1749,10 @@ void VulkanEngine::draw() {
 	vkWaitForFences(device, 1, &renderFence, VK_TRUE, 10000000);
 	vkResetFences(device, 1, &renderFence);
 
-	//compute
-	run_compute();
+	if (totalSamples < rayTracerParams.sampleLimit) {
+		//compute
+		run_compute();
+	}
 
 	//graphics
 	uint32_t swapchainIndex;
@@ -1763,8 +1767,10 @@ void VulkanEngine::draw() {
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &swapchain;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &renderSemaphore;
+	if (totalSamples < rayTracerParams.sampleLimit) {
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = &renderSemaphore;
+	}
 	presentInfo.pImageIndices = &swapchainIndex;
 
 	VK_CHECK(vkQueuePresentKHR(graphicsQueue, &presentInfo));
@@ -1774,6 +1780,7 @@ void VulkanEngine::draw() {
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
+	totalSamples = rayTracerParams.progressive && rayTracerParams.singleRender ? totalSamples + rayTracerParams.raysPerPixel : 0;
 }
 
 void VulkanEngine::run() {

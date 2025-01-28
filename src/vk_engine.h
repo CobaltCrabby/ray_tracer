@@ -159,13 +159,15 @@ struct EnvironmentData {
 
 struct RayTracerData {
 	alignas(4) bool progressive = false;
+	alignas(4) bool singleRender = false;
 	alignas(4) int debug = -1;
 	alignas(4) uint raysPerPixel = 1;
-	alignas(4) uint bounceLimit = 0;
+	alignas(4) uint bounceLimit = 5;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
 	alignas(4) uint triangleCap = 50;
 	alignas(4) uint boxCap = 200;
+	alignas(4) uint sampleLimit = 10;
 };
 
 struct PushConstants {
@@ -316,6 +318,7 @@ public:
 	//all dont need
 	bool _isInitialized{false};
 	int _frameNumber{0};
+	uint totalSamples = 0;
 
 	float cameraAngles[3] = {4.f, 0.f, 0.f};
 	RayTracerData rayTracerParams;
