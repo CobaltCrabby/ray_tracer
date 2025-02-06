@@ -21,7 +21,5 @@ A Vulkan-based compute path tracer written in C++. Code skeleton from *[VkGuide]
 <sup>Eggplant dog model by *[puuulppp](https://twitter.com/puuulppp?lang=en)*</sup>
 ![](renders/dragon_gold.png)
 <sup>Dragon from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>
-![](renders/squeezer_mtlmap.png)
-<sup>Model and textures from *[The Model's Resource](https://www.models-resource.com/nintendo_switch/splatoon3/model/59382/)*</sup>
 ![](renders/bunny_dielectric.png)
 <sup>Bunny from *[The Stanford 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/)*</sup>

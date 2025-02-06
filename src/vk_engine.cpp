@@ -645,7 +645,7 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	//materials
 	RayMaterial dielectric;
-	dielectric.ior = 1.5f;
+	dielectric.ior = 2.f;
 	dielectric.albedo = glm::vec3(1.f);
 
 	RayMaterial white;
@@ -662,18 +662,18 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial li;
 	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
 	li.albedo = glm::vec3(0.f);
-	li.emissionStrength = 5.f;
+	li.emissionStrength = 3.2f;
 
 	RayMaterial object;
 	object.albedoIndex = -1;
 	object.metalnessIndex = -1;
 	//object.ior = 1.5f;
 
-	// rayMaterials.push_back(dielectric);
 	rayMaterials.push_back(white);
 	rayMaterials.push_back(red);
 	rayMaterials.push_back(green);
 	rayMaterials.push_back(li);
+	rayMaterials.push_back(dielectric);
 	// rayMaterials.push_back(blue);
 	// rayMaterials.push_back(object);
 
@@ -685,10 +685,10 @@ void VulkanEngine::prepare_storage_buffers() {
 	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
 
 	model.name = "boba";
-	model.scale = glm::vec3(0.3f);
+	model.scale = glm::vec3(0.17f);
 	model.samplerIndex = 1;
-	model.position = glm::vec3(-0.3f, 0.5f, 0.f);
-	read_obj("../assets/bobadog/bobadog.obj", model, 0);
+	model.position = glm::vec3(0.f, 0.5f, 0.f);
+	read_obj("../assets/klein_bottle.obj", model, 4);
 
 	ImGuiObject light;
 	light.name = "light";
@@ -801,6 +801,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	auto start = std::chrono::system_clock::now();
 
 	bool smoothShade = false;
+	bool includeUVs = false;
 	std::string currentMat;
 	std::string fileLine;
 	std::string materialFile;
@@ -878,6 +879,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				std::string uvIndexStr = vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1);
 				if (!uvIndexStr.empty()) {
 					textureInd.push_back(stoi(uvIndexStr) - 1);
+					includeUVs = true;
 				}
 
 				if (normals.size() == 0) continue;
@@ -889,6 +891,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				index = nextSpace;
 			}
 
+
 			glm::uvec4 pointIndex;
 			
 			//put uv in the vec4s
@@ -899,7 +902,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				} else {
 					normal = normals[normalInd[i]];
 				}
-				glm::vec2 uv = uvs[textureInd[i]];
+				glm::vec2 uv = includeUVs ? uvs[textureInd[i]] : glm::vec2(0.f);
 				glm::vec3 p = positions[vertexInd[i]];
 
 				TrianglePoint point;
@@ -1477,9 +1480,14 @@ void VulkanEngine::imgui_draw() {
 	}
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
-		ImGui::SliderInt("Debug Mode", &rayTracerParams.debug, -1, 2, "%d");
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
 		ImGui::Checkbox("Single Rendering", &rayTracerParams.singleRender);
+
+		float sampleProgress = (float) totalSamples / rayTracerParams.sampleLimit;
+		glm::vec4 c = glm::mix(glm::vec4(1.f, 0.f, 0.f, 1.f), glm::vec4(0.f, 1.f, 0.f, 1.f), sampleProgress);
+
+		ImGui::TextColored({c.r, c.g, c.b, c.a}, "Single Render Progress: %.1f%%", 100 * sampleProgress);
+		ImGui::SliderInt("Debug Mode", &rayTracerParams.debug, -1, 2, "%d");
 		ImGui::DragInt("Rays Per Pixel", (int*) &rayTracerParams.raysPerPixel, 1.f, 0, 1000);
 		ImGui::DragInt("Bounce Limit", (int*) &rayTracerParams.bounceLimit, 1.f, 0, 100);
 		ImGui::DragInt("Triangle Test Threshold", (int*) &rayTracerParams.triangleCap, 1.f, 0);
@@ -1780,7 +1788,8 @@ void VulkanEngine::draw() {
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
-	totalSamples = rayTracerParams.progressive && rayTracerParams.singleRender ? totalSamples + rayTracerParams.raysPerPixel : 0;
+	totalSamples += (totalSamples < rayTracerParams.sampleLimit ? rayTracerParams.raysPerPixel : 0);
+	if (!rayTracerParams.progressive || !rayTracerParams.singleRender) totalSamples = 0;
 }
 
 void VulkanEngine::run() {
