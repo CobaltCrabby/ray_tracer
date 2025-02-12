@@ -639,7 +639,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
 
-	//spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
+	//spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 0};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
@@ -661,8 +661,8 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	RayMaterial li;
 	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
-	li.albedo = glm::vec3(0.f);
-	li.emissionStrength = 3.2f;
+	li.albedo = glm::vec3(1.f);
+	li.emissionStrength = 1.f;
 
 	RayMaterial object;
 	object.albedoIndex = -1;
@@ -684,17 +684,25 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.scale = glm::vec3(1.f);
 	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
 
-	model.name = "boba";
-	model.scale = glm::vec3(0.17f);
+	model.name = "cube";
+	model.scale = glm::vec3(0.25f);
 	model.samplerIndex = 1;
-	model.position = glm::vec3(0.f, 0.5f, 0.f);
-	read_obj("../assets/klein_bottle.obj", model, 4);
+	model.rotation = glm::vec3(0.f, -30.f, 0.f);
+	model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
+	read_obj("../assets/cube.obj", model, 4);
+
+	model.name = "cube2";
+	model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
+	model.samplerIndex = 1;
+	model.rotation = glm::vec3(0.f, 30.f, 0.f);
+	model.position = glm::vec3(0.4f, -0.2f, 0.45f);
+	read_obj("../assets/cube.obj", model, 4);
 
 	ImGuiObject light;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
-	light.scale = glm::vec3(0.3f);
-	read_obj("../assets/light.obj", light, 3);
+	light.scale = glm::vec3(1.f);
+	read_obj("../assets/light2.obj", light, 3);
 
 	ImGuiObject plane;
 	plane.frontOnly = true;
@@ -715,8 +723,8 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	plane.name = "top";
 	plane.position = glm::vec3(0.f, -1.5f, 0.f);
-	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	plane.rotation = glm::vec3(0.f, 0.f, 0.f);
+	read_obj("../assets/ceiling.obj", plane, 0);
 
 	plane.name = "back";
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
@@ -1788,8 +1796,8 @@ void VulkanEngine::draw() {
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
-	totalSamples += (totalSamples < rayTracerParams.sampleLimit ? rayTracerParams.raysPerPixel : 0);
-	if (!rayTracerParams.progressive || !rayTracerParams.singleRender) totalSamples = 0;
+	totalSamples += (totalSamples < rayTracerParams.sampleLimit ? rayTracerParams.sampleLimit : 0);
+	if (!rayTracerParams.singleRender) totalSamples = 0;
 }
 
 void VulkanEngine::run() {
