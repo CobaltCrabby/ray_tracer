@@ -698,6 +698,13 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.position = glm::vec3(0.4f, -0.2f, 0.45f);
 	read_obj("../assets/cube.obj", model, 4);
 
+	// model.name = "bunny";
+	// model.scale = glm::vec3(0.7f);
+	// model.samplerIndex = 1;
+	// //model.rotation = glm::vec3(0.f, 30.f, 0.f);
+	// model.position = glm::vec3(0.f, 0.7f, 0.f);
+	// read_obj("../assets/bunny_full.obj", model, 4);
+
 	ImGuiObject light;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);

@@ -3,6 +3,9 @@
 
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
+const float PI = 3.1415926535897932384f;
+const float INV_PI = 0.3183098862f;
+
 struct CameraInfo {
     mat4 cameraRotation;
     vec3 pos;
@@ -349,90 +352,130 @@ vec3 getEnvironmentLight(Ray ray) {
 
     float groundToSkyT = smoothstep(-0.01, 0, -ray.dir.y);
     float sunMask = float(groundToSkyT >= 1);
-    return mix(env.groundColor, skyGradient, groundToSkyT) + sun * sunMask;
+    return env.lightDir.w == 1 ? mix(env.groundColor, skyGradient, groundToSkyT) + sun * sunMask : vec3(0.f);
+}
+
+// xyz is direction, w is radius for pdf calcs
+vec3 lightSampleDir(vec3 rayOrigin, inout uint state) {
+    // hardcoded for now
+    vec3 lightVertices[4] = {
+        vec3(-0.333333f, 0.000000f, 0.333231f),
+        vec3(0.333333f, 0.000000f, 0.333231f),
+        vec3(-0.333333f, 0.000000f, -0.333436f),
+        vec3(0.333333f, 0.000000f, -0.333436f)
+    };
+
+    // generate random point on the plane of the light
+    float pdf = 0.f;
+    float x = random(state);
+    float z = random(state);
+    float randomX = mix(-0.33333f, 0.33333f, x);
+    float randomZ = mix(-0.33333f, 0.33333f, z);
+    vec3 randomPoint = vec3(randomX, -1.5f, randomZ);
+
+    vec3 pointVector = randomPoint - rayOrigin;
+    return normalize(pointVector);
+}
+
+float lightSamplePDF(vec3 rayOrigin, vec3 rayNormal, vec3 direction) {
+    HitInfo hit;
+    float[2] test;
+    // WORKAROUND FOR NOW LOL
+    Ray ray;
+    ray.origin = rayOrigin;
+    ray.dir = direction;
+    hit = calculateIntersections(ray, test);
+    if (!hit.didHit || materials[hit.materialIndex].emissionStrength == 0.f) return 0.f;
+
+    float sqRadius = hit.dst * hit.dst;
+    float cosTheta = abs(dot(rayNormal, direction));
+    float pdf = sqRadius / (cosTheta * 0.4444444f); // 0.4444 is 4/9 which is the area (2/3)^2
+    return pdf;
+}
+
+vec3 cosineHemisphereDir(vec3 rayNormal, inout uint state) {
+    float r1 = random(state);
+    float r2 = random(state);
+
+    // found by untegrating the pdf 2pi cos(theta)/pi sin(theta) dtheta
+    float phi = 2 * PI * r1;
+    float sqrtR2 = sqrt(r2);
+    float x = cos(phi) * sqrtR2;
+    float y = sin(phi) * sqrtR2;
+    float z = sqrt(1 - r2);
+
+    // generate orthonormal basis based on normal
+    vec3 zAlignedDir = vec3(x, y, z);
+    vec3 nonParallelAxis = dot(rayNormal, vec3(1.f, 0.f, 0.f)) != 1.f ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 1.f, 0.f);
+    vec3 t = normalize(cross(rayNormal, nonParallelAxis));
+    vec3 b = cross(rayNormal, t);
+    mat3 changeOfBasis = {t, b, rayNormal};
+
+    return changeOfBasis * zAlignedDir;
+}
+
+float cosineHemispherePDF(vec3 rayNormal, vec3 direction) {
+    return max(0, dot(direction, rayNormal) * INV_PI);
+}
+
+vec3 uniformHemisphereDir(vec3 rayNormal, inout uint state) {
+    float r1 = random(state);
+    float r2 = random(state);
+    float cosPhi = cos(2 * PI * r2);
+    float sinPhi = sin(2 * PI * r2);
+
+    vec3 nonParallelAxis = dot(rayNormal, vec3(1.f, 0.f, 0.f)) != 1.f ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 1.f, 0.f);
+    vec3 t = normalize(cross(rayNormal, nonParallelAxis));
+    vec3 b = cross(rayNormal, t);
+    mat3 changeOfBasis = {b, t, rayNormal};
+
+    return changeOfBasis * vec3(cosPhi * sqrt(1 - r1 * r1), sinPhi * sqrt(1 - r1 * r1), r1);
 }
 
 vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
-    vec3 incomingLight = vec3(0.f);
-    vec3 rayColor = vec3(1.f);
+    vec3 totalColor = vec3(0.f);
+    vec3 attenuation = vec3(1.f);
+    HitInfo hit;
     Ray newRay = ray;
     RayTracerData traceData = PushConstants.rayTracerParams;
-    int dielectricBounce = 0;
 
     for (int j = 0; j <= traceData.bounceLimit; j++) {
-        HitInfo hitInfo = calculateIntersections(newRay, stats);
-        if (hitInfo.didHit && dielectricBounce < 100) {  
-            Material material = materials[hitInfo.materialIndex];
-            
-            if (material.alphaIndex != -1) {
-                float alpha = texture(sampler2D(TextureBuffer[material.alphaIndex], TextureSampler[0]), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).r;
-                if (alpha == 0) {
-                    newRay.origin = hitInfo.hitPoint - hitInfo.normal * 0.001;
-                    j--;
-                    continue;
-                }
-            }
+        hit = calculateIntersections(newRay, stats);
+        if (hit.didHit) {
+            Material hitMaterial = materials[hit.materialIndex];
+            totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength * attenuation;
 
-            //https://stackoverflow.com/questions/5255806/how-to-calculate-tangent-and-binormal/5257471#5257471
-            // i give up bro
-            // if (material.bumpIndex != -1) {
-            //     Triangle tri = triangles[hitInfo.triHitIndex];
-            //     //return tri.tangent;
-            //     float height = 0.1f;
-            //     float width = 0.01f;
-            //     ivec2 dim = textureSize(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler[0]), 0);
+            // generate new ray and pdf
+            newRay.origin = hit.hitPoint + hit.normal * 0.00001f; // need this for light sampling
+            vec3 lightSample = lightSampleDir(newRay.origin, state);
+            vec3 cosineSample = cosineHemisphereDir(hit.normal, state);
 
-            //     vec2 uv = vec2(hitInfo.uv.x, 1 - hitInfo.uv.y);
-            //     float base = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler[0]), uv).r;
-            //     float x = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler[0]), uv + vec2(1.0 / dim.x, 0.f)).r;
-            //     float y = texture(sampler2D(TextureBuffer[material.bumpIndex], TextureSampler[0]), uv + vec2(0.f, 1.0 / dim.y)).r;
+            float distPicker = random(state);
+            float pf = 0.f;
+            vec3 sampledDir = distPicker < pf ? lightSample : cosineSample;
 
-            //     vec3 tangent = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(tri.tangent, 0.f)).rgb;
-            //     vec3 binormal = (objects[hitInfo.objectHitIndex].transformMatrix * vec4(tri.binormal, 0.f)).rgb;
+            float lightPDF = lightSamplePDF(newRay.origin, hit.normal, sampledDir);
+            float cosinePDF = cosineHemispherePDF(hit.normal, sampledDir);
+            float pdf = pf * lightPDF + (1.f - pf) * cosinePDF;
+            if (pdf < 0.0001f) break;
 
-            //     vec3 deltaX = (tangent * width + hitInfo.normal * (x - base) * height);
-            //     vec3 deltaY = (binormal * width + hitInfo.normal * (y - base) * height);
+            // threshold for the monte carlo integrand AND for russian roulette
+            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, sampledDir) / pdf;
 
-            //     //int flip = int(sign(dot(cross(tangent, binormal), hitInfo.normal)));
-            //     //return bumpNormal;
-            // }
+            // russian roulette
+            float rrProb = max(max(attenuation.r, attenuation.g), attenuation.b);
+            rrProb = min(rrProb, 0.99f); // clamp so mirrors dont bounce forever
+            rrProb = j <= 5 ? 1.f : rrProb; // keep prob at 1 for first 5 bounces to insure good coverage
+            if (random(state) > rrProb) break;
 
-            float reflectance = material.reflectance;
-            if (material.metalnessIndex != -1) {
-                reflectance = texture(sampler2D(TextureBuffer[material.metalnessIndex], TextureSampler[0]), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y)).r;
-            }
-
-            newRay.origin = hitInfo.hitPoint;
-            if (material.ior != -1.f) {
-                newRay = refraction(newRay, hitInfo.normal, hitInfo.frontFace ? 1.f / material.ior : material.ior, state);
-                dielectricBounce++;
-                j--;
-            } else {
-                vec3 diffuseDir = randomDirection(state);
-                diffuseDir = normalize(hitInfo.normal + diffuseDir);
-                vec3 specularDir = reflect(newRay.dir, hitInfo.normal);
-                //reflect is built in function
-                newRay.dir = mix(diffuseDir, specularDir, reflectance);
-                newRay.origin += hitInfo.normal * 0.0001;
-            }
-
-            vec3 emitted = material.emissionColor * material.emissionStrength;
-            incomingLight += emitted * rayColor;
-
-            if (material.albedoIndex != -1) {
-                uint samp = objects[hitInfo.objectHitIndex].samplerIndex;
-                vec4 albedo = texture(sampler2D(TextureBuffer[material.albedoIndex], TextureSampler[samp]), vec2(hitInfo.uv.x, 1 - hitInfo.uv.y));
-                rayColor *= mix(material.albedo.rgb, albedo.rgb, albedo.a);
-                continue;
-            } 
-            rayColor *= material.albedo.rgb;
+            attenuation *= 1.f / rrProb;
+            newRay.dir = sampledDir;
         } else {
-            incomingLight += (PushConstants.environment.lightDir.w == 1.f ? getEnvironmentLight(newRay) : vec3(0.f)) * rayColor;
-            //if (j != 0) incomingLight *= 10.f;
+            totalColor += attenuation * getEnvironmentLight(newRay);
             break;
         }
     }
-    return incomingLight;
+    return totalColor;
 }
 
 void main() {
@@ -466,10 +509,11 @@ void main() {
 
     float stats[2] = {0, 0};
     vec3 outColor = vec3(0.f);
-    for (int i = 0; i < traceData.raysPerPixel; i++) {
+    uint samples = traceData.singleRender ? traceData.sampleLimit : traceData.raysPerPixel;
+    for (int i = 0; i < samples; i++) {
         outColor += trace(ray, state, stats);
     }
-    outColor /= traceData.raysPerPixel;
+    outColor /= samples;
 
     float weight = 1.f / (PushConstants.frameCount + 1.f);
     vec3 finalColor = oldColor.rgb * (1 - weight) + outColor * weight;
