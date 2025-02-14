@@ -435,6 +435,7 @@ vec3 uniformHemisphereDir(vec3 rayNormal, inout uint state) {
 vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
     vec3 totalColor = vec3(0.f);
     vec3 attenuation = vec3(1.f);
+    vec3 directLight = vec3(0.f);
     HitInfo hit;
     Ray newRay = ray;
     RayTracerData traceData = PushConstants.rayTracerParams;
@@ -443,7 +444,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
         hit = calculateIntersections(newRay, stats);
         if (hit.didHit) {
             Material hitMaterial = materials[hit.materialIndex];
-            totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength * attenuation;
+            totalColor += directLight * attenuation;
 
             // generate new ray and pdf
             newRay.origin = hit.hitPoint + hit.normal * 0.00001f; // need this for light sampling
@@ -451,17 +452,26 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             vec3 cosineSample = cosineHemisphereDir(hit.normal, state);
 
             float distPicker = random(state);
-            float pf = 0.f;
+            float pf = 1.f;
             vec3 sampledDir = distPicker < pf ? lightSample : cosineSample;
 
-            float lightPDF = lightSamplePDF(newRay.origin, hit.normal, sampledDir);
-            float cosinePDF = cosineHemispherePDF(hit.normal, sampledDir);
+            float lightPDF = lightSamplePDF(newRay.origin, hit.normal, lightSample);
+            float cosinePDF = cosineHemispherePDF(hit.normal, cosineSample);
             float pdf = pf * lightPDF + (1.f - pf) * cosinePDF;
-            if (pdf < 0.0001f) break;
+
+            // next event estimation
+            Ray lightRay;
+            lightRay.origin = newRay.origin;
+            lightRay.dir = lightSample;
+            HitInfo lightHit = calculateIntersections(lightRay, stats);
+
+            Material lightMaterial = materials[lightHit.materialIndex];
+            directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
 
             // threshold for the monte carlo integrand AND for russian roulette
-            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, sampledDir) / pdf;
-
+            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, cosineSample) / cosinePDF;
+            directLight *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, lightSample) * (lightPDF == 0.f ? 0.f : 1.f / lightPDF);
+ 
             // russian roulette
             float rrProb = max(max(attenuation.r, attenuation.g), attenuation.b);
             rrProb = min(rrProb, 0.99f); // clamp so mirrors dont bounce forever
@@ -469,7 +479,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             if (random(state) > rrProb) break;
 
             attenuation *= 1.f / rrProb;
-            newRay.dir = sampledDir;
+            newRay.dir = cosineSample;
         } else {
             totalColor += attenuation * getEnvironmentLight(newRay);
             break;
