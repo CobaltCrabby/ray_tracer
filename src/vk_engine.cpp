@@ -661,7 +661,7 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	RayMaterial li;
 	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
-	li.albedo = glm::vec3(1.f);
+	li.albedo = glm::vec3(0.f);
 	li.emissionStrength = 1.f;
 
 	RayMaterial object;
@@ -706,6 +706,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	// read_obj("../assets/bunny_full.obj", model, 4);
 
 	ImGuiObject light;
+	light.frontOnly = true;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
 	light.scale = glm::vec3(1.f);

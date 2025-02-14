@@ -406,7 +406,7 @@ vec3 cosineHemisphereDir(vec3 rayNormal, inout uint state) {
 
     // generate orthonormal basis based on normal
     vec3 zAlignedDir = vec3(x, y, z);
-    vec3 nonParallelAxis = dot(rayNormal, vec3(1.f, 0.f, 0.f)) != 1.f ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 1.f, 0.f);
+    vec3 nonParallelAxis = abs(dot(rayNormal, vec3(1.f, 0.f, 0.f))) < 1.f ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 0.f, 1.f);
     vec3 t = normalize(cross(rayNormal, nonParallelAxis));
     vec3 b = cross(rayNormal, t);
     mat3 changeOfBasis = {t, b, rayNormal};
@@ -445,9 +445,13 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
         if (hit.didHit) {
             Material hitMaterial = materials[hit.materialIndex];
             totalColor += directLight * attenuation;
+            if (j == 0) {
+                totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength;
+            }
+            if (any(isnan(totalColor)) || totalColor.r < 0 || totalColor.g < 0 || totalColor.b < 0) return vec3(0.f);
 
             // generate new ray and pdf
-            newRay.origin = hit.hitPoint + hit.normal * 0.00001f; // need this for light sampling
+            newRay.origin = hit.hitPoint + hit.normal * 0.01f; // need this for light sampling
             vec3 lightSample = lightSampleDir(newRay.origin, state);
             vec3 cosineSample = cosineHemisphereDir(hit.normal, state);
 
@@ -469,8 +473,8 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
 
             // threshold for the monte carlo integrand AND for russian roulette
-            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, cosineSample) / cosinePDF;
-            directLight *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, lightSample) * (lightPDF == 0.f ? 0.f : 1.f / lightPDF);
+            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, cosineSample) * (cosinePDF <= 0.f ? 0.f : 1.f / cosinePDF);
+            directLight *= (hitMaterial.albedo * INV_PI) * max(0.f, dot(hit.normal, lightSample)) * (lightPDF <= 0.f ? 0.f : 1.f / lightPDF);
  
             // russian roulette
             float rrProb = max(max(attenuation.r, attenuation.g), attenuation.b);
