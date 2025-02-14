@@ -388,7 +388,7 @@ float lightSamplePDF(vec3 rayOrigin, vec3 rayNormal, vec3 direction) {
     if (!hit.didHit || materials[hit.materialIndex].emissionStrength == 0.f) return 0.f;
 
     float sqRadius = hit.dst * hit.dst;
-    float cosTheta = abs(dot(rayNormal, direction));
+    float cosTheta = dot(vec3(0.f, -1.f, 0.f), direction);
     float pdf = sqRadius / (cosTheta * 0.4444444f); // 0.4444 is 4/9 which is the area (2/3)^2
     return pdf;
 }
@@ -440,12 +440,14 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
     Ray newRay = ray;
     RayTracerData traceData = PushConstants.rayTracerParams;
 
+    bool balanceHeuristic = false;
+
     for (int j = 0; j <= traceData.bounceLimit; j++) {
         hit = calculateIntersections(newRay, stats);
         if (hit.didHit) {
             Material hitMaterial = materials[hit.materialIndex];
-            totalColor += directLight * attenuation;
-            if (j == 0) {
+            totalColor += (balanceHeuristic ? (hitMaterial.emissionColor * hitMaterial.emissionStrength) : directLight) * attenuation;
+            if (j == 0 && !balanceHeuristic) {
                 totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength;
             }
             if (any(isnan(totalColor)) || totalColor.r < 0 || totalColor.g < 0 || totalColor.b < 0) return vec3(0.f);
@@ -456,24 +458,26 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             vec3 cosineSample = cosineHemisphereDir(hit.normal, state);
 
             float distPicker = random(state);
-            float pf = 1.f;
+            float pf = 0.5f;
             vec3 sampledDir = distPicker < pf ? lightSample : cosineSample;
 
-            float lightPDF = lightSamplePDF(newRay.origin, hit.normal, lightSample);
-            float cosinePDF = cosineHemispherePDF(hit.normal, cosineSample);
+            float lightPDF = lightSamplePDF(newRay.origin, hit.normal, balanceHeuristic ? sampledDir : lightSample);
+            float cosinePDF = cosineHemispherePDF(hit.normal, balanceHeuristic ? sampledDir : cosineSample);
             float pdf = pf * lightPDF + (1.f - pf) * cosinePDF;
 
             // next event estimation
-            Ray lightRay;
-            lightRay.origin = newRay.origin;
-            lightRay.dir = lightSample;
-            HitInfo lightHit = calculateIntersections(lightRay, stats);
+            if (!balanceHeuristic) {
+                Ray lightRay;
+                lightRay.origin = newRay.origin;
+                lightRay.dir = lightSample;
+                HitInfo lightHit = calculateIntersections(lightRay, stats);
 
-            Material lightMaterial = materials[lightHit.materialIndex];
-            directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
+                Material lightMaterial = materials[lightHit.materialIndex];
+                directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
+            }
 
             // threshold for the monte carlo integrand AND for russian roulette
-            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, cosineSample) * (cosinePDF <= 0.f ? 0.f : 1.f / cosinePDF);
+            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, balanceHeuristic ? sampledDir : cosineSample) * ((balanceHeuristic ? pdf : cosinePDF) <= 0.f ? 0.f : 1.f / (balanceHeuristic ? pdf : cosinePDF));
             directLight *= (hitMaterial.albedo * INV_PI) * max(0.f, dot(hit.normal, lightSample)) * (lightPDF <= 0.f ? 0.f : 1.f / lightPDF);
  
             // russian roulette
@@ -483,7 +487,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             if (random(state) > rrProb) break;
 
             attenuation *= 1.f / rrProb;
-            newRay.dir = cosineSample;
+            newRay.dir = balanceHeuristic ? sampledDir : cosineSample;
         } else {
             totalColor += attenuation * getEnvironmentLight(newRay);
             break;

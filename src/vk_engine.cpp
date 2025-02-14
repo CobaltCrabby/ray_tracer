@@ -635,6 +635,48 @@ void VulkanEngine::update_descriptors() {
 	});
 }
 
+void VulkanEngine::cornell_box() {
+	ImGuiObject light;
+	light.frontOnly = true;
+	light.name = "light";
+	light.position = glm::vec3(0.f, -1.5f, 0.f);
+	light.scale = glm::vec3(1.f);
+	read_obj("../assets/light2.obj", light, 3);
+
+	ImGuiObject plane;
+	plane.frontOnly = true;
+	plane.name = "bottom";
+	plane.position = glm::vec3(0.f, 0.5f, 0.f);
+	plane.rotation = glm::vec3(0.f);
+	read_obj("../assets/plane.obj", plane, 0);
+
+	plane.name = "left";
+	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
+	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
+	read_obj("../assets/plane.obj", plane, 2);
+
+	plane.name = "right";
+	plane.position = glm::vec3(1.f, -0.5f, 0.f);
+	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
+	read_obj("../assets/plane.obj", plane, 1);
+
+	plane.name = "top";
+	plane.position = glm::vec3(0.f, -1.5f, 0.f);
+	plane.rotation = glm::vec3(0.f, 0.f, 0.f);
+	read_obj("../assets/ceiling.obj", plane, 0);
+
+	plane.name = "back";
+	plane.position = glm::vec3(0.f, -0.5f, 1.f);
+	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
+	plane.scale = glm::vec3(1.f);
+	read_obj("../assets/plane.obj", plane, 0);
+
+	plane.name = "front";
+	plane.position = glm::vec3(0.f, -0.5f, -1.f);
+	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
+	read_obj("../assets/plane.obj", plane, 0);
+}
+
 void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
@@ -677,73 +719,34 @@ void VulkanEngine::prepare_storage_buffers() {
 	// rayMaterials.push_back(blue);
 	// rayMaterials.push_back(object);
 
-
 	//ccw
 	ImGuiObject model;
 	model.name = "sponza";
 	model.scale = glm::vec3(1.f);
 	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
 
-	model.name = "cube";
-	model.scale = glm::vec3(0.25f);
-	model.samplerIndex = 1;
-	model.rotation = glm::vec3(0.f, -30.f, 0.f);
-	model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
-	read_obj("../assets/cube.obj", model, 4);
-
-	model.name = "cube2";
-	model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
-	model.samplerIndex = 1;
-	model.rotation = glm::vec3(0.f, 30.f, 0.f);
-	model.position = glm::vec3(0.4f, -0.2f, 0.45f);
-	read_obj("../assets/cube.obj", model, 4);
-
-	// model.name = "bunny";
-	// model.scale = glm::vec3(0.7f);
+	// model.name = "cube";
+	// model.scale = glm::vec3(0.25f);
 	// model.samplerIndex = 1;
-	// //model.rotation = glm::vec3(0.f, 30.f, 0.f);
-	// model.position = glm::vec3(0.f, 0.7f, 0.f);
-	// read_obj("../assets/bunny_full.obj", model, 4);
+	// model.rotation = glm::vec3(0.f, -30.f, 0.f);
+	// model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
+	// read_obj("../assets/cube.obj", model, 4);
 
-	ImGuiObject light;
-	light.frontOnly = true;
-	light.name = "light";
-	light.position = glm::vec3(0.f, -1.5f, 0.f);
-	light.scale = glm::vec3(1.f);
-	read_obj("../assets/light2.obj", light, 3);
+	// model.name = "cube2";
+	// model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
+	// model.samplerIndex = 1;
+	// model.rotation = glm::vec3(0.f, 30.f, 0.f);
+	// model.position = glm::vec3(0.4f, -0.2f, 0.45f);
+	// read_obj("../assets/cube.obj", model, 4);
 
-	ImGuiObject plane;
-	plane.frontOnly = true;
-	plane.name = "bottom";
-	plane.position = glm::vec3(0.f, 0.5f, 0.f);
-	plane.rotation = glm::vec3(0.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	model.name = "bunny";
+	model.scale = glm::vec3(0.7f);
+	model.samplerIndex = 1;
+	//model.rotation = glm::vec3(0.f, 30.f, 0.f);
+	model.position = glm::vec3(0.f, 0.53f, 0.f);
+	read_obj("../assets/bunny_full.obj", model, 4);
 
-	plane.name = "left";
-	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
-	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	read_obj("../assets/plane.obj", plane, 2);
-
-	plane.name = "right";
-	plane.position = glm::vec3(1.f, -0.5f, 0.f);
-	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	read_obj("../assets/plane.obj", plane, 1);
-
-	plane.name = "top";
-	plane.position = glm::vec3(0.f, -1.5f, 0.f);
-	plane.rotation = glm::vec3(0.f, 0.f, 0.f);
-	read_obj("../assets/ceiling.obj", plane, 0);
-
-	plane.name = "back";
-	plane.position = glm::vec3(0.f, -0.5f, 1.f);
-	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
-	plane.scale = glm::vec3(1.f);
-	read_obj("../assets/plane.obj", plane, 0);
-
-	plane.name = "front";
-	plane.position = glm::vec3(0.f, -0.5f, -1.f);
-	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	cornell_box();
 
 	copy_buffer(sizeof(RayMaterial) * rayMaterials.size(), materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());

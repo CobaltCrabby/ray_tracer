@@ -238,6 +238,8 @@ private:
 	void run_compute();
 	void run_graphics(uint index);
 
+	void cornell_box();
+
 public:
 	DeletionQueue deletionQueue;
 
