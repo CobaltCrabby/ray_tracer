@@ -109,6 +109,12 @@ struct RayTracerData {
     uint sampleLimit;
 };
 
+struct BxDFResult {
+    vec3 sampledDir;
+    vec3 radiance;
+    vec3 directLight;
+};
+
 layout (binding = 0, rgba8) uniform image2D outImage;
 
 layout (binding = 1) uniform texture2D TextureBuffer[64];
@@ -418,18 +424,30 @@ float cosineHemispherePDF(vec3 rayNormal, vec3 direction) {
     return max(0, dot(direction, rayNormal) * INV_PI);
 }
 
-vec3 uniformHemisphereDir(vec3 rayNormal, inout uint state) {
-    float r1 = random(state);
-    float r2 = random(state);
-    float cosPhi = cos(2 * PI * r2);
-    float sinPhi = sin(2 * PI * r2);
+BxDFResult diffuseBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
+    Material hitMaterial = materials[prevHit.materialIndex];
+    vec3 origin = prevHit.hitPoint + prevHit.normal * 0.01f;
 
-    vec3 nonParallelAxis = dot(rayNormal, vec3(1.f, 0.f, 0.f)) != 1.f ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 1.f, 0.f);
-    vec3 t = normalize(cross(rayNormal, nonParallelAxis));
-    vec3 b = cross(rayNormal, t);
-    mat3 changeOfBasis = {b, t, rayNormal};
+    // take samples account to PDFs
+    vec3 lightSample = lightSampleDir(origin, state);
+    vec3 cosineSample = cosineHemisphereDir(prevHit.normal, state);
+    float lightPDF = lightSamplePDF(origin, prevHit.normal, lightSample);
+    float cosinePDF = cosineHemispherePDF(prevHit.normal, cosineSample);
 
-    return changeOfBasis * vec3(cosPhi * sqrt(1 - r1 * r1), sinPhi * sqrt(1 - r1 * r1), r1);
+    // next event estimation
+    Ray lightRay;
+    lightRay.origin = origin;
+    lightRay.dir = lightSample;
+    float[2] temp; // FIX LATER
+    HitInfo lightHit = calculateIntersections(lightRay, temp);
+    Material lightMaterial = materials[lightHit.materialIndex];
+
+    vec3 radiance = hitMaterial.albedo * INV_PI * dot(prevHit.normal, cosineSample) / cosinePDF;
+    vec3 directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
+    directLight *= hitMaterial.albedo * INV_PI * max(0.f, dot(prevHit.normal, lightSample)) * (lightPDF <= 0.f ? 0.f : 1.f / lightPDF);
+
+    BxDFResult result = {cosineSample, radiance, directLight};
+    return result;
 }
 
 vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
@@ -440,54 +458,34 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
     Ray newRay = ray;
     RayTracerData traceData = PushConstants.rayTracerParams;
 
+    // seems to increase noise.. maybe im doing it wrong? maybe it only works for large area lights?
     bool balanceHeuristic = false;
 
     for (int j = 0; j <= traceData.bounceLimit; j++) {
         hit = calculateIntersections(newRay, stats);
         if (hit.didHit) {
             Material hitMaterial = materials[hit.materialIndex];
-            totalColor += (balanceHeuristic ? (hitMaterial.emissionColor * hitMaterial.emissionStrength) : directLight) * attenuation;
-            if (j == 0 && !balanceHeuristic) {
-                totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength;
-            }
+
+            // 0-1 NEE
+            totalColor += directLight * attenuation;
+            if (j == 0) totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength;
             if (any(isnan(totalColor)) || totalColor.r < 0 || totalColor.g < 0 || totalColor.b < 0) return vec3(0.f);
 
-            // generate new ray and pdf
-            newRay.origin = hit.hitPoint + hit.normal * 0.01f; // need this for light sampling
-            vec3 lightSample = lightSampleDir(newRay.origin, state);
-            vec3 cosineSample = cosineHemisphereDir(hit.normal, state);
-
-            float distPicker = random(state);
-            float pf = 0.5f;
-            vec3 sampledDir = distPicker < pf ? lightSample : cosineSample;
-
-            float lightPDF = lightSamplePDF(newRay.origin, hit.normal, balanceHeuristic ? sampledDir : lightSample);
-            float cosinePDF = cosineHemispherePDF(hit.normal, balanceHeuristic ? sampledDir : cosineSample);
-            float pdf = pf * lightPDF + (1.f - pf) * cosinePDF;
-
-            // next event estimation
-            if (!balanceHeuristic) {
-                Ray lightRay;
-                lightRay.origin = newRay.origin;
-                lightRay.dir = lightSample;
-                HitInfo lightHit = calculateIntersections(lightRay, stats);
-
-                Material lightMaterial = materials[lightHit.materialIndex];
-                directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
-            }
-
-            // threshold for the monte carlo integrand AND for russian roulette
-            attenuation *= (hitMaterial.albedo * INV_PI) * dot(hit.normal, balanceHeuristic ? sampledDir : cosineSample) * ((balanceHeuristic ? pdf : cosinePDF) <= 0.f ? 0.f : 1.f / (balanceHeuristic ? pdf : cosinePDF));
-            directLight *= (hitMaterial.albedo * INV_PI) * max(0.f, dot(hit.normal, lightSample)) * (lightPDF <= 0.f ? 0.f : 1.f / lightPDF);
+            // BxDF
+            BxDFResult bxdf = diffuseBRDF(newRay.dir, hit, state);
+            attenuation *= bxdf.radiance;
+            directLight = bxdf.directLight;
  
             // russian roulette
             float rrProb = max(max(attenuation.r, attenuation.g), attenuation.b);
             rrProb = min(rrProb, 0.99f); // clamp so mirrors dont bounce forever
             rrProb = j <= 5 ? 1.f : rrProb; // keep prob at 1 for first 5 bounces to insure good coverage
             if (random(state) > rrProb) break;
-
             attenuation *= 1.f / rrProb;
-            newRay.dir = balanceHeuristic ? sampledDir : cosineSample;
+
+            // prep new bounce
+            newRay.origin = hit.hitPoint + hit.normal * 0.001f;
+            newRay.dir = bxdf.sampledDir;
         } else {
             totalColor += attenuation * getEnvironmentLight(newRay);
             break;

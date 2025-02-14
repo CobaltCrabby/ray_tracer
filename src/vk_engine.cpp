@@ -704,7 +704,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial li;
 	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
 	li.albedo = glm::vec3(0.f);
-	li.emissionStrength = 1.f;
+	li.emissionStrength = 2.4f;
 
 	RayMaterial object;
 	object.albedoIndex = -1;
