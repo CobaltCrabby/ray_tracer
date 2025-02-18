@@ -113,6 +113,7 @@ struct BxDFResult {
     vec3 sampledDir;
     vec3 radiance;
     vec3 directLight;
+    float originSign;
 };
 
 layout (binding = 0, rgba8) uniform image2D outImage;
@@ -252,8 +253,9 @@ HitInfo triangleIntersection(Ray ray, TrianglePoint v0, TrianglePoint v1, Triang
     if (v0uv == v1uv || v1uv == v2uv || v2uv == v0uv) {
         hit.uv = vec2(0.5f);
     }
+    bool rachit = true;
 
-    hit.normal = (smoothShade ? w * v0.normal.xyz + u * v1.normal.xyz + v * v2.normal.xyz : normalize(n)) * (hit.frontFace ? 1 : -1);
+    hit.normal = (rachit ? w * v0.normal.xyz + u * v1.normal.xyz + v * v2.normal.xyz : normalize(n)) * (hit.frontFace ? 1 : -1);
     return hit;
 }
 
@@ -446,7 +448,24 @@ BxDFResult diffuseBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
     vec3 directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
     directLight *= hitMaterial.albedo * INV_PI * max(0.f, dot(prevHit.normal, lightSample)) * (lightPDF <= 0.f ? 0.f : 1.f / lightPDF);
 
-    BxDFResult result = {cosineSample, radiance, directLight};
+    BxDFResult result = {cosineSample, radiance, directLight, 0.f};
+    return result;
+}
+
+BxDFResult specularBRDF(vec3 incomingDir, HitInfo prevHit, inout uint    state) {
+    BxDFResult result = {reflect(incomingDir, prevHit.normal), vec3(1.f), vec3(-1.f), 0.f};
+    return result;
+}
+
+BxDFResult dielectricBTDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
+    Material hitMaterial = materials[prevHit.materialIndex];
+    float ior = !prevHit.frontFace ? hitMaterial.ior : 1.f / hitMaterial.ior;
+
+    float cosine = dot(-incomingDir, prevHit.normal);
+    float sine =  sqrt(1 - cosine * cosine);
+    bool solution = (ior * sine) > 1.f || schlick(cosine, ior) > random(state);
+    vec3 dir = solution ? reflect(incomingDir, prevHit.normal) : refract(incomingDir, prevHit.normal, ior);
+    BxDFResult result = {dir, vec3(1.f), vec3(-1.f), (solution ? 1 : sign(dot(prevHit.normal, incomingDir)))};
     return result;
 }
 
@@ -467,12 +486,21 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             Material hitMaterial = materials[hit.materialIndex];
 
             // 0-1 NEE
-            totalColor += directLight * attenuation;
-            if (j == 0) totalColor += hitMaterial.emissionColor * hitMaterial.emissionStrength;
+            vec3 emission = hitMaterial.emissionColor * hitMaterial.emissionStrength;
+            vec3 finalLight = directLight.x == -1.f ? emission : directLight;
+            totalColor += finalLight * attenuation;
+            if (j == 0) totalColor += emission;
             if (any(isnan(totalColor)) || totalColor.r < 0 || totalColor.g < 0 || totalColor.b < 0) return vec3(0.f);
 
             // BxDF
-            BxDFResult bxdf = diffuseBRDF(newRay.dir, hit, state);
+            BxDFResult bxdf;
+            if (hitMaterial.reflectance != 0) {
+                bxdf = specularBRDF(newRay.dir, hit, state);
+            } else if (hitMaterial.ior != -1) {
+                bxdf = dielectricBTDF(newRay.dir, hit, state);
+            } else {
+                bxdf = diffuseBRDF(newRay.dir, hit, state);
+            }
             attenuation *= bxdf.radiance;
             directLight = bxdf.directLight;
  
@@ -484,7 +512,8 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             attenuation *= 1.f / rrProb;
 
             // prep new bounce
-            newRay.origin = hit.hitPoint + hit.normal * 0.001f;
+            float dielectric = hit.frontFace ? 1.f : -1.f;
+            newRay.origin = hit.hitPoint + hit.normal * bxdf.originSign * 0.01f;
             newRay.dir = bxdf.sampledDir;
         } else {
             totalColor += attenuation * getEnvironmentLight(newRay);

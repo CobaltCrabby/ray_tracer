@@ -481,7 +481,7 @@ void VulkanEngine::init_imgui() {
 	poolInfo.poolSizeCount = std::size(pool_sizes);
 	poolInfo.pPoolSizes = pool_sizes;
 
-	VkDescriptorPool imguiPool;
+	VkDescriptorPool imguiPool; // rachit was here :)
 	VK_CHECK(vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiPool));
 
 	//initialize library
@@ -681,7 +681,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
 
-	//spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 0};
+	spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 5};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
@@ -689,6 +689,9 @@ void VulkanEngine::prepare_storage_buffers() {
 	RayMaterial dielectric;
 	dielectric.ior = 2.f;
 	dielectric.albedo = glm::vec3(1.f);
+
+	RayMaterial mirror;
+	mirror.reflectance = 1.f;
 
 	RayMaterial white;
 
@@ -715,8 +718,8 @@ void VulkanEngine::prepare_storage_buffers() {
 	rayMaterials.push_back(red);
 	rayMaterials.push_back(green);
 	rayMaterials.push_back(li);
+	rayMaterials.push_back(mirror);
 	rayMaterials.push_back(dielectric);
-	// rayMaterials.push_back(blue);
 	// rayMaterials.push_back(object);
 
 	//ccw
@@ -742,9 +745,8 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.name = "bunny";
 	model.scale = glm::vec3(0.7f);
 	model.samplerIndex = 1;
-	//model.rotation = glm::vec3(0.f, 30.f, 0.f);
 	model.position = glm::vec3(0.f, 0.53f, 0.f);
-	read_obj("../assets/bunny_full.obj", model, 4);
+	//read_obj("../assets/bunny_full.obj", model, 4);
 
 	cornell_box();
 
@@ -972,7 +974,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
 				glm::scale(imGuiObj.scale);
-			object.smoothShade = smoothShade;
+			object.smoothShade = smoothShade; //FIX
 			object.bvhIndex = bvhNodes.size();
 			object.samplerIndex = imGuiObj.samplerIndex;
 			objects.push_back(object);
