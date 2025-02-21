@@ -681,7 +681,7 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres
 	spheres.resize(MAX_SPHERES);
 
-	spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 5};
+	//spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 5};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
 
@@ -728,25 +728,25 @@ void VulkanEngine::prepare_storage_buffers() {
 	model.scale = glm::vec3(1.f);
 	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
 
-	// model.name = "cube";
-	// model.scale = glm::vec3(0.25f);
-	// model.samplerIndex = 1;
-	// model.rotation = glm::vec3(0.f, -30.f, 0.f);
-	// model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
-	// read_obj("../assets/cube.obj", model, 4);
+	model.name = "cube";
+	model.scale = glm::vec3(0.25f);
+	model.samplerIndex = 1;
+	model.rotation = glm::vec3(0.f, -30.f, 0.f);
+	model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
+	read_obj("../assets/cube.obj", model, 0);
 
-	// model.name = "cube2";
-	// model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
-	// model.samplerIndex = 1;
-	// model.rotation = glm::vec3(0.f, 30.f, 0.f);
-	// model.position = glm::vec3(0.4f, -0.2f, 0.45f);
-	// read_obj("../assets/cube.obj", model, 4);
+	model.name = "cube2";
+	model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
+	model.samplerIndex = 1;
+	model.rotation = glm::vec3(0.f, 30.f, 0.f);
+	model.position = glm::vec3(0.4f, -0.2f, 0.45f);
+	read_obj("../assets/cube.obj", model, 0);
 
 	model.name = "bunny";
 	model.scale = glm::vec3(0.7f);
 	model.samplerIndex = 1;
 	model.position = glm::vec3(0.f, 0.53f, 0.f);
-	//read_obj("../assets/bunny_full.obj", model, 4);
+	//read_obj("../assets/bunny_full.obj", model, 5);
 
 	cornell_box();
 
