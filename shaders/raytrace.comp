@@ -449,7 +449,7 @@ BxDFResult diffuseBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
     float misWeight2 = (0.5f * cosinePDF + 0.5f * lightSamplePDF(origin, prevHit.normal, cosineSample));
     vec3 radiance = hitMaterial.albedo * INV_PI * dot(prevHit.normal, cosineSample) / cosinePDF;
     vec3 directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
-    directLight *= hitMaterial.albedo * INV_PI * max(0.f, dot(prevHit.normal, lightSample)) * (lightPDF <= 0.f ? 0.f : 1.f / lightPDF);
+    directLight *= hitMaterial.albedo * INV_PI * max(0.f, dot(prevHit.normal, lightSample)) * (misWeight1 <= 0.f ? 0.f : 1.f / misWeight1);
 
     BxDFResult result = {cosineSample, radiance, directLight, 1.f, misWeight2};
     return result;
