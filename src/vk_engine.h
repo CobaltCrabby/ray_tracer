@@ -332,6 +332,7 @@ public:
 	glm::vec2 prevMouseScroll = glm::vec2(0.f);
 	float mouseSensitivity = 100; 
 	bool clicking = false;
+	bool autoProgressive = true;
 	float cameraSpeed = 10.f;
 
 	VkExtent2D _windowExtent{1728, 1117};

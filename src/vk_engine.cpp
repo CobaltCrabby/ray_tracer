@@ -1502,6 +1502,7 @@ void VulkanEngine::imgui_draw() {
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
+		ImGui::Checkbox("Automatic Progressive Rendering", &autoProgressive);
 		ImGui::Checkbox("Single Rendering", &rayTracerParams.singleRender);
 
 		float sampleProgress = (float) totalSamples / rayTracerParams.sampleLimit;
@@ -1822,6 +1823,7 @@ void VulkanEngine::run() {
 		const Uint8* keyState;
 
 		auto start = std::chrono::system_clock::now();
+		bool movingMouse = false;
 
 		// Handle events on queue
 		while (SDL_PollEvent(&e) != 0) {
@@ -1851,9 +1853,11 @@ void VulkanEngine::run() {
 					cameraAngles[1] += -dx * mouseSensitivity * 1.6667f;
 					prevMouseScroll.y = e.mgesture.y;
 					prevMouseScroll.x = e.mgesture.x;
+					movingMouse = true;
 				}
 			} else if (e.type == SDL_FINGERUP) {
 				prevMouseScroll = glm::vec2(0.f);
+				movingMouse = false;
 			}
 
 			keyState = SDL_GetKeyboardState(NULL);
@@ -1878,9 +1882,13 @@ void VulkanEngine::run() {
 			movement.x++;
 		}
 
+		cout << movingMouse << '\n';
 		if (movement != glm::vec3(0.f)) {
 			movement = normalize(cameraInfo.cameraRotation * glm::vec4(movement, 0.f));
 			cameraInfo.pos += movement * renderStats.frameTime * 0.001f * cameraSpeed;
+			rayTracerParams.progressive = false;
+		} else if (autoProgressive) {
+			rayTracerParams.progressive = !movingMouse;
 		}
 
 		ImGui_ImplVulkan_NewFrame();
