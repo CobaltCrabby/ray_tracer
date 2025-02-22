@@ -434,8 +434,6 @@ BxDFResult diffuseBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
     // take samples account to PDFs
     vec3 lightSample = lightSampleDir(origin, state);
     vec3 cosineSample = cosineHemisphereDir(prevHit.normal, state);
-    float lightPDF = lightSamplePDF(origin, prevHit.normal, lightSample);
-    float cosinePDF = cosineHemispherePDF(prevHit.normal, cosineSample);
 
     // next event estimation
     Ray lightRay;
@@ -445,11 +443,21 @@ BxDFResult diffuseBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
     HitInfo lightHit = calculateIntersections(lightRay, temp);
     Material lightMaterial = materials[lightHit.materialIndex];
 
-    float misWeight1 = (0.5f * lightPDF + 0.5f * cosineHemispherePDF(prevHit.normal, lightSample));
-    float misWeight2 = (0.5f * cosinePDF + 0.5f * lightSamplePDF(origin, prevHit.normal, cosineSample));
-    vec3 radiance = hitMaterial.albedo * INV_PI * dot(prevHit.normal, cosineSample) / cosinePDF;
+    // light MIS weight
+    float realLightPDF = lightSamplePDF(origin, prevHit.normal, lightSample);
+    float cosinePDF = cosineHemispherePDF(prevHit.normal, lightSample);
+    float misWeight1 = realLightPDF * realLightPDF / (realLightPDF * realLightPDF + cosinePDF * cosinePDF);
+    if (isnan(misWeight1)) misWeight1 = 0;
+
+    // cosine MIS weight
+    float lightPDF = lightSamplePDF(origin, prevHit.normal, cosineSample);
+    float realCosinePDF = cosineHemispherePDF(prevHit.normal, cosineSample);
+    float misWeight2 = realCosinePDF * realCosinePDF / (lightPDF * lightPDF + realCosinePDF * realCosinePDF);
+    if (isnan(misWeight2)) misWeight2 = 0;
+
+    vec3 radiance = hitMaterial.albedo * INV_PI * dot(prevHit.normal, cosineSample) / realCosinePDF;
     vec3 directLight = lightMaterial.emissionColor * lightMaterial.emissionStrength;
-    directLight *= hitMaterial.albedo * INV_PI * max(0.f, dot(prevHit.normal, lightSample)) * (misWeight1 <= 0.f ? 0.f : 1.f / misWeight1);
+    directLight *= hitMaterial.albedo * INV_PI * max(0.f, dot(prevHit.normal, lightSample)) * (realLightPDF == 0 ? 0 : misWeight1 / realLightPDF);
 
     BxDFResult result = {cosineSample, radiance, directLight, 1.f, misWeight2};
     return result;
@@ -490,7 +498,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
             Material hitMaterial = materials[hit.materialIndex];
 
             // 0-1 NEE
-            vec3 emission = hitMaterial.emissionColor * hitMaterial.emissionStrength * misWeight;
+            vec3 emission = hitMaterial.emissionColor * hitMaterial.emissionStrength / misWeight;
             vec3 finalLight = directLight.x == -1.f ? emission : directLight;
             totalColor += finalLight * attenuation;
             if (j == 0) totalColor += emission;
@@ -510,7 +518,7 @@ vec3 trace(Ray ray, inout uint state, inout float stats[2]) {
  
             // russian roulette
             float rrProb = max(max(attenuation.r, attenuation.g), attenuation.b);
-            rrProb = min(rrProb, 0.99f); // clamp so mirrors dont bounce forever
+            rrProb = min(rrProb, 0.95f); // clamp so mirrors dont bounce forever
             rrProb = j <= 5 ? 1.f : rrProb; // keep prob at 1 for first 5 bounces to insure good coverage
             if (random(state) > rrProb) break;
             attenuation *= 1.f / rrProb;

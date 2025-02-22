@@ -162,7 +162,7 @@ struct RayTracerData {
 	alignas(4) bool singleRender = false;
 	alignas(4) int debug = -1;
 	alignas(4) uint raysPerPixel = 1;
-	alignas(4) uint bounceLimit = 5;
+	alignas(4) uint bounceLimit = 8;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
 	alignas(4) uint triangleCap = 50;
