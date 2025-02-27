@@ -1882,7 +1882,6 @@ void VulkanEngine::run() {
 			movement.x++;
 		}
 
-		cout << movingMouse << '\n';
 		if (movement != glm::vec3(0.f)) {
 			movement = normalize(cameraInfo.cameraRotation * glm::vec4(movement, 0.f));
 			cameraInfo.pos += movement * renderStats.frameTime * 0.001f * cameraSpeed;
