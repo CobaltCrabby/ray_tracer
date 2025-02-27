@@ -7,11 +7,12 @@ A Vulkan-based compute path tracer written in C++. Code skeleton from *[VkGuide]
 - Wavefront .obj and .mtl loading
 - ImGui implementation
 - Bounding volume hierarchies
+- Next event estimation
+- Multiple importance sampling
 
 ## Planned Features
 - Dynamic camera system
-- Importance sampling
-- Disney's BRDF
+- Disney's BSDF
 - Wavefront path tracing
 
 ## Renders

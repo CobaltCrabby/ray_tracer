@@ -162,7 +162,7 @@ struct RayTracerData {
 	alignas(4) bool singleRender = false;
 	alignas(4) int debug = -1;
 	alignas(4) uint raysPerPixel = 1;
-	alignas(4) uint bounceLimit = 5;
+	alignas(4) uint bounceLimit = 8;
 	alignas(4) uint sphereCount;
 	alignas(4) uint objectCount;
 	alignas(4) uint triangleCap = 50;
@@ -237,6 +237,8 @@ private:
 	void imgui_draw();
 	void run_compute();
 	void run_graphics(uint index);
+
+	void cornell_box();
 
 public:
 	DeletionQueue deletionQueue;
@@ -330,6 +332,7 @@ public:
 	glm::vec2 prevMouseScroll = glm::vec2(0.f);
 	float mouseSensitivity = 100; 
 	bool clicking = false;
+	bool autoProgressive = true;
 	float cameraSpeed = 10.f;
 
 	VkExtent2D _windowExtent{1728, 1117};

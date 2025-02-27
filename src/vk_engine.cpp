@@ -481,7 +481,7 @@ void VulkanEngine::init_imgui() {
 	poolInfo.poolSizeCount = std::size(pool_sizes);
 	poolInfo.pPoolSizes = pool_sizes;
 
-	VkDescriptorPool imguiPool;
+	VkDescriptorPool imguiPool; // rachit was here :)
 	VK_CHECK(vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiPool));
 
 	//initialize library
@@ -635,66 +635,13 @@ void VulkanEngine::update_descriptors() {
 	});
 }
 
-void VulkanEngine::prepare_storage_buffers() {
-	//spheres
-	spheres.resize(MAX_SPHERES);
-
-	//spheres[0] = {glm::vec3(-0.5f, 0.1f, 0.f), 0.4f, 0};
-	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
-	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
-
-	//materials
-	RayMaterial dielectric;
-	dielectric.ior = 2.f;
-	dielectric.albedo = glm::vec3(1.f);
-
-	RayMaterial white;
-
-	RayMaterial red;
-	red.albedo = glm::vec3(1.f, 0.f, 0.f);
-
-	RayMaterial green;
-	green.albedo = glm::vec3(0.f, 1.f, 0.f);
-
-	RayMaterial blue;
-	blue.albedo = glm::vec3(0.f, 0.f, 1.f);
-
-	RayMaterial li;
-	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
-	li.albedo = glm::vec3(0.f);
-	li.emissionStrength = 3.2f;
-
-	RayMaterial object;
-	object.albedoIndex = -1;
-	object.metalnessIndex = -1;
-	//object.ior = 1.5f;
-
-	rayMaterials.push_back(white);
-	rayMaterials.push_back(red);
-	rayMaterials.push_back(green);
-	rayMaterials.push_back(li);
-	rayMaterials.push_back(dielectric);
-	// rayMaterials.push_back(blue);
-	// rayMaterials.push_back(object);
-
-
-	//ccw
-	ImGuiObject model;
-	model.name = "sponza";
-	model.scale = glm::vec3(1.f);
-	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
-
-	model.name = "boba";
-	model.scale = glm::vec3(0.17f);
-	model.samplerIndex = 1;
-	model.position = glm::vec3(0.f, 0.5f, 0.f);
-	read_obj("../assets/klein_bottle.obj", model, 4);
-
+void VulkanEngine::cornell_box() {
 	ImGuiObject light;
+	light.frontOnly = true;
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
-	light.scale = glm::vec3(0.3f);
-	read_obj("../assets/light.obj", light, 3);
+	light.scale = glm::vec3(1.f);
+	read_obj("../assets/light2.obj", light, 3);
 
 	ImGuiObject plane;
 	plane.frontOnly = true;
@@ -715,8 +662,8 @@ void VulkanEngine::prepare_storage_buffers() {
 
 	plane.name = "top";
 	plane.position = glm::vec3(0.f, -1.5f, 0.f);
-	plane.rotation = glm::vec3(180.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	plane.rotation = glm::vec3(0.f, 0.f, 0.f);
+	read_obj("../assets/ceiling.obj", plane, 0);
 
 	plane.name = "back";
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
@@ -728,6 +675,80 @@ void VulkanEngine::prepare_storage_buffers() {
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
 	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
 	read_obj("../assets/plane.obj", plane, 0);
+}
+
+void VulkanEngine::prepare_storage_buffers() {
+	//spheres
+	spheres.resize(MAX_SPHERES);
+
+	//spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 5};
+	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
+	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
+
+	//materials
+	RayMaterial dielectric;
+	dielectric.ior = 2.f;
+	dielectric.albedo = glm::vec3(1.f);
+
+	RayMaterial mirror;
+	mirror.reflectance = 1.f;
+
+	RayMaterial white;
+
+	RayMaterial red;
+	red.albedo = glm::vec3(1.f, 0.f, 0.f);
+
+	RayMaterial green;
+	green.albedo = glm::vec3(0.f, 1.f, 0.f);
+
+	RayMaterial blue;
+	blue.albedo = glm::vec3(0.f, 0.f, 1.f);
+
+	RayMaterial li;
+	li.emissionColor = glm::vec3(1.f, 1.f, 1.f);
+	li.albedo = glm::vec3(0.f);
+	li.emissionStrength = 2.4f;
+
+	RayMaterial object;
+	object.albedoIndex = -1;
+	object.metalnessIndex = -1;
+	//object.ior = 1.5f;
+
+	rayMaterials.push_back(white);
+	rayMaterials.push_back(red);
+	rayMaterials.push_back(green);
+	rayMaterials.push_back(li);
+	rayMaterials.push_back(mirror);
+	rayMaterials.push_back(dielectric);
+	// rayMaterials.push_back(object);
+
+	//ccw
+	ImGuiObject model;
+	model.name = "sponza";
+	model.scale = glm::vec3(1.f);
+	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
+
+	model.name = "cube";
+	model.scale = glm::vec3(0.25f);
+	model.samplerIndex = 1;
+	model.rotation = glm::vec3(0.f, -30.f, 0.f);
+	model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
+	read_obj("../assets/cube.obj", model, 0);
+
+	model.name = "cube2";
+	model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
+	model.samplerIndex = 1;
+	model.rotation = glm::vec3(0.f, 30.f, 0.f);
+	model.position = glm::vec3(0.4f, -0.2f, 0.45f);
+	read_obj("../assets/cube.obj", model, 0);
+
+	model.name = "bunny";
+	model.scale = glm::vec3(0.7f);
+	model.samplerIndex = 1;
+	model.position = glm::vec3(0.f, 0.53f, 0.f);
+	//read_obj("../assets/bunny_full.obj", model, 5);
+
+	cornell_box();
 
 	copy_buffer(sizeof(RayMaterial) * rayMaterials.size(), materialBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) rayMaterials.data());
 	copy_buffer(sizeof(TrianglePoint) * triPoints.size(), triPointBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) triPoints.data());
@@ -953,7 +974,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.z), glm::vec3(0.f, 0.f, 1.f)) *
 				glm::scale(imGuiObj.scale);
-			object.smoothShade = smoothShade;
+			object.smoothShade = smoothShade; //FIX
 			object.bvhIndex = bvhNodes.size();
 			object.samplerIndex = imGuiObj.samplerIndex;
 			objects.push_back(object);
@@ -1481,6 +1502,7 @@ void VulkanEngine::imgui_draw() {
 
 	if (ImGui::CollapsingHeader("Ray Tracer Info")) {
 		ImGui::Checkbox("Progressive Rendering", &rayTracerParams.progressive);
+		ImGui::Checkbox("Automatic Progressive Rendering", &autoProgressive);
 		ImGui::Checkbox("Single Rendering", &rayTracerParams.singleRender);
 
 		float sampleProgress = (float) totalSamples / rayTracerParams.sampleLimit;
@@ -1788,8 +1810,8 @@ void VulkanEngine::draw() {
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
-	totalSamples += (totalSamples < rayTracerParams.sampleLimit ? rayTracerParams.raysPerPixel : 0);
-	if (!rayTracerParams.progressive || !rayTracerParams.singleRender) totalSamples = 0;
+	totalSamples += (totalSamples < rayTracerParams.sampleLimit ? rayTracerParams.sampleLimit : 0);
+	if (!rayTracerParams.singleRender) totalSamples = 0;
 }
 
 void VulkanEngine::run() {
@@ -1801,6 +1823,7 @@ void VulkanEngine::run() {
 		const Uint8* keyState;
 
 		auto start = std::chrono::system_clock::now();
+		bool movingMouse = false;
 
 		// Handle events on queue
 		while (SDL_PollEvent(&e) != 0) {
@@ -1830,9 +1853,11 @@ void VulkanEngine::run() {
 					cameraAngles[1] += -dx * mouseSensitivity * 1.6667f;
 					prevMouseScroll.y = e.mgesture.y;
 					prevMouseScroll.x = e.mgesture.x;
+					movingMouse = true;
 				}
 			} else if (e.type == SDL_FINGERUP) {
 				prevMouseScroll = glm::vec2(0.f);
+				movingMouse = false;
 			}
 
 			keyState = SDL_GetKeyboardState(NULL);
@@ -1860,6 +1885,9 @@ void VulkanEngine::run() {
 		if (movement != glm::vec3(0.f)) {
 			movement = normalize(cameraInfo.cameraRotation * glm::vec4(movement, 0.f));
 			cameraInfo.pos += movement * renderStats.frameTime * 0.001f * cameraSpeed;
+			rayTracerParams.progressive = false;
+		} else if (autoProgressive) {
+			rayTracerParams.progressive = !movingMouse;
 		}
 
 		ImGui_ImplVulkan_NewFrame();
