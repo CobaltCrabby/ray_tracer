@@ -4,6 +4,7 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 #include <vk_types.h>
 #include <vector>
 #include <deque>
@@ -115,10 +116,10 @@ struct BoundingBox {
 };
 
 struct RenderObject {
-	alignas(16) glm::mat4 transformMatrix;
-	alignas(4) uint smoothShade; //0 = off, non-zero = on (bool weird on glsl)
-	alignas(4) uint bvhIndex;
-	alignas(4) uint materialIndex;
+	alignas(16) glm::mat4 transformMatrix{};
+	alignas(4) uint smoothShade = 0; //0 = off, non-zero = on (bool weird on glsl)
+	alignas(4) uint bvhIndex = 0;
+	alignas(4) uint materialIndex = 0;
 	alignas(4) uint samplerIndex = 0;
 };
 
@@ -220,14 +221,14 @@ private:
 
 	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
 	void generate_quad();
-	void read_obj(std::string filePath, ImGuiObject imGui, int material);
+	void read_obj(std::string filePath, const ImGuiObject &imGuiObj, int material);
 	void calculate_binormal(int v1, int v2, int v3, glm::vec3& tangent, glm::vec3& binormal);
-	void read_mtl(std::string filePath);
-	void build_bvh(int size, int triIndex, BoundingBox scene);
+	void read_mtl(const std::string &filePath);
+	void build_bvh(int size, int triIndex, BoundingBox sceneBox);
 	void update_bvh_bounds(uint index);
-	void subdivide_bvh(uint intex, uint depth, BVHStats& stats, BoundingBox scene);
-	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, BoundingBox scene);
-	float scene_interior_cost(BoundingBox node, BoundingBox scene);
+	void subdivide_bvh(uint index, uint depth, BVHStats& stats, BoundingBox sceneBox);
+	float find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, BoundingBox sceneBox);
+	float scene_interior_cost(BoundingBox node, BoundingBox sceneBox);
 
 	void prepare_storage_buffers();
 	void update_descriptors();

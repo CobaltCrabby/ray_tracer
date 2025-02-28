@@ -93,20 +93,20 @@ void VulkanEngine::init_vulkan() {
 	SDL_Vulkan_CreateSurface(_window, instance, &surface);
 
 	vkb::PhysicalDeviceSelector selector{ vkb_inst };
-	vkb::PhysicalDevice physicalDevice = selector.set_minimum_version(1, 1)
+	vkb::PhysicalDevice phys = selector.set_minimum_version(1, 1)
 		.set_surface(surface)
 		.select()
 		.value();
 
 	// build logical device
-	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
+	vkb::DeviceBuilder deviceBuilder{phys};
 	VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features{};
 	shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES;
 	shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
 	vkb::Device vkbDevice = deviceBuilder.add_pNext(&shader_draw_parameters_features).build().value();
 
 	device = vkbDevice.device;
-	this->physicalDevice = physicalDevice.physical_device;
+	physicalDevice = phys.physical_device;
 	gpuProperties = vkbDevice.physical_device.properties;
 
 	graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
@@ -119,7 +119,7 @@ void VulkanEngine::init_vulkan() {
 	// create memory allocator
 	VmaAllocatorCreateInfo allocatorInfo{};
 	allocatorInfo.device = device;
-	allocatorInfo.physicalDevice = physicalDevice.physical_device;
+	allocatorInfo.physicalDevice = phys.physical_device;
 	allocatorInfo.instance = instance;
 	vmaCreateAllocator(&allocatorInfo, &allocator);
 }
@@ -143,12 +143,6 @@ void VulkanEngine::init_swapchain() {
 	swapchainImageViews = vkbSwapchain.get_image_views().value();
 
 	drawCmdBuffers.resize(swapchainImages.size());
-
-	VkExtent3D depthImageExtent = {
-		_windowExtent.width,
-		_windowExtent.height,
-		1
-	};
 
 	deletionQueue.push_function([=]() {
 		vkDestroySwapchainKHR(device, swapchain, nullptr);
@@ -305,7 +299,7 @@ void VulkanEngine::init_sync_structures() {
 
 void VulkanEngine::init_pipelines() {
 	//load shader binaries
-	std::string bin = std::filesystem::current_path().generic_string() + "/../shaders/bin/";
+	std::string bin = std::filesystem::current_path().generic_string() + "/shaders/bin/";
 	VkShaderModule fragment;
 	if (!load_shader_module((bin + "raytrace.frag.spv").c_str(), &fragment)) {
 		cout << "error loading fragment shader" << endl;
@@ -641,40 +635,40 @@ void VulkanEngine::cornell_box() {
 	light.name = "light";
 	light.position = glm::vec3(0.f, -1.5f, 0.f);
 	light.scale = glm::vec3(1.f);
-	read_obj("../assets/light2.obj", light, 3);
+	read_obj("assets/light2.obj", light, 3);
 
 	ImGuiObject plane;
 	plane.frontOnly = true;
 	plane.name = "bottom";
 	plane.position = glm::vec3(0.f, 0.5f, 0.f);
 	plane.rotation = glm::vec3(0.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	read_obj("assets/plane.obj", plane, 0);
 
 	plane.name = "left";
 	plane.position = glm::vec3(-1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 90.f);
-	read_obj("../assets/plane.obj", plane, 2);
+	read_obj("assets/plane.obj", plane, 2);
 
 	plane.name = "right";
 	plane.position = glm::vec3(1.f, -0.5f, 0.f);
 	plane.rotation = glm::vec3(90.f, 0.f, -90.f);
-	read_obj("../assets/plane.obj", plane, 1);
+	read_obj("assets/plane.obj", plane, 1);
 
 	plane.name = "top";
 	plane.position = glm::vec3(0.f, -1.5f, 0.f);
 	plane.rotation = glm::vec3(0.f, 0.f, 0.f);
-	read_obj("../assets/ceiling.obj", plane, 0);
+	read_obj("assets/ceiling.obj", plane, 0);
 
 	plane.name = "back";
 	plane.position = glm::vec3(0.f, -0.5f, 1.f);
 	plane.rotation = glm::vec3(90.f, 0.f, 0.f);
 	plane.scale = glm::vec3(1.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	read_obj("assets/plane.obj", plane, 0);
 
 	plane.name = "front";
 	plane.position = glm::vec3(0.f, -0.5f, -1.f);
 	plane.rotation = glm::vec3(-90.f, 0.f, 0.f);
-	read_obj("../assets/plane.obj", plane, 0);
+	read_obj("assets/plane.obj", plane, 0);
 }
 
 void VulkanEngine::prepare_storage_buffers() {
@@ -726,27 +720,27 @@ void VulkanEngine::prepare_storage_buffers() {
 	ImGuiObject model;
 	model.name = "sponza";
 	model.scale = glm::vec3(1.f);
-	//read_obj("../assets/sponza2/sponza_tri.obj", model, 0);
+	//read_obj("assets/sponza2/sponza_tri.obj", model, 0);
 
 	model.name = "cube";
 	model.scale = glm::vec3(0.25f);
 	model.samplerIndex = 1;
 	model.rotation = glm::vec3(0.f, -30.f, 0.f);
 	model.position = glm::vec3(-0.4f, 0.25f, -0.45f);
-	read_obj("../assets/cube.obj", model, 0);
+	read_obj("assets/cube.obj", model, 0);
 
 	model.name = "cube2";
 	model.scale = glm::vec3(0.3f, 0.7f, 0.3f);
 	model.samplerIndex = 1;
 	model.rotation = glm::vec3(0.f, 30.f, 0.f);
 	model.position = glm::vec3(0.4f, -0.2f, 0.45f);
-	read_obj("../assets/cube.obj", model, 0);
+	read_obj("assets/cube.obj", model, 0);
 
 	model.name = "bunny";
 	model.scale = glm::vec3(0.7f);
 	model.samplerIndex = 1;
 	model.position = glm::vec3(0.f, 0.53f, 0.f);
-	//read_obj("../assets/bunny_full.obj", model, 5);
+	//read_obj("assets/bunny_full.obj", model, 5);
 
 	cornell_box();
 
@@ -797,7 +791,7 @@ void VulkanEngine::generate_quad() {
 	copy_buffer(sizeof(uint32_t) * 6, indexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
 }
 
-void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int material) {
+void VulkanEngine::read_obj(std::string filePath, const ImGuiObject &imGuiObj, int material) {
 	//dont store the same tris, reuse bvh
 	if (loadedObjects.count(filePath) != 0) {
 		RenderObject object;
@@ -836,7 +830,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 		std::getline(fileStream, fileLine);
 		if (fileLine.find("mtllib") != std::string::npos) {
 			materialFile = fileLine.substr(7, fileLine.size() - 7);
-			std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
+			std::string mtlPath = filePath.substr(0, filePath.rfind('/') + 1);
 			read_mtl(mtlPath + materialFile);
 		}
 
@@ -903,7 +897,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 					includeUVs = true;
 				}
 
-				if (normals.size() == 0) continue;
+				if (normals.empty()) continue;
 				std::string nIndexStr = vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1);
 				if (!nIndexStr.empty()) {
 					normalInd.push_back(stoi(nIndexStr) - 1);
@@ -918,7 +912,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			//put uv in the vec4s
 			for (int i = 0; i < pointCount; i++) {
 				glm::vec3 normal;
-				if (normals.size() == 0) {
+				if (normals.empty()) {
 					normal = glm::vec3(0.f);
 				} else {
 					normal = normals[normalInd[i]];
@@ -926,7 +920,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				glm::vec2 uv = includeUVs ? uvs[textureInd[i]] : glm::vec2(0.f);
 				glm::vec3 p = positions[vertexInd[i]];
 
-				TrianglePoint point;
+				TrianglePoint point{};
 				point.position = glm::vec4(p, uv.x);
 				point.normal = glm::vec4(normal, uv.y);
 
@@ -934,11 +928,11 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 				triPoints.push_back(point);
 			}
 			
-			glm::vec3 tangent, binormal;
+			glm::vec3 tangent, binormal = {};
 
-			calculate_binormal(pointIndex[0], pointIndex[1], pointIndex[2], tangent, binormal);
+			//calculate_binormal(pointIndex[0], pointIndex[1], pointIndex[2], tangent, binormal);
 
-			Triangle tri;
+			Triangle tri{};
 			tri.v0 = pointIndex[0];
 			tri.v1 = pointIndex[1];
 			tri.v2 = pointIndex[2];
@@ -948,8 +942,8 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			
 			TrianglePoint tp[] = {triPoints[pointIndex[0]], triPoints[pointIndex[1]], triPoints[pointIndex[2]]};
 			glm::vec3 centroid = glm::vec3(0.f);
-			for (int i = 0; i < 3; i++) {
-				glm::vec4 p = tp[i].position;
+			for (auto & i : tp) {
+				glm::vec4 p = i.position;
 				centroid.x += p.x;
 				centroid.y += p.y;
 				centroid.z += p.z;
@@ -967,8 +961,8 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			//create object
 			RenderObject object;
 
-			std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
-			object.materialIndex = currentMat.empty() ? material : loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
+			std::string mtlPath = filePath.substr(0, filePath.rfind('/') + 1);
+			object.materialIndex = currentMat.empty() ? material : loadedMaterials.at((mtlPath + materialFile + "/").append(currentMat));
 			object.transformMatrix = glm::translate(imGuiObj.position) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
 				glm::rotate(glm::radians(imGuiObj.rotation.y), glm::vec3(0.f, 1.f, 0.f)) * 
@@ -982,7 +976,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 			imGuiObjects.push_back(imGuiObj);
 			imGuiObjects.at(imGuiObjects.size() - 1).name += "/" + currentMat;
 
-			loadedObjects.emplace(filePath + "/" + currentMat, object.bvhIndex);
+			loadedObjects.emplace((filePath + "/").append(currentMat), object.bvhIndex);
 
 			glm::mat4 inverse = glm::inverse(object.transformMatrix);
 			bounds.bounds[0] = glm::vec4(-1920.95f, -1429.43f, -1105.43f, 1.f); 
@@ -1007,7 +1001,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	}
 
 	RenderObject object;
-	std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
+	std::string mtlPath = filePath.substr(0, filePath.rfind('/') + 1);
 	object.materialIndex = currentMat.empty() ? material : loadedMaterials.at(mtlPath + materialFile + "/" + currentMat);
 	object.transformMatrix = glm::translate(imGuiObj.position) * 
 		glm::rotate(glm::radians(imGuiObj.rotation.x), glm::vec3(1.f, 0.f, 0.f)) * 
@@ -1036,28 +1030,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	cout << "> Object at " << filePath << ": " << triangles.size() - triOffset << " tris, " << triPoints.size() - pointOffset << " verts, " << time.count() << "ms total load time " << endl;
 }
 
-//https://stackoverflow.com/questions/5255806/how-to-calculate-tangent-and-binormal/5257471#5257471
-void VulkanEngine::calculate_binormal(int v1, int v2, int v3, glm::vec3& tangent, glm::vec3& binormal) {
-	glm::vec4 a = triPoints[v1].position;
-	glm::vec4 b = triPoints[v2].position;
-	glm::vec4 c = triPoints[v3].position;
-
-	glm::vec2 h = glm::vec2(a.w, triPoints[v1].normal.w);
-	glm::vec2 k = glm::vec2(b.w, triPoints[v2].normal.w);
-	glm::vec2 l = glm::vec2(c.w, triPoints[v3].normal.w);
-
-	glm::vec3 edge1 = glm::vec3(b.x, b.y, b.z) - glm::vec3(a.x, a.y, a.z); 
-	glm::vec3 edge2 = glm::vec3(c.x, c.y, c.z) - glm::vec3(a.x, a.y, a.z);
-	glm::vec2 uv1 = k - h;
-	glm::vec2 uv2 = l - h;
-
-	glm::mat2 cup = glm::transpose(glm::mat2(uv1, uv2));
-	// if (h == k || k == l || l == h) {
-	// 	cout << glm::to_string(h) << " " << glm::to_string(k) << " " << glm::to_string(l) << endl;
-	// }
-}
-
-void VulkanEngine::read_mtl(std::string filePath) {
+void VulkanEngine::read_mtl(const std::string &filePath) {
 	std::ifstream fileStream;
 	fileStream.open(filePath);
 
@@ -1076,7 +1049,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 		std::getline(fileStream, fileLine);
 		if (fileLine.find("newmtl") != std::string::npos) {
 			if (!materialName.empty()) {
-				loadedMaterials.emplace(filePath + "/" + materialName, rayMaterials.size());
+				loadedMaterials.emplace((filePath + "/").append(materialName), rayMaterials.size());
 				rayMaterials.push_back(currentMaterial);
 				currentMaterial = {};
 			}
@@ -1084,7 +1057,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
 			continue;
 		}
 
-		std::string mtlPath = filePath.substr(0, filePath.rfind("/") + 1);
+		std::string mtlPath = filePath.substr(0, filePath.rfind('/') + 1);
 		fileLine.erase(remove(fileLine.begin(), fileLine.end(), '\t'), fileLine.end()); //remove tabs from the beggining
 		std::string prefix = fileLine.substr(0, fileLine.find(' '));
 		if (prefix == "Ka" || prefix == "Kd") {
@@ -1166,7 +1139,7 @@ void VulkanEngine::read_mtl(std::string filePath) {
     });
 }
 
-void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox scene) {
+void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox sceneBox) {
 	auto start = std::chrono::system_clock::now();
 
 	nodesUsed++;
@@ -1179,7 +1152,7 @@ void VulkanEngine::build_bvh(int size, int triIndex, BoundingBox scene) {
 	BVHStats stats;
 
 	update_bvh_bounds(offset);
-	subdivide_bvh(offset, 0, stats, scene);
+	subdivide_bvh(offset, 0, stats, sceneBox);
 
 	bvhNodes.resize(nodesUsed);
 	bvhNodes.shrink_to_fit();	
@@ -1209,7 +1182,7 @@ void VulkanEngine::update_bvh_bounds(uint index) {
 	node.boundsZ = glm::vec2(box.bounds[0].z, box.bounds[1].z);
 }
 
-void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, BoundingBox scene) {
+void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, BoundingBox sceneBox) {
 	BVHNode& node = bvhNodes[index];
 	
 	if (node.triCount <= 2 || depth >= 64) {
@@ -1221,12 +1194,12 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, Boundi
 
 	int axis = 0;
 	float splitPos = 0.f;
-	float bestCost = find_bvh_split_plane(node, axis, splitPos, scene);	
+	float bestCost = find_bvh_split_plane(node, axis, splitPos, sceneBox);	
 
     BoundingBox parent;
 	parent.bounds[0] = glm::vec4(node.boundsX[0], node.boundsY[0], node.boundsZ[0], 0.f);
 	parent.bounds[1] = glm::vec4(node.boundsX[1], node.boundsY[1], node.boundsZ[1], 0.f);
-    float noSplitCost = node.triCount * scene_interior_cost(parent, scene);
+    float noSplitCost = node.triCount * scene_interior_cost(parent, sceneBox);
 	if (bestCost >= noSplitCost) {
 		stats.maxDepth = iMax(depth, stats.maxDepth);
 		stats.minDepth = iMin(depth, stats.minDepth);
@@ -1276,7 +1249,7 @@ void VulkanEngine::subdivide_bvh(uint index, uint depth, BVHStats& stats, Boundi
 	subdivide_bvh(node.index + 1, depth + 1, stats, scene);
 }
 
-float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, BoundingBox scene) {
+float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitPos, BoundingBox sceneBox) {
 	float bestCost = 1e30f;
 	for (int a = 0; a < 3; a++) {
 		float min = 1e30f;
@@ -1314,12 +1287,12 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 			leftSum += bins[i].triCount;
 			leftCount[i] = leftSum;
 			leftBox.grow(bins[i].box);
-			leftArea[i] = scene_interior_cost(leftBox, scene);
+			leftArea[i] = scene_interior_cost(leftBox, sceneBox);
 			rightSum += bins[BINS - 1 - i].triCount;
 			rightCount[BINS - 2 - i] = rightSum;
 			rightBox.grow(bins[BINS - 1 - i].box);
 			rightArea[i] = rightBox.surfaceArea();
-			rightArea[BINS - 2 - i] = scene_interior_cost(rightBox, scene);
+			rightArea[BINS - 2 - i] = scene_interior_cost(rightBox, sceneBox);
 		}
 
 		scale = (max - min) / BINS;
@@ -1337,12 +1310,12 @@ float VulkanEngine::find_bvh_split_plane(BVHNode& node, int& axis, float& splitP
 }
 
 //https://diglib.eg.org/server/api/core/bitstreams/0e178688-ff5b-44ff-b660-1c3259c23b0c/content
-float VulkanEngine::scene_interior_cost(BoundingBox node, BoundingBox scene) {
+float VulkanEngine::scene_interior_cost(BoundingBox node, BoundingBox sceneBox) {
 	return node.surfaceArea();
 	// REMEMBER TO DO ROTATION
 	glm::vec4 extent = (node.bounds[1]) - (node.bounds[0]);
 
-	float inv_volume = 1 / scene.volume();
+	float inv_volume = 1 / sceneBox.volume();
 	float ben = node.volume() * inv_volume; //ben goodman
 	
 	//i dont know man
@@ -1407,7 +1380,7 @@ void VulkanEngine::copy_buffer(size_t bufferSize, AllocatedBuffer& buffer, VkBuf
 	VmaAllocationCreateInfo vmaAllocInfo{};
 	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-	AllocatedBuffer stagingBuffer;
+	AllocatedBuffer stagingBuffer{};
 
 	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer.buffer, &stagingBuffer.allocation, nullptr));
 
@@ -1452,7 +1425,7 @@ void VulkanEngine::update_buffer(size_t bufferSize, AllocatedBuffer& buffer, voi
 	VmaAllocationCreateInfo vmaAllocInfo{};
 	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
-	AllocatedBuffer stagingBuffer;
+	AllocatedBuffer stagingBuffer{};
 
 	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer.buffer, &stagingBuffer.allocation, nullptr));
 
@@ -1483,7 +1456,7 @@ AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags
 	VmaAllocationCreateInfo allocInfo{};
 	allocInfo.usage = memoryUsage;
 
-	AllocatedBuffer buffer;
+	AllocatedBuffer buffer{};
 
 	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, nullptr));
 	return buffer;
@@ -1676,7 +1649,6 @@ void VulkanEngine::run_compute() {
 }
 
 void VulkanEngine::run_graphics(uint ind) {
-	VkCommandBufferAllocateInfo cmdBufferAlloc = vkinit::commandBufferAllocateInfo(commandPool);
 	VkCommandBufferBeginInfo cmdBufferInfo = vkinit::commandBufferBeginInfo();
 
 	VkClearColorValue clearColor = {0.f, 0.f, 0.f};
@@ -1772,7 +1744,7 @@ void VulkanEngine::cleanup() {
 }
 
 void VulkanEngine::draw() {
-	auto start = std::chrono::system_clock::now();
+	// auto start = std::chrono::system_clock::now();
 	ImGui::Render();
 
 	//wait for render
@@ -1789,8 +1761,8 @@ void VulkanEngine::draw() {
 	vkAcquireNextImageKHR(device, swapchain, 1000000000, presentSemaphore, nullptr, &swapchainIndex);
 	run_graphics(swapchainIndex);
 
-	auto end = std::chrono::system_clock::now();    
-	auto fence = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	// auto end = std::chrono::system_clock::now();    
+	//auto fence = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
 	//present queue results
 	VkPresentInfoKHR presentInfo = {};
@@ -1806,8 +1778,8 @@ void VulkanEngine::draw() {
 	VK_CHECK(vkQueuePresentKHR(graphicsQueue, &presentInfo));
 
 	vkQueueWaitIdle(graphicsQueue);
-	end = std::chrono::system_clock::now();    
-	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	// end = std::chrono::system_clock::now();    
+	// auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
 	_frameNumber = rayTracerParams.progressive ? _frameNumber + 1 : 0;
 	totalSamples += (totalSamples < rayTracerParams.sampleLimit ? rayTracerParams.sampleLimit : 0);
@@ -1860,7 +1832,7 @@ void VulkanEngine::run() {
 				movingMouse = false;
 			}
 
-			keyState = SDL_GetKeyboardState(NULL);
+			keyState = SDL_GetKeyboardState(nullptr);
 			ImGui_ImplSDL2_ProcessEvent(&e);
 		}
 
