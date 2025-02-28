@@ -1,0 +1,47 @@
+#version 450
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout (binding = 0) restrict buffer pathStatePool { 
+    int lols[1]; // only one array can be of variable length? do i hardcode the length
+    int lols3[];
+} pathPool;
+
+layout (binding = 1) restrict buffer newPathQueue {
+    uint size; // atomic number representing the size of the queue
+    uint requests[]; // each entry is the path index needed to be generated 
+} pathQueue;
+
+void main() {
+    ivec2 dim = ivec2(1728, 1117); // hard coded for now, maybe push the dimensions to give the size
+    uint threadIndex = gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x;
+    if (threadIndex >= pathQueue.size) return; // if too many threads dispatched
+
+    // generate ray
+    /*CameraInfo cam = PushConstants.camInfo;
+
+    //from sebastian lague
+    float planeHeight = cam.nearPlane * tan(radians(cam.fov * 0.5f)) * 2.f;
+    float planeWidth = planeHeight * cam.aspectRatio;
+
+    vec3 bottomLeft = vec3(-planeWidth / 2.f, -planeHeight / 2.f, 0.1f);
+    vec3 point = bottomLeft + vec3(planeWidth * uv.x, planeHeight * uv.y, 0.f);
+    vec3 dir = normalize(point); 
+
+    Ray ray;
+    ray.dir = (cam.cameraRotation * vec4(dir, 1.f)).xyz;
+    ray.origin = cam.pos;
+    ray.invDir = 1.f / ray.dir;
+    for (int i = 0; i < 3; i++) {
+        ray.dimSign[i] = uint(ray.invDir[i] < 0);
+    }*/
+    
+    // update path state
+    uint poolIndex = pathQueue.requests[threadIndex];
+    pathPool.lols3[poolIndex] = 0; // write the results each array
+
+    // sync the threads and clear the queue
+    memoryBarrierBuffer();
+    pathQueue.size = 0;
+
+}

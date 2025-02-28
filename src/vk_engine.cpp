@@ -1028,7 +1028,7 @@ void VulkanEngine::read_obj(std::string filePath, ImGuiObject imGuiObj, int mate
 	bounds.bounds[0] = inverse * bounds.bounds[0];
 	bounds.bounds[1] = inverse * bounds.bounds[1];
 
-	cout << endl << filePath << " " << currentMat << endl; 
+	cout << endl << filePath << " " << currentMat << endl;
 	build_bvh(triangles.size() - objectTriOffset, objectTriOffset, bounds);
 
 	auto end = std::chrono::system_clock::now();    
