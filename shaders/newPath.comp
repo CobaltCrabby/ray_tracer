@@ -1,47 +1,70 @@
 #version 450
 
+#extension GL_KHR_shader_subgroup_ballot: enable
+
+// doesn't need to be 8x8 because we are accessing a buffer not the image
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
+const uint poolSize = 1930176;
+const float PI = 3.1415926f;
+
+struct CameraInfo {
+    mat4 cameraRotation;
+    vec3 pos;
+    float nearPlane;
+    float aspectRatio;
+    float fov;
+};
+
 layout (binding = 0) restrict buffer pathStatePool { 
-    int lols[1]; // only one array can be of variable length? do i hardcode the length
-    int lols3[];
+    vec3 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
+    vec3 direction[poolSize];
 } pathPool;
 
-layout (binding = 1) restrict buffer newPathQueue {
-    uint size; // atomic number representing the size of the queue
-    uint requests[]; // each entry is the path index needed to be generated 
-} pathQueue;
+// layout (binding = 1) restrict buffer newPathQueue {
+//     uint size; // atomic number representing the size of the queue
+//     uint requests[poolSize]; // each entry is the path index needed to be generated 
+// } pathQueue;
+
+// layout (binding = 2) restrict buffer extensionRayQueue {
+//     uint size; // atomic number representing the size of the queue
+//     uint requests[poolSize]; // each entry is the path index needed to be extended
+// } extensionQueue;
+
+// layout (push_constant) uniform constants {
+//     CameraInfo camInfo;
+// } PushConstants;
 
 void main() {
-    ivec2 dim = ivec2(1728, 1117); // hard coded for now, maybe push the dimensions to give the size
+    /*ivec2 dim = ivec2(1728, 1117); // hard coded for now, maybe push the dimensions to give the size
+	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
+
     uint threadIndex = gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x;
     if (threadIndex >= pathQueue.size) return; // if too many threads dispatched
 
-    // generate ray
-    /*CameraInfo cam = PushConstants.camInfo;
+    // generate ray; from sebastian lague, probably from unity docs
+    CameraInfo cam = PushConstants.camInfo;
 
-    //from sebastian lague
     float planeHeight = cam.nearPlane * tan(radians(cam.fov * 0.5f)) * 2.f;
     float planeWidth = planeHeight * cam.aspectRatio;
 
     vec3 bottomLeft = vec3(-planeWidth / 2.f, -planeHeight / 2.f, 0.1f);
     vec3 point = bottomLeft + vec3(planeWidth * uv.x, planeHeight * uv.y, 0.f);
-    vec3 dir = normalize(point); 
-
-    Ray ray;
-    ray.dir = (cam.cameraRotation * vec4(dir, 1.f)).xyz;
-    ray.origin = cam.pos;
-    ray.invDir = 1.f / ray.dir;
-    for (int i = 0; i < 3; i++) {
-        ray.dimSign[i] = uint(ray.invDir[i] < 0);
-    }*/
     
     // update path state
     uint poolIndex = pathQueue.requests[threadIndex];
-    pathPool.lols3[poolIndex] = 0; // write the results each array
+    pathPool.origin[poolIndex] = cam.pos;
+    pathPool.direction[poolIndex] = (cam.cameraRotation * vec4(normalize(point), 1.f)).xyz;
 
     // sync the threads and clear the queue
     memoryBarrierBuffer();
     pathQueue.size = 0;
 
+    // write requests to the raycast queue (probably wrong lol)
+    // which one first for proper sync?? need to test..
+    extensionQueue.requests[extensionQueue.size + gl_SubgroupInvocationID] = poolIndex;
+    uvec4 ballot = subgroupBallot(true);
+    if (subgroupElect()) {
+        atomicAdd(extensionQueue.size, subgroupBallotBitCount(ballot)); // num of active threads
+    }*/
 }

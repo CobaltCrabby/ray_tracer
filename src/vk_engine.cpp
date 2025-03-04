@@ -10,7 +10,9 @@
 #include <fstream>
 
 #include "VkBootstrap.h"
+#include "vk_initializers.h"
 #include "vk_textures.h"
+#include "vulkan/vulkan_core.h"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
@@ -321,6 +323,13 @@ void VulkanEngine::init_pipelines() {
 		cout << "successfully loaded compute shader" << endl;
 	}
 
+	VkShaderModule newPath;
+	if (!load_shader_module((bin + "newPath.comp.spv").c_str(), &newPath)) {
+		cout << "error loading newPath shader" << endl;
+	} else {
+		cout << "successfully loaded newPath shader" << endl;
+	}
+
 	//create graphics pipeline
 	PipelineBuilder builder;
 
@@ -351,13 +360,16 @@ void VulkanEngine::init_pipelines() {
 	builder._vertexInputInfo.vertexBindingDescriptionCount = vertexDescription.bindings.size();
 
 	VkPipelineLayoutCreateInfo graphicsPipeLayoutInfo = vkinit::pipelineLayoutCreateInfo();
-
 	graphicsPipeLayoutInfo.pSetLayouts = &graphicsLayout;
 	graphicsPipeLayoutInfo.setLayoutCount = 1;
 
 	VkPipelineLayoutCreateInfo computePipelineLayoutInfo = vkinit::pipelineLayoutCreateInfo();
 	computePipelineLayoutInfo.pSetLayouts = &computeLayout;
 	computePipelineLayoutInfo.setLayoutCount = 1;
+
+	VkPipelineLayoutCreateInfo newPathPipelineLayoutInfo = vkinit::pipelineLayoutCreateInfo();
+	newPathPipelineLayoutInfo.pSetLayouts = &newPathLayout;
+	newPathPipelineLayoutInfo.setLayoutCount = 1;
 
 	VkPushConstantRange pushConsant;
 	pushConsant.offset = 0;
@@ -369,6 +381,7 @@ void VulkanEngine::init_pipelines() {
 
 	VK_CHECK(vkCreatePipelineLayout(device, &graphicsPipeLayoutInfo, nullptr, &graphicsPipelineLayout));
 	VK_CHECK(vkCreatePipelineLayout(device, &computePipelineLayoutInfo, nullptr, &computePipeLayout));
+	VK_CHECK(vkCreatePipelineLayout(device, &newPathPipelineLayoutInfo, nullptr, &newPathPipeLayout));
 
 	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertex));
 	builder._shaderStages.push_back(vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragment));
@@ -380,12 +393,19 @@ void VulkanEngine::init_pipelines() {
 	computePipelineInfo.stage = vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, compute);
 	VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineInfo, nullptr, &computePipeline));
 
+	VkComputePipelineCreateInfo newPathPipelineInfo = vkinit::computePipelineCreateInfo(newPathPipeLayout);
+	newPathPipelineInfo.stage = vkinit::pipelineShaderStageCreateInfo(VK_SHADER_STAGE_COMPUTE_BIT, newPath);
+	VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &newPathPipelineInfo, nullptr, &newPathPipeline));
+
 	//can delete after pipeline creation
 	vkDestroyShaderModule(device, fragment, nullptr);
 	vkDestroyShaderModule(device, vertex, nullptr);
 	vkDestroyShaderModule(device, compute, nullptr);
+	vkDestroyShaderModule(device, newPath, nullptr);
 
 	deletionQueue.push_function([=]() {
+		vkDestroyPipelineLayout(device, newPathPipeLayout, nullptr);
+		vkDestroyPipeline(device, newPathPipeline, nullptr);
 		vkDestroyPipelineLayout(device, computePipeLayout, nullptr);
 		vkDestroyPipeline(device, computePipeline, nullptr);
 		vkDestroyPipelineLayout(device, graphicsPipelineLayout, nullptr);
@@ -445,7 +465,20 @@ void VulkanEngine::init_descriptors() {
 
 	vkCreateDescriptorSetLayout(device, &computeSetInfo, nullptr, &computeLayout);
 
+	// new path descriptors
+	VkDescriptorSetLayoutBinding pathStateBufferBinding = vkinit::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0);
+
+	VkDescriptorSetLayoutBinding newPathBindings[] = {pathStateBufferBinding};
+
+	VkDescriptorSetLayoutCreateInfo newPathSetInfo{};
+	newPathSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	newPathSetInfo.bindingCount = 1;
+	newPathSetInfo.pBindings = newPathBindings;
+
+	vkCreateDescriptorSetLayout(device, &newPathSetInfo, nullptr, &newPathLayout);
+
 	deletionQueue.push_function([=]() {
+		vkDestroyDescriptorSetLayout(device, newPathLayout, nullptr);
 		vkDestroyDescriptorSetLayout(device, graphicsLayout, nullptr);
 		vkDestroyDescriptorSetLayout(device, computeLayout, nullptr);
 		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
@@ -623,6 +656,24 @@ void VulkanEngine::update_descriptors() {
 
 	vkUpdateDescriptorSets(device, 9, computeWrites, 0, nullptr);
 
+	VkDescriptorSetAllocateInfo newPathAllocInfo = {};
+	newPathAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	newPathAllocInfo.descriptorPool = descriptorPool;
+	newPathAllocInfo.descriptorSetCount = 1;
+	newPathAllocInfo.pSetLayouts = &newPathLayout;
+	vkAllocateDescriptorSets(device, &newPathAllocInfo, &newPathSet);
+
+	VkDescriptorBufferInfo pathStateBufferInfo;
+	pathStateBufferInfo.buffer = pathStateBuffer.buffer;
+	pathStateBufferInfo.offset = 0;
+	pathStateBufferInfo.range = sizeof(PathPool);
+
+	VkWriteDescriptorSet pathStateWrite = vkinit::writeDescriptorBuffer(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, newPathSet, &pathStateBufferInfo, 0);
+
+	VkWriteDescriptorSet newPathWrites[] = {pathStateWrite};
+
+	vkUpdateDescriptorSets(device, 1, newPathWrites, 0, nullptr);
+
 	deletionQueue.push_function([=]() {
 		vkDestroySampler(device, sampler, nullptr);
 		vkDestroySampler(device, clampSampler, nullptr);
@@ -678,6 +729,14 @@ void VulkanEngine::prepare_storage_buffers() {
 	//spheres[0] = {glm::vec3(0.f, 0.1f, -0.3f), 0.4f, 5};
 	//spheres[1] = {glm::vec3(0.5f, 0.1f, 0.f), 0.4f, 2};
 	copy_buffer(sizeof(Sphere) * MAX_SPHERES, sphereBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) spheres.data());
+
+	PathPool pool{};
+	for (int i = 0; i < PIXEL_COUNT; i++) {
+		pool.origin[i] = glm::vec3(0.f);
+		pool.direction[i] = glm::vec3(0.f);
+	}
+
+	copy_buffer(sizeof(PathPool), pathStateBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) &pool);
 
 	//materials
 	RayMaterial dielectric;
@@ -1636,6 +1695,11 @@ void VulkanEngine::run_compute() {
 	vkCmdPushConstants(computeCmdBuffer, computePipeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants), &constants);
 
 	vkCmdDispatch(computeCmdBuffer, ceil(_windowExtent.width / 8.f), ceil(_windowExtent.height / 8.f), 1);
+
+	vkCmdBindPipeline(computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline);
+	vkCmdBindDescriptorSets(computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeLayout, 0, 1, &newPathSet, 0, nullptr);
+
+	vkCmdDispatch(computeCmdBuffer, 1, 1, 1);
 
 	vkEndCommandBuffer(computeCmdBuffer);
 

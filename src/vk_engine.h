@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "vk_types.h"
+#include "vulkan/vulkan_core.h"
 #include <iostream>
 #include <string>
 #include <vk_types.h>
@@ -205,6 +207,12 @@ constexpr unsigned int BINS = 20;
 constexpr unsigned int MAX_TEXTURES = 64;
 const unsigned int MAX_MATERIALS = 10;
 const unsigned int MAX_SPHERES = 10;
+const unsigned int PIXEL_COUNT = 1728 * 1117;
+
+struct PathPool {
+	glm::vec3 origin[PIXEL_COUNT];
+	glm::vec3 direction[PIXEL_COUNT];
+};
 
 class VulkanEngine {
 private:
@@ -289,14 +297,17 @@ public:
 
 	VkDescriptorSet computeSet;
 	VkDescriptorSet graphicsSet;
+	VkDescriptorSet newPathSet;
 	VkDescriptorSetLayout graphicsLayout;
 	VkDescriptorSetLayout computeLayout;
+	VkDescriptorSetLayout newPathLayout;
 	VkDescriptorPool descriptorPool;
 
 	AllocatedBuffer vertexBuffer;
 	AllocatedBuffer indexBuffer;
 	Texture computeImage;
 
+	AllocatedBuffer pathStateBuffer;
 	AllocatedBuffer sphereBuffer;
 	AllocatedBuffer triPointBuffer;
 	AllocatedBuffer materialBuffer;
@@ -309,6 +320,9 @@ public:
 
 	VkPipelineLayout computePipeLayout;
 	VkPipeline computePipeline;
+
+	VkPipelineLayout newPathPipeLayout;
+	VkPipeline newPathPipeline;
 
 	VkSemaphore presentSemaphore, renderSemaphore, computeSemaphore, graphicsSemaphore;
 	VkFence renderFence, computeFence;
