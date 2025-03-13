@@ -23,7 +23,7 @@ using namespace std;
 	do {\
 		VkResult err = x;\
 		if (err) {\
-			std::cout << "Error detected" << err << endl;\
+			std::cout << "Error detected " << err << endl;\
 			abort();\
 		}\
 	} while (0)
@@ -58,20 +58,6 @@ void VulkanEngine::init() {
 	generate_quad();
 	prepare_storage_buffers();
 	update_descriptors();
-
-	// for (int i = 0; i < triangles.size(); i++) {
-	// 	TrianglePoint v0 = triPoints[triangles[i].v0];
-	// 	TrianglePoint v1 = triPoints[triangles[i].v1];
-	// 	TrianglePoint v2 = triPoints[triangles[i].v2];
-	// 	TrianglePoint tris[] = {v0, v1, v2};
-	// 	for (int j = 0; j < 3; j++) {
-	// 		glm::vec4 p = tris[j].position;
-	// 		glm::vec2 uv = {tris[j].position.w, tris[j].normal.w};
-	// 		if (abs(p.x + 10.9128f) < 0.01f && abs(p.y + 5.72331f) < 0.01f && abs(p.z - 2.51851f) < 0.01f && j == 2) {
-	// 			cout << uv.x << " " << uv.y << " " << i << endl;
-	// 		}
-	// 	}
-	// }
 
 	// everything went fine
 	_isInitialized = true;
