@@ -1,8 +1,54 @@
 #include "vulkan/vulkan_core.h"
+#include "pipeline.h"
 #include <cstddef>
 #include <render_context.h>
 #include <vk_mem_alloc.h>
 #include <image.h>
+
+void Image::transitionLayout(VkImageLayout layout, SubmitInfo submit) {
+    VkCommandBuffer cmd = submit.submitBuffer;
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	VK_CHECK(vkBeginCommandBuffer(cmd, &beginInfo));
+
+    VkImageSubresourceRange range;
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel = 0;
+    range.levelCount = 1;
+    range.baseArrayLayer = 0;
+    range.layerCount = 1;
+
+    VkImageMemoryBarrier imageBarrier = {};
+    imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageBarrier.newLayout = layout;
+    imageBarrier.image = image;
+    imageBarrier.subresourceRange = range;
+    imageBarrier.srcAccessMask = 0;
+    imageBarrier.dstAccessMask = 0;
+
+    //barrier the image into the transfer-receive layout
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+
+	VK_CHECK(vkEndCommandBuffer(cmd));
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 0;
+	submitInfo.pWaitSemaphores = nullptr;
+	submitInfo.pWaitDstStageMask = nullptr;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmd;
+	submitInfo.signalSemaphoreCount = 0;
+	submitInfo.pSignalSemaphores = nullptr;
+
+	VK_CHECK(vkQueueSubmit(submit.queue, 1, &submitInfo, *submit.submitFence));
+	vkWaitForFences(renderContext->device, 1, submit.submitFence, VK_TRUE, 9999999999);
+	vkResetFences(renderContext->device, 1, submit.submitFence);
+
+	vkResetCommandPool(renderContext->device, submit.submitPool, 0);
+}
 
 Image::Image(RenderContext* context, VmaAllocator* allocator, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage) {
     renderContext = context;

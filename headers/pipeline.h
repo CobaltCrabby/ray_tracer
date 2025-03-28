@@ -1,9 +1,11 @@
 #pragma once
 
+#include "buffer.h"
+#include "renderpass.h"
 #include "render_context.h"
-#include "renderer.h"
 #include "vulkan/vulkan_core.h"
 #include <descriptor_pool.h>
+#include <glm/glm.hpp>
 
 #include <fstream>
 
@@ -33,6 +35,14 @@ static bool load_shader_module(RenderContext* context, const char* filePath, VkS
     return true;
 }
 
+struct SubmitInfo {
+    VkCommandPool submitPool;
+    VkCommandBuffer submitBuffer; 
+    VkFence* submitFence; 
+    VkQueue queue;
+    VmaAllocator allocator;
+};
+
 class GraphicsPipeline {
     public:
         struct Vertex {
@@ -46,10 +56,15 @@ class GraphicsPipeline {
         VkPipelineLayout pipelineLayout;
         VkDescriptorSet descriptorSet;
         VkDescriptorSetLayout setLayout;
+        uint descriptorCount = 0;
+
+        Buffer* vertexBuffer;
+        Buffer* indexBuffer;
 
         void updateDescriptors(std::vector<VkWriteDescriptorSet> writes, VkDescriptorSet set);
+        void generateScreenQuad(VkCommandPool submitPool, VkCommandBuffer submitBuffer, VkFence* submitFence, VkQueue queue, VmaAllocator allocator);
 
-        GraphicsPipeline(RenderContext* context, DescriptorPool* pool, RenderPass* pass, std::vector<VkWriteDescriptorSet> fragmentWrites, const char* vertexShaderPath, const char* fragmentShaderPath);
+        GraphicsPipeline(RenderContext* context, DescriptorPool* pool, RenderPass* pass, std::vector<VkWriteDescriptorSet> fragmentWrites, SubmitInfo* submitInfo, const char* vertexShaderPath, const char* fragmentShaderPath);
         ~GraphicsPipeline();
 };
 

@@ -1745,7 +1745,7 @@ void VulkanEngine::run_graphics(uint ind) {
 	vkCmdEndRenderPass(currentCmdBuffer);
 	vkEndCommandBuffer(currentCmdBuffer);
 
-	VkPipelineStageFlags graphicsWaitStageMasks[] = {VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkPipelineStageFlags graphicsWaitStageMasks[] = {VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	VkSemaphore graphicsWaitSemaphores[] = {presentSemaphore, computeSemaphore};
 	VkSemaphore graphicsSignalSemaphores[] = {renderSemaphore, graphicsSemaphore};
 	

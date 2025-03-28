@@ -10,7 +10,7 @@ src/%.o: src/%.cpp headers/*.h
 	clang++ -c -o $@ -x c++ $< -std=c++17 -I headers -I third_party/vma -I third_party/glm -I third_party/imgui -I /opt/homebrew/Cellar/sdl2/2.30.5/include/SDL2 -I third_party/vkbootstrap -I third_party/stb_image -I third_party/tinyobjloader
 
 shaders/bin/%.spv: shaders/%
-	glslc $(subst .spv,,$(subst /bin,,$@)) -o $@
+	glslc $(subst .spv,,$(subst /bin,,$@)) -o $@ --target-env=vulkan1.1
 
 run:
 	./bin/raytracer

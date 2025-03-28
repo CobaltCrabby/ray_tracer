@@ -12,9 +12,25 @@ void GraphicsPipeline::updateDescriptors(std::vector<VkWriteDescriptorSet> write
     vkUpdateDescriptorSets(renderContext->device, writes.size(), writes.data(), 0, nullptr);
 }
 
-GraphicsPipeline::GraphicsPipeline(RenderContext* context, DescriptorPool* pool, RenderPass* pass, std::vector<VkWriteDescriptorSet> fragmentWrites, const char* vertexShaderPath, const char* fragmentShaderPath) {
+void GraphicsPipeline::generateScreenQuad(VkCommandPool submitPool, VkCommandBuffer submitBuffer, VkFence* submitFence, VkQueue queue, VmaAllocator allocator) {
+    std::vector<Vertex> vertices = {
+        {{1.0f,  1.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-1.0f,  1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{1.0f, -1.0f, 0.0f}, {1.0f, 0.0f}}
+    };
+
+    std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+    
+    std::cout << "yay" << std::endl;
+    vertexBuffer = new Buffer(renderContext->device, submitPool, submitBuffer, submitFence, queue, allocator, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices.data());
+    indexBuffer = new Buffer(renderContext->device, submitPool, submitBuffer, submitFence, queue, allocator, sizeof(uint32_t) * indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
+}
+
+GraphicsPipeline::GraphicsPipeline(RenderContext* context, DescriptorPool* pool, RenderPass* pass, std::vector<VkWriteDescriptorSet> fragmentWrites, SubmitInfo* submitInfo, const char* vertexShaderPath, const char* fragmentShaderPath) {
     renderContext = context;
     descriptorPool = pool;
+    descriptorCount = fragmentWrites.size();
     
     // vertex input
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -205,6 +221,7 @@ GraphicsPipeline::GraphicsPipeline(RenderContext* context, DescriptorPool* pool,
 
     VK_CHECK(vkAllocateDescriptorSets(context->device, &allocateInfo, &descriptorSet));
 
+    generateScreenQuad(submitInfo->submitPool, submitInfo->submitBuffer, submitInfo->submitFence, submitInfo->queue, submitInfo->allocator);
     updateDescriptors(fragmentWrites, descriptorSet);
     
     vkDestroyShaderModule(context->device, fragmentShader, nullptr);
@@ -212,6 +229,8 @@ GraphicsPipeline::GraphicsPipeline(RenderContext* context, DescriptorPool* pool,
 }
 
 GraphicsPipeline::~GraphicsPipeline() {
+    delete vertexBuffer;
+    delete indexBuffer;
     vkDestroyDescriptorSetLayout(renderContext->device, setLayout, nullptr);
     vkDestroyPipelineLayout(renderContext->device, pipelineLayout, nullptr);
     vkDestroyPipeline(renderContext->device, pipeline, nullptr);
