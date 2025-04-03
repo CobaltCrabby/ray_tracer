@@ -1,9 +1,9 @@
 #pragma once
 
+#include "render_context.hpp"
+#include "pipeline.hpp"
+#include "render_context.hpp"
 #include <vk_mem_alloc.h>
-#include <render_context.h>
-#include "pipeline.h"
-#include "render_context.h"
 #include "vulkan/vulkan_core.h"
 
 class Image {

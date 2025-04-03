@@ -1,10 +1,10 @@
 #pragma once
 
-#include "pipeline.h"
-#include "render_context.h"
-#include "framebuffer.h"
-#include "image.h"
-#include "descriptor_pool.h"
+#include "pipeline.hpp"
+#include "render_context.hpp"
+#include "framebuffer.hpp"
+#include "image.hpp"
+#include "descriptor_pool.hpp"
 #include <vulkan/vulkan_core.h>
 #include <glm/glm.hpp>
 
@@ -17,16 +17,22 @@ class Renderer {
             VkSemaphore swapImageAvailable, renderFinish;
         };
 
-        const static unsigned int FRAMES_IN_FLIGHT = 2;
+        struct PathState {
+            glm::vec4 origin[1930176];
+            glm::vec4 direction[1930176];
+        };
 
         RenderContext* renderContext;
         DescriptorPool* descriptorPool;
         RenderPass* renderPass;
-        Image* renderImage;
+        Image* renderImages[RenderContext::RenderContext::FRAMES_IN_FLIGHT];
+        Buffer* pathStateBuffer;
+
         GraphicsPipeline* graphicsPipeline;
         ComputePipeline* computePipeline;
+        ComputePipeline* newPathPipeline;
 
-        FrameData frames[FRAMES_IN_FLIGHT];
+        FrameData frames[RenderContext::FRAMES_IN_FLIGHT];
         VkCommandPool copyCommandPool;
         VkCommandBuffer copyCommandBuffer;
         VkFence copyFence;
@@ -35,7 +41,7 @@ class Renderer {
         std::vector<Framebuffer*> framebuffers;
         uint frameNumber;
 
-        Renderer(RenderContext* context);
+        explicit Renderer(RenderContext* context);
         ~Renderer();
         void render();
 };

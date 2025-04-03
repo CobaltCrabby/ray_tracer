@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render_context.h"
+#include "render_context.hpp"
 #include <vulkan/vulkan_core.h>
 
 class RenderPass {

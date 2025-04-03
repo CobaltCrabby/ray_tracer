@@ -1,5 +1,5 @@
 #include "vulkan/vulkan_core.h"
-#include <framebuffer.h>
+#include <framebuffer.hpp>
 
 Framebuffer::Framebuffer(RenderContext* renderContext, std::vector<VkImageView> attachment, RenderPass* rp) {
     this->renderContext = renderContext;

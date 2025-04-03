@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render_context.h"
-#include <renderpass.h>
+#include "render_context.hpp"
+#include "renderpass.hpp"
 #include <vulkan/vulkan_core.h>
 
 class Framebuffer {

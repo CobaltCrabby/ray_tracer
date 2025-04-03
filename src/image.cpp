@@ -1,9 +1,9 @@
 #include "vulkan/vulkan_core.h"
-#include "pipeline.h"
+#include "pipeline.hpp"
 #include <cstddef>
-#include <render_context.h>
+#include <render_context.hpp>
 #include <vk_mem_alloc.h>
-#include <image.h>
+#include <image.hpp>
 
 void Image::transitionLayout(VkImageLayout layout, SubmitInfo submit) {
     VkCommandBuffer cmd = submit.submitBuffer;

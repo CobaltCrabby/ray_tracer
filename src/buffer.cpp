@@ -1,5 +1,20 @@
 #include "vulkan/vulkan_core.h"
-#include <buffer.h>
+#include <buffer.hpp>
+
+Buffer::Buffer(VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags) {
+	allocator = alloc;
+
+	// allocate buffer
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = bufferSize;
+	bufferInfo.usage = flags;
+
+	VmaAllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaAllocInfo, &buffer, &allocation, nullptr));
+}
 
 Buffer::Buffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBuffer, VkFence* fence, VkQueue queue, VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags, void* bufferData) {
     VkBufferCreateInfo stagingInfo{};

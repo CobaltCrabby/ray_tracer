@@ -4,10 +4,22 @@
 
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
+const uint poolSize = 1930176;
+
 layout (binding = 0, rgba8) uniform image2D outImage;
+
+layout (binding = 1) buffer pathStatePool { 
+    vec4 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
+    vec4 direction[poolSize];
+} pathPool;
 
 void main() {
     ivec2 dim = imageSize(outImage);
-	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
-    imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(vec3(gl_SubgroupInvocationID / 32.f), 1.f));
+    uint threadIndex = (gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x);
+    if (threadIndex >= poolSize) return;
+
+    vec3 finalColor = pathPool.direction[threadIndex].rgb;
+    if (any(isnan(finalColor))) finalColor = vec3(1.f, 0.f, 1.f);
+
+    imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));
 }

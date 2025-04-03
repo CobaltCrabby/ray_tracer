@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render_context.h"
+#include "render_context.hpp"
 #include "vulkan/vulkan_core.h"
 
 class Buffer {
@@ -12,6 +12,7 @@ class Buffer {
         VmaAllocator allocator;
 
         Buffer() = default;
+        Buffer(VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags);
         Buffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBuffer, VkFence* fence, VkQueue queue, VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags, void* bufferData);
         ~Buffer();
 };

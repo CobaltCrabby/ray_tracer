@@ -18,6 +18,7 @@ class RenderContext {
 
     public:        
         const VkExtent2D windowExtent = {1728, 1117};
+        const static unsigned int FRAMES_IN_FLIGHT = 2;
 
         // vulkan context objects
         VkInstance instance;

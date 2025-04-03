@@ -1,5 +1,5 @@
 #include <vulkan/vulkan_core.h>
-#include <renderpass.h>
+#include <renderpass.hpp>
 #include <vector>
 
 RenderPass::RenderPass(RenderContext* context) {

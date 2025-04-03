@@ -2,7 +2,7 @@
 #include <SDL_vulkan.h>
 #include <SDL.h>
 #include <vulkan/vulkan_core.h>
-#include <render_context.h>
+#include <render_context.hpp>
 #include <VkBootstrap.h>
 
 // only define first time use

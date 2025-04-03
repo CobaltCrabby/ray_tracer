@@ -2,9 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include <renderer.h>
-#include <renderpass.h>
-#include <pipeline.h>
+#include <renderer.hpp>
 
 Renderer::Renderer(RenderContext* context) {
     renderContext = context;
@@ -23,14 +21,13 @@ Renderer::Renderer(RenderContext* context) {
     copyBufferAllocateInfo.commandPool = copyCommandPool;
     VK_CHECK(vkAllocateCommandBuffers(context->device, &copyBufferAllocateInfo, &copyCommandBuffer));
 
-    // CREATE FENCES FOR THIS ^
     VkFenceCreateInfo fenceInfo{};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     //fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     VK_CHECK(vkCreateFence(renderContext->device, &fenceInfo, nullptr, &copyFence));
 
     // per frame command pools and buffers
-    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+    for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         VkCommandPoolCreateInfo poolCreateInfo{};
         poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolCreateInfo.queueFamilyIndex = context->graphicsQueueFamily;
@@ -57,7 +54,7 @@ Renderer::Renderer(RenderContext* context) {
 
     // create renderpass and framebuffers
     renderPass = new RenderPass(context);
-    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+    for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         VkImageView imageView = renderContext->swapchainImageViews[i];
         Framebuffer* fb = new Framebuffer(renderContext, {imageView}, renderPass); 
         framebuffers.push_back(fb);
@@ -70,10 +67,13 @@ Renderer::Renderer(RenderContext* context) {
     submitInfo.queue = renderContext->graphicsQueue;
     submitInfo.allocator = renderContext->allocator;
 
-    // create and update descriptors
+    // create and update descriptors    
     descriptorPool = new DescriptorPool(renderContext);
-    renderImage = new Image(renderContext, &renderContext->allocator, {renderContext->windowExtent.width, renderContext->windowExtent.height, 1}, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    renderImage->transitionLayout(VK_IMAGE_LAYOUT_GENERAL, submitInfo);
+    pathStateBuffer = new Buffer(renderContext->allocator, sizeof(PathState), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
+        renderImages[i] = new Image(renderContext, &renderContext->allocator, {renderContext->windowExtent.width, renderContext->windowExtent.height, 1}, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+        renderImages[i]->transitionLayout(VK_IMAGE_LAYOUT_GENERAL, submitInfo);
+    }
 
     VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -84,10 +84,15 @@ Renderer::Renderer(RenderContext* context) {
 	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	VK_CHECK(vkCreateSampler(renderContext->device, &samplerInfo, nullptr, &defaultSampler));
 
-    VkDescriptorImageInfo renderImageInfo;
+    VkDescriptorImageInfo renderImageInfo{};
 	renderImageInfo.sampler = defaultSampler;
-	renderImageInfo.imageView = renderImage->imageView;
+	renderImageInfo.imageView = renderImages[0]->imageView;
 	renderImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkDescriptorBufferInfo pathStateBufferInfo{};
+    pathStateBufferInfo.buffer = pathStateBuffer->buffer;
+    pathStateBufferInfo.offset = 0;
+    pathStateBufferInfo.range = sizeof(PathState);
 
     std::vector<VkWriteDescriptorSet> graphicsWrites;
     VkWriteDescriptorSet graphicsTextureWrite{};
@@ -107,34 +112,50 @@ Renderer::Renderer(RenderContext* context) {
     computeTextureWrite.pImageInfo = &renderImageInfo;
     computeWrites.push_back(computeTextureWrite);
 
+    std::vector<VkWriteDescriptorSet> newPathWrites;
+    VkWriteDescriptorSet pathStateBufferWrite{};
+    pathStateBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	pathStateBufferWrite.dstBinding = 1;
+	pathStateBufferWrite.descriptorCount = 1;
+	pathStateBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    pathStateBufferWrite.pBufferInfo = &pathStateBufferInfo;
+    computeWrites.push_back(pathStateBufferWrite);
+
+    //pathStateBufferWrite.dstBinding = 0;
+    //newPathWrites.push_back(pathStateBufferWrite);
+    newPathWrites = computeWrites;
+
     std::string bin = std::filesystem::current_path().generic_string() + "/shaders/bin/";
     graphicsPipeline = new GraphicsPipeline(renderContext, descriptorPool, renderPass, graphicsWrites, &submitInfo, (bin + "raytrace.vert.spv").c_str(), (bin + "raytrace.frag.spv").c_str());
     computePipeline = new ComputePipeline(renderContext, descriptorPool, computeWrites, (bin + "test.comp.spv").c_str());
+    newPathPipeline = new ComputePipeline(renderContext, descriptorPool, newPathWrites, (bin + "newPath.comp.spv").c_str());
 }
 
 Renderer::~Renderer() {
     delete graphicsPipeline;
     delete computePipeline;
+    delete newPathPipeline;
 
     vkDestroySampler(renderContext->device, defaultSampler, nullptr);
     vkDestroyCommandPool(renderContext->device, copyCommandPool, nullptr);
     vkDestroyFence(renderContext->device, copyFence, nullptr);
 
-    for (int i = 0; i < FRAMES_IN_FLIGHT; i++) {
+    for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         vkDestroyCommandPool(renderContext->device, frames[i].commandPool, nullptr);
         vkDestroyFence(renderContext->device, frames[i].frameReady, nullptr);
         vkDestroySemaphore(renderContext->device, frames[i].swapImageAvailable, nullptr);
         vkDestroySemaphore(renderContext->device, frames[i].renderFinish, nullptr);
         delete framebuffers[i];
+        delete renderImages[i];
     }
 
     delete descriptorPool;
     delete renderPass;
-    delete renderImage;
+    delete pathStateBuffer;
 }
 
 void Renderer::render() {
-    FrameData frame = frames[frameNumber % FRAMES_IN_FLIGHT];
+    FrameData frame = frames[frameNumber % RenderContext::FRAMES_IN_FLIGHT];
 
     vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 10000000);
 	vkResetFences(renderContext->device, 1, &frame.frameReady);
@@ -148,7 +169,7 @@ void Renderer::render() {
     beginInfo.flags = 0;
     beginInfo.pInheritanceInfo = nullptr;
 
-    VkClearColorValue clearColor = {0.f, 0.f, 0.f};
+    VkClearColorValue clearColor = {0.f, 1.f, 0.f};
 	VkClearValue clearValue;
 	clearValue.color = clearColor;
 
@@ -156,12 +177,31 @@ void Renderer::render() {
 	rpBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rpBeginInfo.clearValueCount = 1;
 	rpBeginInfo.pClearValues = &clearValue;
-    rpBeginInfo.framebuffer = framebuffers[frameNumber % FRAMES_IN_FLIGHT]->framebuffer;
+    rpBeginInfo.framebuffer = framebuffers[frameNumber % RenderContext::FRAMES_IN_FLIGHT]->framebuffer;
 	rpBeginInfo.renderPass = renderPass->renderPass;
 	rpBeginInfo.renderArea.offset = {0, 0};
 	rpBeginInfo.renderArea.extent = renderContext->windowExtent;
 
     VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo));
+
+    // new path run
+    /*if (frameNumber == 0)*/ {
+        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width / 8.f), ceil(renderContext->windowExtent.height / 8.f), 1);
+
+        // pipeline barrier the buffer
+        VkBufferMemoryBarrier newPathMemoryBarrier{};
+        newPathMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        newPathMemoryBarrier.buffer = pathStateBuffer->buffer;
+        newPathMemoryBarrier.size = sizeof(PathState);
+        newPathMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        newPathMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        newPathMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        newPathMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        newPathMemoryBarrier.offset = 0;
+        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &newPathMemoryBarrier, 0, nullptr);
+    }
 
     // compute pipeline run
     vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipeline);
@@ -173,7 +213,7 @@ void Renderer::render() {
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
 	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	imageMemoryBarrier.image = renderImage->image;
+	imageMemoryBarrier.image = renderImages[0]->image;
 	imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 	imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
 	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;

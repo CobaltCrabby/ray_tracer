@@ -1,7 +1,7 @@
 #include "SDL_events.h"
-#include <render_context.h>
-#include <renderer.h>
-#include <camera.h>
+#include <render_context.hpp>
+#include <renderer.hpp>
+#include <camera.hpp>
 
 #include <iostream>
 

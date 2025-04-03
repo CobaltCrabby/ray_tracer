@@ -1,5 +1,5 @@
 #include "vulkan/vulkan_core.h"
-#include <descriptor_pool.h>
+#include <descriptor_pool.hpp>
 
 DescriptorPool::DescriptorPool(RenderContext* context) {
     renderContext = context;
