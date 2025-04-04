@@ -8,6 +8,6 @@ class DescriptorPool {
         VkDescriptorPool pool;
         RenderContext* renderContext;
 
-        DescriptorPool(RenderContext* context);
+        DescriptorPool(RenderContext* context, VkDescriptorPoolCreateFlags flags = 0, std::vector<VkDescriptorPoolSize> sizes = {});
         ~DescriptorPool();
 };

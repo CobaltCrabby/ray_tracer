@@ -17,17 +17,17 @@ struct CameraInfo {
 
 layout (binding = 0, rgba8) uniform image2D outImage;
 
-layout (binding = 1) buffer pathStatePool { 
+layout (binding = 1) restrict buffer pathStatePool { 
     vec4 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
     vec4 direction[poolSize];
 } pathPool;
 
-layout (binding = 2) buffer newPathQueue {
+layout (binding = 2) restrict buffer newPathQueue {
     uint size; // atomic number representing the size of the queue
     uint requests[poolSize]; // each entry is the path index needed to be generated 
 } pathQueue;
 
-layout (binding = 3) buffer extensionRayQueue {
+layout (binding = 3) restrict buffer extensionRayQueue {
     uint size; // atomic number representing the size of the queue
     uint requests[poolSize]; // each entry is the path index needed to be extended
 } extensionQueue;
@@ -59,7 +59,6 @@ void main() {
     vec3 point = bottomLeft + vec3(planeWidth * uv.x, planeHeight * uv.y, 0.f);
     
     // update path state
-    // read in the queue backwards so we can decrease the size atomically and still use the unread data
     uint poolIndex = pathQueue.requests[threadIndex];
     pathPool.origin[poolIndex] = vec4(cam.pos, 0.f);
     pathPool.direction[poolIndex] = (vec4(normalize(point), 1.f));

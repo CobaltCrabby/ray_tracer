@@ -16,6 +16,7 @@ int main() {
     while (!quit) {
         while (SDL_PollEvent(&event)) {
             quit = event.type == SDL_QUIT;
+            ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
         renderer.render();

@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdio>
 #include <iostream>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -172,6 +173,9 @@ Renderer::Renderer(RenderContext* context) {
     graphicsPipeline = new GraphicsPipeline(renderContext, descriptorPool, renderPass, graphicsWrites, &submitInfo, (bin + "raytrace.vert.spv").c_str(), (bin + "raytrace.frag.spv").c_str());
     computePipeline = new ComputePipeline(renderContext, descriptorPool, computeWrites, (bin + "test.comp.spv").c_str());
     newPathPipeline = new ComputePipeline(renderContext, descriptorPool, newPathWrites, (bin + "newPath.comp.spv").c_str());
+
+    // ImGui init
+    imguiContext = new ImGuiContext(renderContext->window, renderContext, renderPass, submitInfo);
 }
 
 Renderer::~Renderer() {
@@ -197,9 +201,17 @@ Renderer::~Renderer() {
     delete pathStateBuffer;
     delete newPathQueue;
     delete extensionRayQueue;
+    delete imguiContext;
 }
 
 void Renderer::render() {
+    // ImGui
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplSDL2_NewFrame(renderContext->window);
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+    ImGui::Render();
+
     FrameData frame = frames[frameNumber % RenderContext::FRAMES_IN_FLIGHT];
 
     vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 10000000);
@@ -230,7 +242,7 @@ void Renderer::render() {
     VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo));
 
     // reset timestamps
-    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, 2);
+    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, 3);
     vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
     
     // new path run
@@ -261,7 +273,7 @@ void Renderer::render() {
     extensionMemoryBarrier.offset = 0;
     vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &extensionMemoryBarrier, 0, nullptr);
 
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 1);
+    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
 
     // compute pipeline run
     vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipeline);
@@ -281,6 +293,8 @@ void Renderer::render() {
 	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0 , nullptr, 1, &imageMemoryBarrier);
 
+    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 2);
+
     // graphics pipeline run
     vkCmdBeginRenderPass(frame.commandBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -292,6 +306,7 @@ void Renderer::render() {
     vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->pipeline);
     vkCmdDrawIndexed(frame.commandBuffer, 6, 1, 0, 0, 0);
 
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.commandBuffer);
     vkCmdEndRenderPass(frame.commandBuffer);
 	vkEndCommandBuffer(frame.commandBuffer);
 
@@ -338,21 +353,21 @@ void Renderer::render() {
     }*/
 
     // timing
-    uint64_t times[4];
+    uint64_t times[6];
     vkGetQueryPoolResults(
         renderContext->device, 
         renderContext->queryPool, 
         0, 
-        2, 
-        4 * sizeof(uint64_t), 
+        3, 
+        6 * sizeof(uint64_t), 
         times,
         2 * sizeof(uint64_t), 
         VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
     );
 
     float deltaMs = float(times[2] - times[0]) / 1000000.0f;
-    std::cout << deltaMs << "ms" << std::endl;
-
+    float mydog = float(times[4] - times[2]) / 1000000.0f;
+    std::cout << "new path: " << deltaMs << " ms, test: " << mydog << "ms" << std::endl;
     /// rACHIT WAs HERE
     frameNumber++;
 }

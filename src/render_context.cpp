@@ -92,7 +92,7 @@ RenderContext::RenderContext() {
     VkQueryPoolCreateInfo queryCreateInfo{};
     queryCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     queryCreateInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    queryCreateInfo.queryCount = 2;
+    queryCreateInfo.queryCount = 3;
     VK_CHECK(vkCreateQueryPool(device, &queryCreateInfo, nullptr, &queryPool));
 }
 

@@ -5,6 +5,7 @@
 #include "framebuffer.hpp"
 #include "image.hpp"
 #include "descriptor_pool.hpp"
+#include "imgui.hpp"
 #include <vulkan/vulkan_core.h>
 #include <glm/glm.hpp>
 
@@ -31,6 +32,7 @@ class Renderer {
         DescriptorPool* descriptorPool;
         RenderPass* renderPass;
         Image* renderImages[RenderContext::RenderContext::FRAMES_IN_FLIGHT];
+        ImGuiContext* imguiContext;
         Buffer* pathStateBuffer;
         Buffer* newPathQueue;
         Buffer* extensionRayQueue;
