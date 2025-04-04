@@ -13,12 +13,18 @@ layout (binding = 1) buffer pathStatePool {
     vec4 direction[poolSize];
 } pathPool;
 
+layout (binding = 3) buffer extensionRayQueue {
+    uint size; // atomic number representing the size of the queue
+    uint requests[poolSize]; // each entry is the path index needed to be extended
+} extensionQueue;
+
 void main() {
     ivec2 dim = imageSize(outImage);
     uint threadIndex = (gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x);
     if (threadIndex >= poolSize) return;
 
-    vec3 finalColor = pathPool.direction[threadIndex].rgb;
+    uint index = extensionQueue.requests[threadIndex];
+    vec3 finalColor = pathPool.direction[index].rgb;
     if (any(isnan(finalColor))) finalColor = vec3(1.f, 0.f, 1.f);
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));

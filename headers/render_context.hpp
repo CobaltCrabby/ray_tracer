@@ -30,6 +30,7 @@ class RenderContext {
 
         VkFormat swapchainFormat;
         VkDebugUtilsMessengerEXT debugMessenger;
+        VkQueryPool queryPool;
         VmaAllocator allocator;
 
         // queues

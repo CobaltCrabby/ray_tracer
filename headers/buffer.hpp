@@ -10,6 +10,7 @@ class Buffer {
         VkDevice* device;
         VmaAllocation allocation;
         VmaAllocator allocator;
+        VmaAllocationInfo allocInfo;
 
         Buffer() = default;
         Buffer(VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags);

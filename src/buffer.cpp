@@ -11,7 +11,8 @@ Buffer::Buffer(VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags) 
 	bufferInfo.usage = flags;
 
 	VmaAllocationCreateInfo vmaAllocInfo{};
-	vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+	vmaAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaAllocInfo, &buffer, &allocation, nullptr));
 }
@@ -25,6 +26,7 @@ Buffer::Buffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBu
 	VmaAllocationCreateInfo vmaAllocInfo{};
 	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
+	// create staging buffer
 	VkBuffer stagingBuffer;
 	VmaAllocation stagingAllocation;
 	allocator = alloc;
@@ -43,9 +45,11 @@ Buffer::Buffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBu
 	bufferInfo.size = bufferSize;
 	bufferInfo.usage = flags | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-	vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+	vmaAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	//vmaAllocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
-	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaAllocInfo, &buffer, &allocation, nullptr));
+	VK_CHECK(vmaCreateBuffer(allocator, &bufferInfo, &vmaAllocInfo, &buffer, &allocation, &allocInfo));
 
 	// copy buffer
     VkCommandBuffer cmd = cmdBuffer;

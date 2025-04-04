@@ -22,11 +22,18 @@ class Renderer {
             glm::vec4 direction[1930176];
         };
 
+        struct IndexQueue {
+            uint size = 0;
+            uint requests[1930176];
+        };
+
         RenderContext* renderContext;
         DescriptorPool* descriptorPool;
         RenderPass* renderPass;
         Image* renderImages[RenderContext::RenderContext::FRAMES_IN_FLIGHT];
         Buffer* pathStateBuffer;
+        Buffer* newPathQueue;
+        Buffer* extensionRayQueue;
 
         GraphicsPipeline* graphicsPipeline;
         ComputePipeline* computePipeline;

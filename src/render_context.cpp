@@ -7,7 +7,7 @@
 
 // only define first time use
 #define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
+#include "vk_mem_alloc.h"
 
 RenderContext::RenderContext() {
     // create the vulkan instance
@@ -87,13 +87,23 @@ RenderContext::RenderContext() {
     swapchain = vkbSwapchain.swapchain;
     swapchainFormat = vkbSwapchain.image_format;
     swapchainImageViews = vkbSwapchain.get_image_views().value();
+
+    // query pool
+    VkQueryPoolCreateInfo queryCreateInfo{};
+    queryCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    queryCreateInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    queryCreateInfo.queryCount = 2;
+    VK_CHECK(vkCreateQueryPool(device, &queryCreateInfo, nullptr, &queryPool));
 }
 
 RenderContext::~RenderContext() {
     vmaDestroyAllocator(allocator);
+    vkDestroyQueryPool(device, queryPool, nullptr);
+
     for (int i = 0; i < swapchainImageViews.size(); i++) {
         vkDestroyImageView(device, swapchainImageViews[i], nullptr);
     }
+
     vkDestroySwapchainKHR(device, swapchain, nullptr);
     vkb::destroy_debug_utils_messenger(instance, debugMessenger, nullptr);
     vkDestroyDevice(device, nullptr);

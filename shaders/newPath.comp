@@ -22,12 +22,12 @@ layout (binding = 1) buffer pathStatePool {
     vec4 direction[poolSize];
 } pathPool;
 
-layout (binding = 2) restrict buffer newPathQueue {
+layout (binding = 2) buffer newPathQueue {
     uint size; // atomic number representing the size of the queue
     uint requests[poolSize]; // each entry is the path index needed to be generated 
 } pathQueue;
 
-layout (binding = 3) restrict buffer extensionRayQueue {
+layout (binding = 3) buffer extensionRayQueue {
     uint size; // atomic number representing the size of the queue
     uint requests[poolSize]; // each entry is the path index needed to be extended
 } extensionQueue;
@@ -59,19 +59,27 @@ void main() {
     vec3 point = bottomLeft + vec3(planeWidth * uv.x, planeHeight * uv.y, 0.f);
     
     // update path state
+    // read in the queue backwards so we can decrease the size atomically and still use the unread data
     uint poolIndex = pathQueue.requests[threadIndex];
     pathPool.origin[poolIndex] = vec4(cam.pos, 0.f);
     pathPool.direction[poolIndex] = (vec4(normalize(point), 1.f));
 
-    // sync the threads and clear the queue
-    memoryBarrierBuffer();
-    pathQueue.size = 0;
-
     // write requests to the raycast queue (probably wrong lol)
     // which one first for proper sync?? need to test..
-    extensionQueue.requests[extensionQueue.size + gl_SubgroupInvocationID] = poolIndex;
     uvec4 ballot = subgroupBallot(true);
+    uint oldSize = 0;
     if (subgroupElect()) {
-        atomicAdd(extensionQueue.size, subgroupBallotBitCount(ballot)); // num of active threads
+        uint activeThreads = subgroupBallotBitCount(ballot);
+        oldSize = atomicAdd(extensionQueue.size, activeThreads); // returns the number before the atomic add
+
+        // when all paths get put into extension queue, we finish
+        if (oldSize + activeThreads == pathQueue.size) {
+            pathPool.direction[poolIndex] = vec4(1.f);
+            pathQueue.size = 0;
+        }
     }
+
+    // synchronize value for all subgroup threads
+    uint offset = subgroupBroadcast(oldSize, 0);
+    extensionQueue.requests[offset + gl_SubgroupInvocationID] = poolIndex;
 }
