@@ -209,7 +209,9 @@ void Renderer::render() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL2_NewFrame(renderContext->window);
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
+
+    imguiContext->displayImGui(&renderStats);
+
     ImGui::Render();
 
     FrameData frame = frames[frameNumber % RenderContext::FRAMES_IN_FLIGHT];
@@ -242,7 +244,7 @@ void Renderer::render() {
     VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo));
 
     // reset timestamps
-    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, 3);
+    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, 4);
     vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
     
     // new path run
@@ -308,6 +310,8 @@ void Renderer::render() {
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.commandBuffer);
     vkCmdEndRenderPass(frame.commandBuffer);
+
+    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, renderContext->queryPool, 3);
 	vkEndCommandBuffer(frame.commandBuffer);
 
     // submit and present to queue
@@ -353,21 +357,21 @@ void Renderer::render() {
     }*/
 
     // timing
-    uint64_t times[6];
+    uint64_t times[8];
     vkGetQueryPoolResults(
         renderContext->device, 
         renderContext->queryPool, 
         0, 
-        3, 
-        6 * sizeof(uint64_t), 
+        4, 
+        8 * sizeof(uint64_t), 
         times,
         2 * sizeof(uint64_t), 
         VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
     );
 
-    float deltaMs = float(times[2] - times[0]) / 1000000.0f;
-    float mydog = float(times[4] - times[2]) / 1000000.0f;
-    std::cout << "new path: " << deltaMs << " ms, test: " << mydog << "ms" << std::endl;
+    renderStats.newPathTime = float(times[2] - times[0]) / 1000000.0f;
+    renderStats.testTime = float(times[4] - times[2]) / 1000000.0f;
+    renderStats.totalTime = float(times[6] - times[0]) / 1000000.0f;
     /// rACHIT WAs HERE
     frameNumber++;
 }

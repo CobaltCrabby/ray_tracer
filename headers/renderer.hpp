@@ -48,6 +48,7 @@ class Renderer {
         VkSampler defaultSampler;
 
         std::vector<Framebuffer*> framebuffers;
+        ImGuiStats renderStats{};
         uint frameNumber;
 
         explicit Renderer(RenderContext* context);

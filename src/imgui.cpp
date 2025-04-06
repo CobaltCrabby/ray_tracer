@@ -4,6 +4,20 @@
 #include <SDL.h>
 #include <renderpass.hpp>
 
+void ImGuiContext::displayImGui(ImGuiStats* stats) {
+	ImGui::Begin("PathTracer");
+	ImVec2 windowSize = {600, 600};
+	ImGui::SetWindowSize(windowSize);
+
+	if (ImGui::CollapsingHeader("Timings")) {
+		ImGui::Text("new path kernel: %.3fms", stats->newPathTime);
+		ImGui::Text("test kernel: %.3fms", stats->testTime);
+		ImGui::Text("total: %.1ffps", 1.f / (stats->totalTime / 1000.f));
+	}
+
+	ImGui::End();
+}
+
 ImGuiContext::ImGuiContext(SDL_Window* window, RenderContext* context, RenderPass* renderpass, SubmitInfo immediateSubmitInfo) {
     renderContext = context;
 
