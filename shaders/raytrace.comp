@@ -463,7 +463,7 @@ BxDFResult diffuseBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
     return result;
 }
 
-BxDFResult specularBRDF(vec3 incomingDir, HitInfo prevHit, inout uint    state) {
+BxDFResult specularBRDF(vec3 incomingDir, HitInfo prevHit, inout uint state) {
     BxDFResult result = {reflect(incomingDir, prevHit.normal), vec3(1.f), vec3(-1.f), 1.f, 1.f};
     return result;
 }

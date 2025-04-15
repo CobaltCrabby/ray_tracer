@@ -6,6 +6,7 @@
 #include "image.hpp"
 #include "descriptor_pool.hpp"
 #include "imgui.hpp"
+#include "render_object.hpp"
 #include <vulkan/vulkan_core.h>
 #include <glm/glm.hpp>
 
@@ -31,15 +32,20 @@ class Renderer {
         RenderContext* renderContext;
         DescriptorPool* descriptorPool;
         RenderPass* renderPass;
-        Image* renderImages[RenderContext::RenderContext::FRAMES_IN_FLIGHT];
         ImGuiContext* imguiContext;
+        Image* renderImages[RenderContext::RenderContext::FRAMES_IN_FLIGHT];
+
         Buffer* pathStateBuffer;
         Buffer* newPathQueue;
         Buffer* extensionRayQueue;
+        Buffer* vertexBuffer;
+        Buffer* triangleBuffer;
+        Buffer* BVHBuffer;
 
         GraphicsPipeline* graphicsPipeline;
         ComputePipeline* computePipeline;
         ComputePipeline* newPathPipeline;
+        ComputePipeline* extensionPipeline;
 
         FrameData frames[RenderContext::FRAMES_IN_FLIGHT];
         VkCommandPool copyCommandPool;
@@ -53,5 +59,7 @@ class Renderer {
 
         explicit Renderer(RenderContext* context);
         ~Renderer();
+
         void render();
+        void addWrite(std::vector<VkWriteDescriptorSet>& sets, VkWriteDescriptorSet newSet, uint binding);
 };

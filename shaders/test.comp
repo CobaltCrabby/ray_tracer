@@ -24,7 +24,7 @@ void main() {
     if (threadIndex >= poolSize) return;
 
     uint index = extensionQueue.requests[threadIndex];
-    vec3 finalColor = pathPool.direction[index].rgb;
+    vec3 finalColor = vec3(pathPool.direction[threadIndex].rgb) * pathPool.direction[threadIndex].a;
     if (any(isnan(finalColor))) finalColor = vec3(1.f, 0.f, 1.f);
 
     imageStore(outImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.f));

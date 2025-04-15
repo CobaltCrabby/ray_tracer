@@ -10,9 +10,10 @@ void ImGuiContext::displayImGui(ImGuiStats* stats) {
 	ImGui::SetWindowSize(windowSize);
 
 	if (ImGui::CollapsingHeader("Timings")) {
-		ImGui::Text("new path kernel: %.3fms", stats->newPathTime);
-		ImGui::Text("test kernel: %.3fms", stats->testTime);
+		ImGui::Indent(16.f);
+		ImGui::Text("compute dispatches: %.3fms", stats->computeTime);
 		ImGui::Text("total: %.1ffps", 1.f / (stats->totalTime / 1000.f));
+		ImGui::Unindent(16.f);
 	}
 
 	ImGui::End();

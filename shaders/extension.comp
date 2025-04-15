@@ -1,0 +1,198 @@
+#version 450
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+const uint poolSize = 1930176;
+
+layout (binding = 0, rgba8) uniform image2D outImage;
+
+struct Vertex {
+    vec4 position; // position.w = uv.x
+    vec4 normal; // normal.w = uv.y
+};
+
+struct Triangle {
+    uint v1, v2, v3;
+};
+
+struct BVHNode {
+	vec2 boundsX;
+    vec2 boundsY;
+    vec2 boundsZ;
+	uint index;
+    uint triCount;
+	//if triCount == 0: index is a node index, else: index is a triangle index
+};
+
+struct HitInfo {
+    vec3 hitPoint;
+    vec3 normal;
+    vec2 uv;
+    float dst;
+    uint objectHitIndex;
+    uint triHitIndex;
+    uint materialIndex;
+    bool didHit;
+    bool frontFace;
+};
+
+struct Ray {
+    vec3 dir;
+    vec3 origin;
+};
+
+struct BoundingBox {
+    //[0] = min, [1] = max, only use 3 of the vec components bc memory alignment
+    vec4[2] bounds; 
+};
+
+layout (binding = 1) restrict buffer pathStatePool { 
+    vec4 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
+    vec4 direction[poolSize];
+} pathPool;
+
+layout (binding = 2) restrict buffer extensionRayQueue {
+    uint size; // atomic number representing the size of the queue
+    uint requests[poolSize]; // each entry is the path index needed to be extended
+} extensionQueue;
+
+layout (binding = 3) restrict buffer triangleVertexBuffer {
+    Vertex vertices[];
+} vertexBuffer;
+
+layout (binding = 4) restrict buffer triangleIndexBuffer {
+    Triangle triangles[];
+} triangleBuffer;
+
+layout (binding = 5) restrict buffer BVHNodeBuffer {
+    BVHNode nodes[];
+} BVHBuffer;
+
+float boxIntersection(BoundingBox box, Ray ray) {
+    vec3 tMin = (box.bounds[0].xyz - ray.origin) / ray.dir;
+    vec3 tMax = (box.bounds[1].xyz - ray.origin) / ray.dir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+
+    bool hit = tFar >= tNear && tFar > 0;
+    float dst = hit ? tNear > 0 ? tNear : 0 : 99999999;
+    return dst;
+}
+
+// also need to expand the path state struct for hit info
+// https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+HitInfo triangleIntersection(Ray ray, Vertex v0, Vertex v1, Vertex v2, bool smoothShade, bool frontOnly) {
+    vec3 v1v2 = v1.position.xyz - v2.position.xyz;
+    vec3 v1v0 = v1.position.xyz - v0.position.xyz;
+    vec3 v2v0 = v2.position.xyz - v0.position.xyz;
+    vec3 rov0 = ray.origin - v0.position.xyz;
+    vec3 n = cross(v1v0, v2v0);
+
+    vec3  q = cross(rov0, ray.dir);
+    float d0 = -dot(ray.dir, n);
+    float d = 1.f/d0;
+
+    float dst = dot(rov0, n) * d;
+    float u = dot(v2v0, q) * d;
+    float v = -dot(v1v0, q) * d;
+    float w = 1.f - u - v;
+    
+    HitInfo hit;
+    hit.frontFace = d0 >= 0.00000001f;
+    hit.didHit = dst >= 0 && u >= 0 && v >= 0 && w >= 0 && !(!hit.frontFace && frontOnly);
+    hit.hitPoint = ray.origin + ray.dir * dst;
+    hit.dst = dst;
+
+    vec2 v0uv = vec2(v0.position.w, v0.normal.w);
+    vec2 v1uv = vec2(v1.position.w, v1.normal.w);
+    vec2 v2uv = vec2(v2.position.w, v2.normal.w);
+    hit.uv = w * v0uv + u * v1uv + v * v2uv;
+
+    if (v0uv == v1uv || v1uv == v2uv || v2uv == v0uv) {
+        hit.uv = vec2(0.5f);
+    }
+
+    hit.normal = (smoothShade ? w * v0.normal.xyz + u * v1.normal.xyz + v * v2.normal.xyz : normalize(n)) * (hit.frontFace ? 1 : -1);
+    return hit;    
+}
+
+HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
+    HitInfo closestHit;
+    closestHit.didHit = false;
+    closestHit.dst = 99999999;
+
+    Ray transformRay;
+    transformRay.dir = vec4(ray.dir, 0.f).xyz;
+    transformRay.origin = vec4(ray.origin, 1.f).xyz;
+
+    //bvh traversal
+    BVHNode root = BVHBuffer.nodes[0];
+    uint stack[64];
+    uint stackIndex = 1;
+    stack[0] = 0;
+    while (stackIndex > 0) {
+        BVHNode currentNode = BVHBuffer.nodes[stack[--stackIndex]];
+
+        if (currentNode.triCount != 0) {
+            //check for triangles
+            stats[1] += currentNode.triCount;
+            for (uint j = currentNode.index; j < currentNode.index + currentNode.triCount; j++) {
+                Triangle tri = triangleBuffer.triangles[j];
+                HitInfo hitInfo = triangleIntersection(transformRay, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], false, false);
+
+                if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
+                    closestHit = hitInfo;
+                    closestHit.normal = normalize(vec4(closestHit.normal, 0.f)).xyz;
+                    closestHit.hitPoint = vec4(closestHit.hitPoint, 1.f).xyz;
+                    closestHit.triHitIndex = j;
+                }
+            }
+        } else {
+            //push nodes based on which one is closer
+            BVHNode child1 = BVHBuffer.nodes[currentNode.index];
+            BVHNode child2 = BVHBuffer.nodes[currentNode.index + 1];
+
+            BoundingBox box1;
+            box1.bounds[0].xyz = vec3(child1.boundsX[0], child1.boundsY[0], child1.boundsZ[0]);
+            box1.bounds[1].xyz = vec3(child1.boundsX[1], child1.boundsY[1], child1.boundsZ[1]);
+            BoundingBox box2;
+            box2.bounds[0].xyz = vec3(child2.boundsX[0], child2.boundsY[0], child2.boundsZ[0]);
+            box2.bounds[1].xyz = vec3(child2.boundsX[1], child2.boundsY[1], child2.boundsZ[1]);
+
+            float dst1 = boxIntersection(box1, transformRay);
+            float dst2 = boxIntersection(box2, transformRay);
+            stats[0] += 2;
+
+            bool isNearestA = dst1 <= dst2;
+            float dstNear = isNearestA ? dst1 : dst2;
+            float dstFar = isNearestA ? dst2 : dst1;
+            uint childIndexNear = isNearestA ? currentNode.index : currentNode.index + 1;
+            uint childIndexFar = isNearestA ? currentNode.index + 1 : currentNode.index;
+
+            if (dstFar < closestHit.dst) stack[stackIndex++] = childIndexFar;
+            if (dstNear < closestHit.dst) stack[stackIndex++] = childIndexNear;
+        }
+    }
+
+    return closestHit;
+}
+
+void main() {
+    ivec2 dim = imageSize(outImage);
+    uint threadIndex = (gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x);
+    if (threadIndex >= poolSize) return;
+
+    float[2] stats;
+
+    Ray ray;
+    uint index = extensionQueue.requests[threadIndex];
+    ray.dir = pathPool.direction[index].xyz;
+    ray.origin = pathPool.origin[index].xyz;
+
+    HitInfo hitInfo = calculateIntersections(ray, stats);
+    //Triangle tri = triangleBuffer.triangles[0];
+    //HitInfo hitInfo = triangleIntersection(ray, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], false, false);
+    pathPool.direction[index].w = float(hitInfo.didHit);
+}

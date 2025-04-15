@@ -8,8 +8,7 @@
 
 struct ImGuiStats {
     // read-only
-    float newPathTime;
-    float testTime;
+    float computeTime;
     float totalTime;
 };
 

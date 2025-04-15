@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <iostream>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 #include <renderer.hpp>
 
 Renderer::Renderer(RenderContext* context) {
@@ -75,21 +74,28 @@ Renderer::Renderer(RenderContext* context) {
         initialPathQueue.requests[i] = i;
     }
 
+    // make read_obj part of TLAS so you can directly write to tri buffer
+    TLAS tlas;
+    tlas.readObj("assets/rb_low.obj");
+
+    // for (int i = 0; i < tlas.vertices.size(); i++) {
+        // std::cout << i << " " << glm::to_string(tlas.vertices[i].position) << std::endl;
+    // }
+
+    std::cout << tlas.bvhNodes[1].index << tlas.bvhNodes[1].triCount << std::endl;
+
     descriptorPool = new DescriptorPool(renderContext);
+    vertexBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Vertex) * tlas.vertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.vertices.data());
+    triangleBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Triangle) * tlas.triangles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.triangles.data());
+    BVHBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::BVHNode) * tlas.bvhNodes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.bvhNodes.data());
     pathStateBuffer = new Buffer(renderContext->allocator, sizeof(PathState), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     newPathQueue = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) &initialPathQueue);
     extensionRayQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    
     for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         renderImages[i] = new Image(renderContext, &renderContext->allocator, {renderContext->windowExtent.width, renderContext->windowExtent.height, 1}, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         renderImages[i]->transitionLayout(VK_IMAGE_LAYOUT_GENERAL, submitInfo);
     }
-
-    VmaAllocationInfo allocInfo{};
-    vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
-    std::cout << ((IndexQueue*) allocInfo.pMappedData)->size << std::endl;
-
-    vmaGetAllocationInfo(newPathQueue->allocator, newPathQueue->allocation, &allocInfo);
-    std::cout << ((IndexQueue*) allocInfo.pMappedData)->size << std::endl;
 
     VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -120,59 +126,101 @@ Renderer::Renderer(RenderContext* context) {
     extensionQueueInfo.offset = 0;
     extensionQueueInfo.range = sizeof(IndexQueue);
 
-    std::vector<VkWriteDescriptorSet> graphicsWrites;
+    VkDescriptorBufferInfo vertexBufferInfo{};
+    vertexBufferInfo.buffer = vertexBuffer->buffer;
+    vertexBufferInfo.offset = 0;
+    vertexBufferInfo.range = sizeof(TLAS::Vertex) * tlas.vertices.size();
+    
+    VkDescriptorBufferInfo triangleBufferInfo{};
+    triangleBufferInfo.buffer = triangleBuffer->buffer;
+    triangleBufferInfo.offset = 0;
+    triangleBufferInfo.range = sizeof(TLAS::Triangle) * tlas.triangles.size();
+
+    VkDescriptorBufferInfo BVHBufferInfo{};
+    BVHBufferInfo.buffer = BVHBuffer->buffer;
+    BVHBufferInfo.offset = 0;
+    BVHBufferInfo.range = sizeof(TLAS::BVHNode) * tlas.bvhNodes.size();
+
     VkWriteDescriptorSet graphicsTextureWrite{};
     graphicsTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	graphicsTextureWrite.dstBinding = 0;
 	graphicsTextureWrite.descriptorCount = 1;
 	graphicsTextureWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     graphicsTextureWrite.pImageInfo = &renderImageInfo;
-    graphicsWrites.push_back(graphicsTextureWrite);
 
-    std::vector<VkWriteDescriptorSet> computeWrites;
-    std::vector<VkWriteDescriptorSet> newPathWrites;
-    
     VkWriteDescriptorSet computeTextureWrite{};
     computeTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	computeTextureWrite.dstBinding = 0;
 	computeTextureWrite.descriptorCount = 1;
 	computeTextureWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     computeTextureWrite.pImageInfo = &renderImageInfo;
-    computeWrites.push_back(computeTextureWrite);
 
     VkWriteDescriptorSet pathStateBufferWrite{};
     pathStateBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	pathStateBufferWrite.dstBinding = 1;
 	pathStateBufferWrite.descriptorCount = 1;
 	pathStateBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     pathStateBufferWrite.pBufferInfo = &pathStateBufferInfo;
-    computeWrites.push_back(pathStateBufferWrite);
-
-    pathStateBufferWrite.dstBinding = 0;
-    newPathWrites.push_back(pathStateBufferWrite);
-    newPathWrites = computeWrites;
 
     VkWriteDescriptorSet newPathQueueWrite{};
     newPathQueueWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	newPathQueueWrite.dstBinding = 2;
 	newPathQueueWrite.descriptorCount = 1;
 	newPathQueueWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     newPathQueueWrite.pBufferInfo = &newPathQueueInfo;
-    newPathWrites.push_back(newPathQueueWrite);
 
     VkWriteDescriptorSet extensionQueueWrite{};
     extensionQueueWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	extensionQueueWrite.dstBinding = 3;
 	extensionQueueWrite.descriptorCount = 1;
 	extensionQueueWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     extensionQueueWrite.pBufferInfo = &extensionQueueInfo;
-    newPathWrites.push_back(extensionQueueWrite);
-    computeWrites.push_back(extensionQueueWrite);
+
+    VkWriteDescriptorSet vertexBufferWrite{};
+    vertexBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	vertexBufferWrite.descriptorCount = 1;
+	vertexBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    vertexBufferWrite.pBufferInfo = &vertexBufferInfo;
+
+    VkWriteDescriptorSet triangleBufferWrite{};
+    triangleBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	triangleBufferWrite.descriptorCount = 1;
+	triangleBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    triangleBufferWrite.pBufferInfo = &triangleBufferInfo;
+
+    VkWriteDescriptorSet BVHBufferWrite{};
+    BVHBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	BVHBufferWrite.descriptorCount = 1;
+	BVHBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    BVHBufferWrite.pBufferInfo = &BVHBufferInfo;
+    
+    std::vector<VkWriteDescriptorSet> graphicsWrites;
+    std::vector<VkWriteDescriptorSet> computeWrites;
+    std::vector<VkWriteDescriptorSet> newPathWrites;
+    std::vector<VkWriteDescriptorSet> extensionWrites;
+    
+    // fragment shader
+    addWrite(graphicsWrites, graphicsTextureWrite, 0);
+
+    // new path compute
+    addWrite(newPathWrites, computeTextureWrite, 0);
+    addWrite(newPathWrites, pathStateBufferWrite, 1);
+    addWrite(newPathWrites, newPathQueueWrite, 2);
+    addWrite(newPathWrites, extensionQueueWrite, 3);
+
+    // extensions compute
+    addWrite(extensionWrites, computeTextureWrite, 0);
+    addWrite(extensionWrites, pathStateBufferWrite, 1);
+    addWrite(extensionWrites, extensionQueueWrite, 2);
+    addWrite(extensionWrites, vertexBufferWrite, 3);
+    addWrite(extensionWrites, triangleBufferWrite, 4);
+    addWrite(extensionWrites, BVHBufferWrite, 5);
+
+    // test compute
+    addWrite(computeWrites, computeTextureWrite, 0);
+    addWrite(computeWrites, pathStateBufferWrite, 1);
+    addWrite(computeWrites, extensionQueueWrite, 3);
 
     std::string bin = std::filesystem::current_path().generic_string() + "/shaders/bin/";
     graphicsPipeline = new GraphicsPipeline(renderContext, descriptorPool, renderPass, graphicsWrites, &submitInfo, (bin + "raytrace.vert.spv").c_str(), (bin + "raytrace.frag.spv").c_str());
     computePipeline = new ComputePipeline(renderContext, descriptorPool, computeWrites, (bin + "test.comp.spv").c_str());
     newPathPipeline = new ComputePipeline(renderContext, descriptorPool, newPathWrites, (bin + "newPath.comp.spv").c_str());
+    extensionPipeline = new ComputePipeline(renderContext, descriptorPool, extensionWrites, (bin + "extension.comp.spv").c_str());
 
     // ImGui init
     imguiContext = new ImGuiContext(renderContext->window, renderContext, renderPass, submitInfo);
@@ -182,6 +230,7 @@ Renderer::~Renderer() {
     delete graphicsPipeline;
     delete computePipeline;
     delete newPathPipeline;
+    delete extensionPipeline;
 
     vkDestroySampler(renderContext->device, defaultSampler, nullptr);
     vkDestroyCommandPool(renderContext->device, copyCommandPool, nullptr);
@@ -198,6 +247,9 @@ Renderer::~Renderer() {
 
     delete descriptorPool;
     delete renderPass;
+    delete vertexBuffer;
+    delete triangleBuffer;
+    delete BVHBuffer;
     delete pathStateBuffer;
     delete newPathQueue;
     delete extensionRayQueue;
@@ -244,26 +296,15 @@ void Renderer::render() {
     VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo));
 
     // reset timestamps
-    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, 4);
+    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
     vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
-    
+
     // new path run
     vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
     vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
     vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width / 8.f), ceil(renderContext->windowExtent.height / 8.f), 1);
 
     // pipeline barrier the buffers
-    VkBufferMemoryBarrier newPathMemoryBarrier{};
-    newPathMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    newPathMemoryBarrier.buffer = pathStateBuffer->buffer;
-    newPathMemoryBarrier.size = sizeof(PathState);
-    newPathMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    newPathMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    newPathMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    newPathMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    newPathMemoryBarrier.offset = 0;
-    vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &newPathMemoryBarrier, 0, nullptr);
-
     VkBufferMemoryBarrier extensionMemoryBarrier{};
     extensionMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     extensionMemoryBarrier.buffer = extensionRayQueue->buffer;
@@ -275,7 +316,21 @@ void Renderer::render() {
     extensionMemoryBarrier.offset = 0;
     vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &extensionMemoryBarrier, 0, nullptr);
 
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
+    // extension pipeline run
+    vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
+	vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
+	vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width / 8.f), ceil(renderContext->windowExtent.height / 8.f), 1);
+
+    VkBufferMemoryBarrier newPathMemoryBarrier{};
+    newPathMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    newPathMemoryBarrier.buffer = pathStateBuffer->buffer;
+    newPathMemoryBarrier.size = sizeof(PathState);
+    newPathMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    newPathMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    newPathMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    newPathMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    newPathMemoryBarrier.offset = 0;
+    vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &newPathMemoryBarrier, 0, nullptr);
 
     // compute pipeline run
     vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipeline);
@@ -295,7 +350,7 @@ void Renderer::render() {
 	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0 , nullptr, 1, &imageMemoryBarrier);
 
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 2);
+    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
 
     // graphics pipeline run
     vkCmdBeginRenderPass(frame.commandBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -311,7 +366,7 @@ void Renderer::render() {
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.commandBuffer);
     vkCmdEndRenderPass(frame.commandBuffer);
 
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, renderContext->queryPool, 3);
+    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, renderContext->queryPool, 2);
 	vkEndCommandBuffer(frame.commandBuffer);
 
     // submit and present to queue
@@ -357,21 +412,25 @@ void Renderer::render() {
     }*/
 
     // timing
-    uint64_t times[8];
+    uint64_t times[RenderContext::QUERY_SIZE * 2];
     vkGetQueryPoolResults(
         renderContext->device, 
         renderContext->queryPool, 
         0, 
-        4, 
-        8 * sizeof(uint64_t), 
+        RenderContext::QUERY_SIZE, 
+        RenderContext::QUERY_SIZE * 2 * sizeof(uint64_t), 
         times,
         2 * sizeof(uint64_t), 
         VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
     );
 
-    renderStats.newPathTime = float(times[2] - times[0]) / 1000000.0f;
-    renderStats.testTime = float(times[4] - times[2]) / 1000000.0f;
-    renderStats.totalTime = float(times[6] - times[0]) / 1000000.0f;
+    renderStats.computeTime = float(times[2] - times[0]) / 1000000.0f;
+    renderStats.totalTime = float(times[4] - times[0]) / 1000000.0f;
     /// rACHIT WAs HERE
     frameNumber++;
+}
+
+void Renderer::addWrite(std::vector<VkWriteDescriptorSet>& sets, VkWriteDescriptorSet newSet, uint binding) {
+    newSet.dstBinding = binding;
+    sets.push_back(newSet);
 }
