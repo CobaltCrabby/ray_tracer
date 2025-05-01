@@ -262,7 +262,7 @@ ComputePipeline::ComputePipeline(RenderContext* context, DescriptorPool* pool, s
 
     VkDescriptorSetLayoutCreateInfo setLayoutCreateInfo{};
     setLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    setLayoutCreateInfo.bindingCount = writes.size();
+    setLayoutCreateInfo.bindingCount = bindings.size();
     setLayoutCreateInfo.pBindings = bindings.data();
 
     VK_CHECK(vkCreateDescriptorSetLayout(context->device, &setLayoutCreateInfo, nullptr, &setLayout));

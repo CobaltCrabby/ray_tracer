@@ -1,6 +1,6 @@
 #version 450
 
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 const uint poolSize = 1930176;
 
@@ -49,6 +49,8 @@ struct BoundingBox {
 layout (binding = 1) restrict buffer pathStatePool { 
     vec4 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
     vec4 direction[poolSize];
+    vec4 hitNormal[poolSize];
+    vec4 throughput[poolSize];
 } pathPool;
 
 layout (binding = 2) restrict buffer extensionRayQueue {
@@ -181,8 +183,8 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
 
 void main() {
     ivec2 dim = imageSize(outImage);
-    uint threadIndex = (gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x);
-    if (threadIndex >= poolSize) return;
+    uint threadIndex = gl_GlobalInvocationID.x;
+    if (threadIndex >= extensionQueue.size) return;
 
     float[2] stats;
 
@@ -192,7 +194,6 @@ void main() {
     ray.origin = pathPool.origin[index].xyz;
 
     HitInfo hitInfo = calculateIntersections(ray, stats);
-    //Triangle tri = triangleBuffer.triangles[0];
-    //HitInfo hitInfo = triangleIntersection(ray, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], false, false);
     pathPool.direction[index].w = float(hitInfo.didHit);
+    pathPool.hitNormal[index] = vec4(hitInfo.normal, hitInfo.dst);
 }

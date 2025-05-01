@@ -2,7 +2,7 @@
 
 #extension GL_KHR_shader_subgroup_ballot: enable
 
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 const uint poolSize = 1930176;
 const float PI = 3.1415926f;
@@ -20,6 +20,8 @@ layout (binding = 0, rgba8) uniform image2D outImage;
 layout (binding = 1) restrict buffer pathStatePool { 
     vec4 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
     vec4 direction[poolSize];
+    vec4 hitNormal[poolSize];
+    vec4 throughput[poolSize];
 } pathPool;
 
 layout (binding = 2) restrict buffer newPathQueue {
@@ -37,11 +39,10 @@ layout (binding = 3) restrict buffer extensionRayQueue {
 // } PushConstants;
 
 void main() {
-    ivec2 dim = imageSize(outImage);  // hard coded for now, maybe push the dimensions to give the size
-    vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
-
-    uint threadIndex = gl_GlobalInvocationID.y * dim.x + gl_GlobalInvocationID.x;
+    ivec2 dim = {1728, 1117}; // hard coded for now, maybe push the dimensions to give the size
+    uint threadIndex = gl_GlobalInvocationID.x;
     if (threadIndex >= pathQueue.size) return; // if too many threads dispatched
+    if (extensionQueue.size >= poolSize) return;
 
     // generate ray; from sebastian lague, probably from unity docs
     CameraInfo cam = {
@@ -52,6 +53,8 @@ void main() {
         50.f
     };
 
+    uint poolIndex = pathQueue.requests[threadIndex];
+    vec2 uv = uvec2(poolIndex % dim.x, poolIndex / dim.x) / vec2(dim);
     float planeHeight = cam.nearPlane * tan(radians(cam.fov * 0.5f)) * 2.f;
     float planeWidth = planeHeight * cam.aspectRatio;
 
@@ -59,13 +62,14 @@ void main() {
     vec3 point = bottomLeft + vec3(planeWidth * uv.x, planeHeight * uv.y, 0.f);
     
     // update path state
-    uint poolIndex = pathQueue.requests[threadIndex];
     pathPool.origin[poolIndex] = vec4(cam.pos, 0.f);
     pathPool.direction[poolIndex] = (vec4(normalize(point), 1.f));
+    pathPool.throughput[poolIndex] = vec4(1.f);
 
     // write requests to the raycast queue (probably wrong lol)
     // which one first for proper sync?? need to test..
-    uvec4 ballot = subgroupBallot(true);
+    bool predicate = true; // lol
+    uvec4 ballot = subgroupBallot(predicate);
     uint oldSize = 0;
     if (subgroupElect()) {
         uint activeThreads = subgroupBallotBitCount(ballot);
@@ -77,7 +81,15 @@ void main() {
         }
     }
 
+    // bit shift the ballot and count the number of 1 bits left, this is the index for the request
+    uvec4 shifted = ballot >> (127 - gl_SubgroupInvocationID);
+    uint threadBitCount =  subgroupBallotBitCount(shifted);
+
     // synchronize value for all subgroup threads
     uint offset = subgroupBroadcast(oldSize, 0);
-    extensionQueue.requests[offset + gl_SubgroupInvocationID] = poolIndex;
+    if (predicate) {
+        extensionQueue.requests[offset + threadBitCount] = poolIndex;
+    }
+
+    imageStore(outImage, ivec2(uv * dim), pathPool.direction[poolIndex]);
 }

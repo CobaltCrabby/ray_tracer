@@ -11,7 +11,7 @@ class RenderContext {
 	do {\
 		VkResult err = x;\
 		if (err) {\
-			std::cout << "Error detected " << err << std::endl;\
+			std::cout << "Error detected: " << err << std::endl;\
 			abort();\
 		}\
 	} while (0)

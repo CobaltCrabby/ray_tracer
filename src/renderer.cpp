@@ -67,13 +67,6 @@ Renderer::Renderer(RenderContext* context) {
     submitInfo.queue = renderContext->graphicsQueue;
     submitInfo.allocator = renderContext->allocator;
 
-    // create and update descriptors    
-    IndexQueue initialPathQueue{};
-    initialPathQueue.size = 1930176;
-    for (int i = 0; i < 1930176; i++) {
-        initialPathQueue.requests[i] = i;
-    }
-
     // make read_obj part of TLAS so you can directly write to tri buffer
     TLAS tlas;
     tlas.readObj("assets/rb_low.obj");
@@ -89,8 +82,9 @@ Renderer::Renderer(RenderContext* context) {
     triangleBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Triangle) * tlas.triangles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.triangles.data());
     BVHBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::BVHNode) * tlas.bvhNodes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.bvhNodes.data());
     pathStateBuffer = new Buffer(renderContext->allocator, sizeof(PathState), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    newPathQueue = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) &initialPathQueue);
+    newPathQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     extensionRayQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    materialRequestQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     
     for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         renderImages[i] = new Image(renderContext, &renderContext->allocator, {renderContext->windowExtent.width, renderContext->windowExtent.height, 1}, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -126,11 +120,16 @@ Renderer::Renderer(RenderContext* context) {
     extensionQueueInfo.offset = 0;
     extensionQueueInfo.range = sizeof(IndexQueue);
 
+    VkDescriptorBufferInfo materialRequestQueueInfo{};
+    materialRequestQueueInfo.buffer = materialRequestQueue->buffer;
+    materialRequestQueueInfo.offset = 0;
+    materialRequestQueueInfo.range = sizeof(IndexQueue);
+
     VkDescriptorBufferInfo vertexBufferInfo{};
     vertexBufferInfo.buffer = vertexBuffer->buffer;
     vertexBufferInfo.offset = 0;
     vertexBufferInfo.range = sizeof(TLAS::Vertex) * tlas.vertices.size();
-    
+
     VkDescriptorBufferInfo triangleBufferInfo{};
     triangleBufferInfo.buffer = triangleBuffer->buffer;
     triangleBufferInfo.offset = 0;
@@ -171,6 +170,12 @@ Renderer::Renderer(RenderContext* context) {
 	extensionQueueWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     extensionQueueWrite.pBufferInfo = &extensionQueueInfo;
 
+    VkWriteDescriptorSet materialRequestWrite{};
+    materialRequestWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	materialRequestWrite.descriptorCount = 1;
+	materialRequestWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    materialRequestWrite.pBufferInfo = &materialRequestQueueInfo;
+
     VkWriteDescriptorSet vertexBufferWrite{};
     vertexBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	vertexBufferWrite.descriptorCount = 1;
@@ -191,17 +196,30 @@ Renderer::Renderer(RenderContext* context) {
     
     std::vector<VkWriteDescriptorSet> graphicsWrites;
     std::vector<VkWriteDescriptorSet> computeWrites;
+    std::vector<VkWriteDescriptorSet> logicWrites;
     std::vector<VkWriteDescriptorSet> newPathWrites;
+    std::vector<VkWriteDescriptorSet> materialWrites;
     std::vector<VkWriteDescriptorSet> extensionWrites;
     
     // fragment shader
     addWrite(graphicsWrites, graphicsTextureWrite, 0);
+
+    // logic compute
+    addWrite(logicWrites, computeTextureWrite, 0);
+    addWrite(logicWrites, pathStateBufferWrite, 1);
+    addWrite(logicWrites, newPathQueueWrite, 2);
+    //addWrite(logicWrites, materialRequestWrite, 3);
 
     // new path compute
     addWrite(newPathWrites, computeTextureWrite, 0);
     addWrite(newPathWrites, pathStateBufferWrite, 1);
     addWrite(newPathWrites, newPathQueueWrite, 2);
     addWrite(newPathWrites, extensionQueueWrite, 3);
+
+    // material compute
+    addWrite(materialWrites, pathStateBufferWrite, 1);
+    addWrite(materialWrites, newPathQueueWrite, 2);
+    addWrite(materialWrites, materialRequestWrite, 3);
 
     // extensions compute
     addWrite(extensionWrites, computeTextureWrite, 0);
@@ -219,7 +237,9 @@ Renderer::Renderer(RenderContext* context) {
     std::string bin = std::filesystem::current_path().generic_string() + "/shaders/bin/";
     graphicsPipeline = new GraphicsPipeline(renderContext, descriptorPool, renderPass, graphicsWrites, &submitInfo, (bin + "raytrace.vert.spv").c_str(), (bin + "raytrace.frag.spv").c_str());
     computePipeline = new ComputePipeline(renderContext, descriptorPool, computeWrites, (bin + "test.comp.spv").c_str());
+    logicPipeline = new ComputePipeline(renderContext, descriptorPool, logicWrites, (bin + "logic.comp.spv").c_str());
     newPathPipeline = new ComputePipeline(renderContext, descriptorPool, newPathWrites, (bin + "newPath.comp.spv").c_str());
+    materialPipeline = new ComputePipeline(renderContext, descriptorPool, materialWrites, (bin + "material.comp.spv").c_str());
     extensionPipeline = new ComputePipeline(renderContext, descriptorPool, extensionWrites, (bin + "extension.comp.spv").c_str());
 
     // ImGui init
@@ -229,7 +249,9 @@ Renderer::Renderer(RenderContext* context) {
 Renderer::~Renderer() {
     delete graphicsPipeline;
     delete computePipeline;
+    delete logicPipeline;
     delete newPathPipeline;
+    delete materialPipeline;
     delete extensionPipeline;
 
     vkDestroySampler(renderContext->device, defaultSampler, nullptr);
@@ -253,6 +275,7 @@ Renderer::~Renderer() {
     delete pathStateBuffer;
     delete newPathQueue;
     delete extensionRayQueue;
+    delete materialRequestQueue;
     delete imguiContext;
 }
 
@@ -267,6 +290,13 @@ void Renderer::render() {
     ImGui::Render();
 
     FrameData frame = frames[frameNumber % RenderContext::FRAMES_IN_FLIGHT];
+
+    if (frameNumber == 0) {
+        VmaAllocationInfo allocInfo{};
+        vmaGetAllocationInfo(materialRequestQueue->allocator, materialRequestQueue->allocation, &allocInfo);
+        IndexQueue* readback = (IndexQueue*) allocInfo.pMappedData;
+        std::cout << "before - size: " << readback->size << " pool size: " << renderContext->windowExtent.width * renderContext->windowExtent.height << std::endl;
+    }
 
     vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 10000000);
 	vkResetFences(renderContext->device, 1, &frame.frameReady);
@@ -299,58 +329,94 @@ void Renderer::render() {
     vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
     vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
 
-    // new path run
-    vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
-    vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
-    vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width / 8.f), ceil(renderContext->windowExtent.height / 8.f), 1);
+    // TODO:
+    // somehow get size of path queue and material
+    // somehow get size of extension queue
 
-    // pipeline barrier the buffers
-    VkBufferMemoryBarrier extensionMemoryBarrier{};
-    extensionMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    extensionMemoryBarrier.buffer = extensionRayQueue->buffer;
-    extensionMemoryBarrier.size = sizeof(IndexQueue);
-    extensionMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    extensionMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    extensionMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    extensionMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    extensionMemoryBarrier.offset = 0;
-    vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &extensionMemoryBarrier, 0, nullptr);
+    for (int i = 0; i < 1; i++) {
+        // logic run
+        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipelineLayout, 0, 1, &logicPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+        
+        // pipeline barrier the buffers (NEW PATH AND MATERIAL REQUEST QUEUES)
+        VkBufferMemoryBarrier newPathMemoryBarrier{};
+        newPathMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        newPathMemoryBarrier.buffer = newPathQueue->buffer;
+        newPathMemoryBarrier.size = sizeof(IndexQueue);
+        newPathMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        newPathMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        newPathMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        newPathMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        newPathMemoryBarrier.offset = 0;
+        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &newPathMemoryBarrier, 0, nullptr);
 
-    // extension pipeline run
-    vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
-	vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
-	vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width / 8.f), ceil(renderContext->windowExtent.height / 8.f), 1);
+        VkBufferMemoryBarrier materialBufferMemoryBarrier{};
+        materialBufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        materialBufferMemoryBarrier.buffer = materialRequestQueue->buffer;
+        materialBufferMemoryBarrier.size = sizeof(IndexQueue);
+        materialBufferMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        materialBufferMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        materialBufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        materialBufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        materialBufferMemoryBarrier.offset = 0;
+        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &materialBufferMemoryBarrier, 0, nullptr);
 
-    VkBufferMemoryBarrier newPathMemoryBarrier{};
-    newPathMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    newPathMemoryBarrier.buffer = pathStateBuffer->buffer;
-    newPathMemoryBarrier.size = sizeof(PathState);
-    newPathMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    newPathMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    newPathMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    newPathMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    newPathMemoryBarrier.offset = 0;
-    vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &newPathMemoryBarrier, 0, nullptr);
+        // new path and material run
+        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
 
-    // compute pipeline run
-    vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipeline);
-	vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipelineLayout, 0, 1, &computePipeline->descriptorSet, 0, nullptr);
-	vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width / 8.f), ceil(renderContext->windowExtent.height / 8.f), 1);
+        // vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipeline);
+        // vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
+        // vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+
+        /*
+        // pipeline barrier the buffer (EXTENSION REQUEST)
+        VkBufferMemoryBarrier extensionMemoryBarrier{};
+        extensionMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        extensionMemoryBarrier.buffer = extensionRayQueue->buffer;
+        extensionMemoryBarrier.size = sizeof(IndexQueue);
+        extensionMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        extensionMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        extensionMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        extensionMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        extensionMemoryBarrier.offset = 0;
+        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &extensionMemoryBarrier, 0, nullptr);
+
+        // extension pipeline run
+        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+
+        // pipeline barrier the buffer (PATH STATE WRITES FROM EXTENSION)
+        VkBufferMemoryBarrier pathStateMemoryBarrier{};
+        pathStateMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        pathStateMemoryBarrier.buffer = pathStateBuffer->buffer;
+        pathStateMemoryBarrier.size = sizeof(PathState);
+        pathStateMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        pathStateMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        pathStateMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        pathStateMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        pathStateMemoryBarrier.offset = 0;
+        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &pathStateMemoryBarrier, 0, nullptr);
+
+        vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
+        */
+    }
 
     // pipeline barrier the image
     VkImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	imageMemoryBarrier.image = renderImages[0]->image;
-	imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-	imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0 , nullptr, 1, &imageMemoryBarrier);
-
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
+    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageMemoryBarrier.image = renderImages[0]->image;
+    imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0 , nullptr, 1, &imageMemoryBarrier);
 
     // graphics pipeline run
     vkCmdBeginRenderPass(frame.commandBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -392,24 +458,13 @@ void Renderer::render() {
 
 	VK_CHECK(vkQueuePresentKHR(renderContext->graphicsQueue, &presentInfo));
 	vkQueueWaitIdle(renderContext->graphicsQueue);
-
-    // for proper queue write testing
-    /*if (frameNumber == 0) {
+    
+    if (frameNumber == 0) {
         VmaAllocationInfo allocInfo{};
-        vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
-        IndexQueue* extensionReadback = (IndexQueue*) allocInfo.pMappedData;
-        bool indexInPool[1930176] = {false};
-        for (int i = 0; i < 1930176; i++) {
-            uint index = extensionReadback->requests[i];
-            if (indexInPool[index]) {
-                std::cout << "duplicates found: " << index << " at " << i << std::endl;
-                break;
-            } else {
-                indexInPool[index] = false;
-            }
-        }
-        std::cout << "done" << std::endl;
-    }*/
+        vmaGetAllocationInfo(materialRequestQueue->allocator, materialRequestQueue->allocation, &allocInfo);
+        IndexQueue* readback = (IndexQueue*) allocInfo.pMappedData;
+        std::cout << "after - size: " << readback->size << " pool size: " << renderContext->windowExtent.width * renderContext->windowExtent.height << std::endl;
+    }
 
     // timing
     uint64_t times[RenderContext::QUERY_SIZE * 2];

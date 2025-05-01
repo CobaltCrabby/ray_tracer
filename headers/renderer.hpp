@@ -20,8 +20,10 @@ class Renderer {
         };
 
         struct PathState {
-            glm::vec4 origin[1930176];
-            glm::vec4 direction[1930176];
+            glm::vec4 origin[1930176]; //xyz = origin, w = uv.x
+            glm::vec4 direction[1930176]; //xyz = direction, w = uv.y
+            glm::vec4 hitNormal[1930176]; //xyz = normal, w = hit distance
+            glm::vec4 throughput[1930176]; //xyz = attenuation, 
         };
 
         struct IndexQueue {
@@ -38,13 +40,16 @@ class Renderer {
         Buffer* pathStateBuffer;
         Buffer* newPathQueue;
         Buffer* extensionRayQueue;
+        Buffer* materialRequestQueue;
         Buffer* vertexBuffer;
         Buffer* triangleBuffer;
         Buffer* BVHBuffer;
 
         GraphicsPipeline* graphicsPipeline;
         ComputePipeline* computePipeline;
+        ComputePipeline* logicPipeline;
         ComputePipeline* newPathPipeline;
+        ComputePipeline* materialPipeline;
         ComputePipeline* extensionPipeline;
 
         FrameData frames[RenderContext::FRAMES_IN_FLIGHT];
