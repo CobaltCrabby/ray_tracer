@@ -1,10 +1,12 @@
 #version 450
 
+#extension GL_EXT_shader_image_load_formatted : require
+
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 const uint poolSize = 1930176;
 
-layout (binding = 0, rgba8) uniform image2D outImage;
+layout (binding = 0) uniform image2D outImage;
 
 struct Vertex {
     vec4 position; // position.w = uv.x
@@ -184,7 +186,9 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
 void main() {
     ivec2 dim = imageSize(outImage);
     uint threadIndex = gl_GlobalInvocationID.x;
-    if (threadIndex >= extensionQueue.size) return;
+    if (threadIndex >= poolSize) return; 
+    // no need to use queue size because extra work will be run on bad data but that isn't outside of the queue
+    // and doesnt decrease time bc it will run threads anyways
 
     float[2] stats;
 
@@ -193,7 +197,13 @@ void main() {
     ray.dir = pathPool.direction[index].xyz;
     ray.origin = pathPool.origin[index].xyz;
 
+    ivec2 uv = ivec2(index % dim.x, index / dim.x);
+
     HitInfo hitInfo = calculateIntersections(ray, stats);
     pathPool.direction[index].w = float(hitInfo.didHit);
     pathPool.hitNormal[index] = vec4(hitInfo.normal, hitInfo.dst);
+
+    imageStore(outImage, uv, pathPool.hitNormal[index]);
+
+    extensionQueue.size = 0;
 }

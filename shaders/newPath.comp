@@ -1,6 +1,7 @@
 #version 450
 
 #extension GL_KHR_shader_subgroup_ballot: enable
+#extension GL_EXT_shader_image_load_formatted : require
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
@@ -15,7 +16,7 @@ struct CameraInfo {
     float fov;
 };
 
-layout (binding = 0, rgba8) uniform image2D outImage;
+layout (binding = 0) uniform image2D outImage;
 
 layout (binding = 1) restrict buffer pathStatePool { 
     vec4 origin[poolSize]; // only one array can be of variable length? do i hardcode the length (probably)
@@ -42,9 +43,9 @@ void main() {
     ivec2 dim = {1728, 1117}; // hard coded for now, maybe push the dimensions to give the size
     uint threadIndex = gl_GlobalInvocationID.x;
     if (threadIndex >= pathQueue.size) return; // if too many threads dispatched
-    if (extensionQueue.size >= poolSize) return;
 
-    // generate ray; from sebastian lague, probably from unity docs
+    // generate ray
+    // Rachit Kakkar was here
     CameraInfo cam = {
         mat4(1.f),
         vec3(0.f, 0.f, -5.f),
@@ -88,8 +89,6 @@ void main() {
     // synchronize value for all subgroup threads
     uint offset = subgroupBroadcast(oldSize, 0);
     if (predicate) {
-        extensionQueue.requests[offset + threadBitCount] = poolIndex;
+        extensionQueue.requests[offset + threadBitCount - 1] = poolIndex;
     }
-
-    imageStore(outImage, ivec2(uv * dim), pathPool.direction[poolIndex]);
 }

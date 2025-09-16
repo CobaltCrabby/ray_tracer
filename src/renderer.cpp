@@ -75,8 +75,6 @@ Renderer::Renderer(RenderContext* context) {
         // std::cout << i << " " << glm::to_string(tlas.vertices[i].position) << std::endl;
     // }
 
-    std::cout << tlas.bvhNodes[1].index << tlas.bvhNodes[1].triCount << std::endl;
-
     descriptorPool = new DescriptorPool(renderContext);
     vertexBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Vertex) * tlas.vertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.vertices.data());
     triangleBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Triangle) * tlas.triangles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.triangles.data());
@@ -293,7 +291,7 @@ void Renderer::render() {
 
     if (frameNumber == 0) {
         VmaAllocationInfo allocInfo{};
-        vmaGetAllocationInfo(materialRequestQueue->allocator, materialRequestQueue->allocation, &allocInfo);
+        vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
         IndexQueue* readback = (IndexQueue*) allocInfo.pMappedData;
         std::cout << "before - size: " << readback->size << " pool size: " << renderContext->windowExtent.width * renderContext->windowExtent.height << std::endl;
     }
@@ -332,6 +330,8 @@ void Renderer::render() {
     // TODO:
     // somehow get size of path queue and material
     // somehow get size of extension queue
+    // i need to seperate the kernels into different command buffers to i can get the size after dispatch
+    // this will also make timing the individual kernels possible which is nice ig but slower overall
 
     for (int i = 0; i < 1; i++) {
         // logic run
@@ -367,11 +367,10 @@ void Renderer::render() {
         vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
 
-        // vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipeline);
-        // vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
-        // vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
 
-        /*
         // pipeline barrier the buffer (EXTENSION REQUEST)
         VkBufferMemoryBarrier extensionMemoryBarrier{};
         extensionMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -400,9 +399,8 @@ void Renderer::render() {
         pathStateMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         pathStateMemoryBarrier.offset = 0;
         vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &pathStateMemoryBarrier, 0, nullptr);
-
+        
         vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
-        */
     }
 
     // pipeline barrier the image
@@ -461,7 +459,7 @@ void Renderer::render() {
     
     if (frameNumber == 0) {
         VmaAllocationInfo allocInfo{};
-        vmaGetAllocationInfo(materialRequestQueue->allocator, materialRequestQueue->allocation, &allocInfo);
+        vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
         IndexQueue* readback = (IndexQueue*) allocInfo.pMappedData;
         std::cout << "after - size: " << readback->size << " pool size: " << renderContext->windowExtent.width * renderContext->windowExtent.height << std::endl;
     }

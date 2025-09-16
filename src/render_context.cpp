@@ -39,9 +39,13 @@ RenderContext::RenderContext() {
     SDL_Vulkan_CreateSurface(window, instance, &surface);
 
     // pick GPU
+    VkPhysicalDeviceFeatures features{};
+    features.shaderStorageImageWriteWithoutFormat = VK_TRUE;
+        
     vkb::PhysicalDeviceSelector selector{inst};
     vkb::PhysicalDevice vkbPhysicalDevice = selector.set_minimum_version(1, 1)
         .set_surface(surface)
+        .set_required_features(features)
         .select()
         .value();
 

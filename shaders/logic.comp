@@ -1,12 +1,13 @@
 #version 450
 
 #extension GL_KHR_shader_subgroup_ballot: enable
+#extension GL_EXT_shader_image_load_formatted : require
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 const uint poolSize = 1930176;
 
-layout (binding = 0, rgba8) uniform image2D outImage;
+layout (binding = 0) uniform image2D outImage;
 
 layout (binding = 1) restrict buffer pathStatePool { 
     vec4 origin[poolSize]; // only one array can be of variable length, hardcode the length unfort
@@ -20,26 +21,28 @@ layout (binding = 2) restrict buffer newPathQueue {
     uint requests[poolSize]; // each entry is the path index needed to be generated 
 } pathQueue;
 
-/*layout (binding = 3) restrict buffer materialRequestQueue {
+layout (binding = 3) restrict buffer materialRequestQueue {
     uint size; // atomic number representing the size of the queue
     uint requests[poolSize]; // each entry is the path index needed to be extended
-} materialQueue;*/
+} materialQueue;
 
 void main() {
     ivec2 dim = {1728, 1117};
     ivec2 uv = ivec2(gl_GlobalInvocationID.x % dim.x, gl_GlobalInvocationID.x / dim.x);
     uint threadIndex = gl_GlobalInvocationID.x;
-    if (threadIndex >= poolSize) return;
-    if (pathQueue.size == poolSize) return;
+    if (threadIndex >= poolSize || pathQueue.size == poolSize) return;
 
     // write requests to the path queue
-    bool predicate = length(pathPool.throughput[threadIndex].xyz) == 0.f;
+    bool predicate = true;
     uvec4 newPathBallot = subgroupBallot(predicate);
     uint oldSize = 0;
     if (subgroupElect()) {
         uint activeThreads = subgroupBallotBitCount(newPathBallot);
         oldSize = atomicAdd(pathQueue.size, activeThreads); // returns the number before the atomic add
     }
+
+    // TODO:
+    // MAKE SURE LEAST SIGNIFICANT BIT MATCHES THE DIRECTION OF THE BITSHIFT !!!
 
     // bit shift the ballot and count the number of 1 bits left, this is the index for the request
     uvec4 shifted = newPathBallot >> (127 - gl_SubgroupInvocationID);
@@ -48,7 +51,7 @@ void main() {
     // synchronize value for all subgroup threads
     uint offset = subgroupBroadcast(oldSize, 0);
     if (predicate) {
-        pathQueue.requests[offset + threadBitCount] = threadIndex; // THIS LINE CRASHES IT
+        pathQueue.requests[offset + threadBitCount - 1] = threadIndex;
     }
 
     //imageStore(outImage, uv, vec4(vec2(uv) / dim, 0.f, 1.f));

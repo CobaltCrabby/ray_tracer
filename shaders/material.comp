@@ -1,6 +1,7 @@
 #version 450
 
 #extension GL_KHR_shader_subgroup_ballot: enable
+#extension GL_EXT_shader_image_load_formatted : require
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
@@ -58,9 +59,7 @@ void main() {
     ivec2 uv = ivec2(gl_GlobalInvocationID.x % dim.x, gl_GlobalInvocationID.x / dim.x);
 
     uint threadIndex = gl_GlobalInvocationID.x;
-    if (materialQueue.size > 0) return;
-    // if (threadIndex >= materialQueue.size) return; // if too many threads dispatched
-    // if (extensionQueue.size >= poolSize) return;
+    if (threadIndex >= poolSize) return; // if too many threads dispatched
 
     uint state = threadIndex;
     uint poolIndex = materialQueue.requests[threadIndex];
@@ -83,12 +82,12 @@ void main() {
         }
     }
     // bit shift the ballot and count the number of 1 bits removed, this is the index for the request
-    uvec4 shifted = ballot << gl_SubgroupInvocationID;
-    uint threadBitCount = 128 - subgroupBallotBitCount(shifted);
+    uvec4 shifted = ballot >> (127 - gl_SubgroupInvocationID);
+    uint threadBitCount = subgroupBallotBitCount(shifted);
 
     // synchronize value for all subgroup threads
     uint offset = subgroupBroadcast(oldSize, 0);
     if (predicate) {
-        materialQueue.requests[offset + threadBitCount] = poolIndex;
+        materialQueue.requests[offset + threadBitCount - 1] = poolIndex;
     }
 }

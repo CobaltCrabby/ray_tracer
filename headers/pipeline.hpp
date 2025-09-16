@@ -5,7 +5,7 @@
 #include "render_context.hpp"
 #include "vulkan/vulkan_core.h"
 #include "descriptor_pool.hpp"
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 #include <fstream>
 

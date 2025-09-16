@@ -22,7 +22,6 @@ void GraphicsPipeline::generateScreenQuad(VkCommandPool submitPool, VkCommandBuf
 
     std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
     
-    std::cout << "yay" << std::endl;
     vertexBuffer = new Buffer(renderContext->device, submitPool, submitBuffer, submitFence, queue, allocator, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices.data());
     indexBuffer = new Buffer(renderContext->device, submitPool, submitBuffer, submitFence, queue, allocator, sizeof(uint32_t) * indices.size(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices.data());
 }

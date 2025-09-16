@@ -1,4 +1,5 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include "pipeline.hpp"
 #include "render_context.hpp"
