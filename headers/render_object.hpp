@@ -25,7 +25,7 @@ class Sphere {
         Sphere(float r, glm::vec3 p, uint m);
 };
 
-class TLAS {
+class BLAS {
     public:
         struct Vertex {
             // compacted for memory reasons
@@ -101,6 +101,6 @@ class TLAS {
         void subdivideBVH(uint index, uint depth, BVHStats& stats);
         float findBVHSplitPlane(BVHNode& node, int& axis, float& splitPos);
 
-        void buildTLAS();
-        TLAS() = default;
+        void buildBLAS();
+        BLAS() = default;
     };

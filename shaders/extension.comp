@@ -202,8 +202,10 @@ void main() {
     HitInfo hitInfo = calculateIntersections(ray, stats);
     pathPool.direction[index].w = float(hitInfo.didHit);
     pathPool.hitNormal[index] = vec4(hitInfo.normal, hitInfo.dst);
+    pathPool.throughput[index] = pathPool.hitNormal[index];
 
     imageStore(outImage, uv, pathPool.hitNormal[index]);
 
+    // not running twice ??
     extensionQueue.size = 0;
 }

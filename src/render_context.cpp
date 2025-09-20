@@ -14,7 +14,7 @@ RenderContext::RenderContext() {
     vkb::InstanceBuilder instBuilder;
     auto build = instBuilder.set_app_name("path tracer")
         .request_validation_layers(true)
-        .require_api_version(1, 1, 0)
+        .require_api_version(1, 4, 0)
         .use_default_debug_messenger()
         .enable_extension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) // need for mac
         .build();

@@ -1,0 +1,12 @@
+Current
+- seperate stages into different command buffers
+    - queue submit each one, grab the size somehow
+    - also query timestamps for timing each stage
+    - this will fix the double run not working ?
+
+Future
+- Disney BSDF
+- Resizable (will be hard bc queue size hard coded)
+- Camera System
+    - be able to save renders directly
+    - render videos (ffmpeg?)

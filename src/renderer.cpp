@@ -34,22 +34,32 @@ Renderer::Renderer(RenderContext* context) {
         poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // needed to rerecord commands
         VK_CHECK(vkCreateCommandPool(context->device, &poolCreateInfo, nullptr, &frames[i].commandPool));
 
+        VkCommandBuffer allocatedCmdBuffers[] = {frames[i].logicCmdBuffer, frames[i].newPathCmdBuffer, frames[i].materialCmdBuffer, frames[i].extensionCmdBuffer, frames[i].graphicsCmdBuffer};
         VkCommandBufferAllocateInfo bufferAllocateInfo{};
         bufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         bufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        bufferAllocateInfo.commandBufferCount = 1;
+        bufferAllocateInfo.commandBufferCount = 5;
         bufferAllocateInfo.commandPool = frames[i].commandPool;
-        VK_CHECK(vkAllocateCommandBuffers(context->device, &bufferAllocateInfo, &frames[i].commandBuffer));
+        VK_CHECK(vkAllocateCommandBuffers(context->device, &bufferAllocateInfo, allocatedCmdBuffers));
+
+        // ??? idk pointer stuff
+        frames[i].logicCmdBuffer = allocatedCmdBuffers[0];
+        frames[i].newPathCmdBuffer = allocatedCmdBuffers[1];
+        frames[i].materialCmdBuffer = allocatedCmdBuffers[2];
+        frames[i].extensionCmdBuffer = allocatedCmdBuffers[3];
+        frames[i].graphicsCmdBuffer = allocatedCmdBuffers[4];
 
         VkFenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
         VK_CHECK(vkCreateFence(renderContext->device, &fenceInfo, nullptr, &frames[i].frameReady));
+        VK_CHECK(vkCreateFence(renderContext->device, &fenceInfo, nullptr, &frames[i].computeReady));
 
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         VK_CHECK(vkCreateSemaphore(renderContext->device, &semaphoreInfo, nullptr, &frames[i].renderFinish));
         VK_CHECK(vkCreateSemaphore(renderContext->device, &semaphoreInfo, nullptr, &frames[i].swapImageAvailable));
+        VK_CHECK(vkCreateSemaphore(renderContext->device, &semaphoreInfo, nullptr, &frames[i].computeFinish));
     }
 
     // create renderpass and framebuffers
@@ -67,18 +77,18 @@ Renderer::Renderer(RenderContext* context) {
     submitInfo.queue = renderContext->graphicsQueue;
     submitInfo.allocator = renderContext->allocator;
 
-    // make read_obj part of TLAS so you can directly write to tri buffer
-    TLAS tlas;
-    tlas.readObj("assets/rb_low.obj");
+    // make read_obj part of BLAS so you can directly write to tri buffer
+    BLAS blas;
+    blas.readObj("assets/klein_bottle.obj");
 
-    // for (int i = 0; i < tlas.vertices.size(); i++) {
-        // std::cout << i << " " << glm::to_string(tlas.vertices[i].position) << std::endl;
+    // for (int i = 0; i < BLAS.vertices.size(); i++) {
+        // std::cout << i << " " << glm::to_string(BLAS.vertices[i].position) << std::endl;
     // }
 
     descriptorPool = new DescriptorPool(renderContext);
-    vertexBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Vertex) * tlas.vertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.vertices.data());
-    triangleBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::Triangle) * tlas.triangles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.triangles.data());
-    BVHBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(TLAS::BVHNode) * tlas.bvhNodes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) tlas.bvhNodes.data());
+    vertexBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(BLAS::Vertex) * blas.vertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) blas.vertices.data());
+    triangleBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(BLAS::Triangle) * blas.triangles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) blas.triangles.data());
+    BVHBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(BLAS::BVHNode) * blas.bvhNodes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) blas.bvhNodes.data());
     pathStateBuffer = new Buffer(renderContext->allocator, sizeof(PathState), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     newPathQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     extensionRayQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -126,17 +136,17 @@ Renderer::Renderer(RenderContext* context) {
     VkDescriptorBufferInfo vertexBufferInfo{};
     vertexBufferInfo.buffer = vertexBuffer->buffer;
     vertexBufferInfo.offset = 0;
-    vertexBufferInfo.range = sizeof(TLAS::Vertex) * tlas.vertices.size();
+    vertexBufferInfo.range = sizeof(BLAS::Vertex) * blas.vertices.size();
 
     VkDescriptorBufferInfo triangleBufferInfo{};
     triangleBufferInfo.buffer = triangleBuffer->buffer;
     triangleBufferInfo.offset = 0;
-    triangleBufferInfo.range = sizeof(TLAS::Triangle) * tlas.triangles.size();
+    triangleBufferInfo.range = sizeof(BLAS::Triangle) * blas.triangles.size();
 
     VkDescriptorBufferInfo BVHBufferInfo{};
     BVHBufferInfo.buffer = BVHBuffer->buffer;
     BVHBufferInfo.offset = 0;
-    BVHBufferInfo.range = sizeof(TLAS::BVHNode) * tlas.bvhNodes.size();
+    BVHBufferInfo.range = sizeof(BLAS::BVHNode) * blas.bvhNodes.size();
 
     VkWriteDescriptorSet graphicsTextureWrite{};
     graphicsTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -258,9 +268,11 @@ Renderer::~Renderer() {
 
     for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         vkDestroyCommandPool(renderContext->device, frames[i].commandPool, nullptr);
+        vkDestroyFence(renderContext->device, frames[i].computeReady, nullptr);
         vkDestroyFence(renderContext->device, frames[i].frameReady, nullptr);
         vkDestroySemaphore(renderContext->device, frames[i].swapImageAvailable, nullptr);
         vkDestroySemaphore(renderContext->device, frames[i].renderFinish, nullptr);
+        vkDestroySemaphore(renderContext->device, frames[i].computeFinish, nullptr);
         delete framebuffers[i];
         delete renderImages[i];
     }
@@ -302,30 +314,12 @@ void Renderer::render() {
     uint32_t swapchainIndex;
 	vkAcquireNextImageKHR(renderContext->device, renderContext->swapchain, 1000000000, frame.swapImageAvailable, nullptr, &swapchainIndex);
     
-    // graphics
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0;
-    beginInfo.pInheritanceInfo = nullptr;
+    // COMPUTE
+    VkCommandBufferBeginInfo computeBeginInfo{};
+    computeBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    computeBeginInfo.flags = 0;
+    computeBeginInfo.pInheritanceInfo = nullptr;
 
-    VkClearColorValue clearColor = {0.f, 1.f, 0.f};
-	VkClearValue clearValue;
-	clearValue.color = clearColor;
-
-	VkRenderPassBeginInfo rpBeginInfo = {};
-	rpBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	rpBeginInfo.clearValueCount = 1;
-	rpBeginInfo.pClearValues = &clearValue;
-    rpBeginInfo.framebuffer = framebuffers[frameNumber % RenderContext::FRAMES_IN_FLIGHT]->framebuffer;
-	rpBeginInfo.renderPass = renderPass->renderPass;
-	rpBeginInfo.renderArea.offset = {0, 0};
-	rpBeginInfo.renderArea.extent = renderContext->windowExtent;
-
-    VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo));
-
-    // reset timestamps
-    vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
 
     // TODO:
     // somehow get size of path queue and material
@@ -333,35 +327,33 @@ void Renderer::render() {
     // i need to seperate the kernels into different command buffers to i can get the size after dispatch
     // this will also make timing the individual kernels possible which is nice ig but slower overall
 
-    for (int i = 0; i < 1; i++) {
-        // logic run
-        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipeline);
-        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipelineLayout, 0, 1, &logicPipeline->descriptorSet, 0, nullptr);
-        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+    // max bounces
+    for (int i = 0; i < 1; i++) {    
+        // logic
+        VK_CHECK(vkBeginCommandBuffer(frame.logicCmdBuffer, &computeBeginInfo));
         
-        // pipeline barrier the buffers (NEW PATH AND MATERIAL REQUEST QUEUES)
-        VkBufferMemoryBarrier newPathMemoryBarrier{};
-        newPathMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        newPathMemoryBarrier.buffer = newPathQueue->buffer;
-        newPathMemoryBarrier.size = sizeof(IndexQueue);
-        newPathMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        newPathMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        newPathMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        newPathMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        newPathMemoryBarrier.offset = 0;
-        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &newPathMemoryBarrier, 0, nullptr);
+        vkCmdBindPipeline(frame.logicCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.logicCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipelineLayout, 0, 1, &logicPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.logicCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+        
+        vkEndCommandBuffer(frame.logicCmdBuffer);
 
-        VkBufferMemoryBarrier materialBufferMemoryBarrier{};
-        materialBufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        materialBufferMemoryBarrier.buffer = materialRequestQueue->buffer;
-        materialBufferMemoryBarrier.size = sizeof(IndexQueue);
-        materialBufferMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        materialBufferMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        materialBufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        materialBufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        materialBufferMemoryBarrier.offset = 0;
-        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &materialBufferMemoryBarrier, 0, nullptr);
+        VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT};
+        VkSubmitInfo logicSubmitInfo{};
+        logicSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        logicSubmitInfo.commandBufferCount = 1;
+        logicSubmitInfo.pCommandBuffers = &frame.logicCmdBuffer;
+        logicSubmitInfo.waitSemaphoreCount = i == 0 ? 0 : 1;
+        logicSubmitInfo.pWaitSemaphores = i == 0 ? nullptr : &frame.swapImageAvailable;
+        logicSubmitInfo.signalSemaphoreCount = 1;
+        logicSubmitInfo.pSignalSemaphores = &frame.computeFinish;
+        logicSubmitInfo.pWaitDstStageMask = waitStage;
+        
+        VK_CHECK(vkQueueSubmit(renderContext->graphicsQueue, 1, &logicSubmitInfo, frame.frameReady));
+        VK_CHECK(vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 999999999));
+        VK_CHECK(vkResetFences(renderContext->device, 1, &frame.frameReady));
 
+        /*
         // new path and material run
         vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
@@ -387,7 +379,7 @@ void Renderer::render() {
         vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
-
+        
         // pipeline barrier the buffer (PATH STATE WRITES FROM EXTENSION)
         VkBufferMemoryBarrier pathStateMemoryBarrier{};
         pathStateMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -400,47 +392,57 @@ void Renderer::render() {
         pathStateMemoryBarrier.offset = 0;
         vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &pathStateMemoryBarrier, 0, nullptr);
         
-        vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
+        // REMOVE LATER
+        vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
+        */
     }
 
-    // pipeline barrier the image
-    VkImageMemoryBarrier imageMemoryBarrier{};
-    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    imageMemoryBarrier.image = renderImages[0]->image;
-    imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0 , nullptr, 1, &imageMemoryBarrier);
+    // GRAPHICS
+    VkCommandBufferBeginInfo graphicsBeginInfo{};
+    graphicsBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    graphicsBeginInfo.flags = 0;
+    graphicsBeginInfo.pInheritanceInfo = nullptr;
+
+    VkClearColorValue clearColor = {0.f, 1.f, 0.f};
+	VkClearValue clearValue;
+	clearValue.color = clearColor;
+
+	VkRenderPassBeginInfo rpBeginInfo = {};
+	rpBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	rpBeginInfo.clearValueCount = 1;
+	rpBeginInfo.pClearValues = &clearValue;
+    rpBeginInfo.framebuffer = framebuffers[frameNumber % RenderContext::FRAMES_IN_FLIGHT]->framebuffer;
+	rpBeginInfo.renderPass = renderPass->renderPass;
+	rpBeginInfo.renderArea.offset = {0, 0};
+	rpBeginInfo.renderArea.extent = renderContext->windowExtent;
+
+    VK_CHECK(vkBeginCommandBuffer(frame.graphicsCmdBuffer, &graphicsBeginInfo));
 
     // graphics pipeline run
-    vkCmdBeginRenderPass(frame.commandBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(frame.graphicsCmdBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     VkDeviceSize offset = 0;
-	vkCmdBindVertexBuffers(frame.commandBuffer, 0, 1, &graphicsPipeline->vertexBuffer->buffer, &offset);
-	vkCmdBindIndexBuffer(frame.commandBuffer, graphicsPipeline->indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindVertexBuffers(frame.graphicsCmdBuffer, 0, 1, &graphicsPipeline->vertexBuffer->buffer, &offset);
+	vkCmdBindIndexBuffer(frame.graphicsCmdBuffer, graphicsPipeline->indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->pipelineLayout, 0, 1, &graphicsPipeline->descriptorSet, 0, nullptr);
-    vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->pipeline);
-    vkCmdDrawIndexed(frame.commandBuffer, 6, 1, 0, 0, 0);
+    vkCmdBindDescriptorSets(frame.graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->pipelineLayout, 0, 1, &graphicsPipeline->descriptorSet, 0, nullptr);
+    vkCmdBindPipeline(frame.graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->pipeline);
+    vkCmdDrawIndexed(frame.graphicsCmdBuffer, 6, 1, 0, 0, 0);
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.commandBuffer);
-    vkCmdEndRenderPass(frame.commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.graphicsCmdBuffer);
+    vkCmdEndRenderPass(frame.graphicsCmdBuffer);
 
-    vkCmdWriteTimestamp(frame.commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, renderContext->queryPool, 2);
-	vkEndCommandBuffer(frame.commandBuffer);
+	vkEndCommandBuffer(frame.graphicsCmdBuffer);
 
     // submit and present to queue
-	VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkPipelineStageFlags waitStageMasks[] = {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+	VkSemaphore graphicsSemaphores[] = {frame.swapImageAvailable, frame.computeFinish};
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &frame.commandBuffer;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &frame.swapImageAvailable;
+    submitInfo.pCommandBuffers = &frame.graphicsCmdBuffer;
+    submitInfo.waitSemaphoreCount = 2;
+    submitInfo.pWaitSemaphores = graphicsSemaphores;
     submitInfo.pWaitDstStageMask = waitStageMasks;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &frame.renderFinish;
@@ -457,6 +459,10 @@ void Renderer::render() {
 	VK_CHECK(vkQueuePresentKHR(renderContext->graphicsQueue, &presentInfo));
 	vkQueueWaitIdle(renderContext->graphicsQueue);
     
+    // THIS IS HOW YOU GET READBACK, is there a way to only get the size and not the indices which would slow down readback ?
+    // use subregions to copy into a seperate buffer ?
+    // also combine all buffers into one memory allocation and use offsets for more optimal reads ?
+    // can do in one copy command using multiple VkBufferCopy structs, but needs to be in one buffer !
     if (frameNumber == 0) {
         VmaAllocationInfo allocInfo{};
         vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
@@ -465,7 +471,7 @@ void Renderer::render() {
     }
 
     // timing
-    uint64_t times[RenderContext::QUERY_SIZE * 2];
+    /*uint64_t times[RenderContext::QUERY_SIZE * 2];
     vkGetQueryPoolResults(
         renderContext->device, 
         renderContext->queryPool, 
@@ -479,6 +485,7 @@ void Renderer::render() {
 
     renderStats.computeTime = float(times[2] - times[0]) / 1000000.0f;
     renderStats.totalTime = float(times[4] - times[0]) / 1000000.0f;
+    */
     /// rACHIT WAs HERE
     frameNumber++;
 }

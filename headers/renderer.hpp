@@ -15,9 +15,14 @@ class Renderer {
     public:
         struct FrameData {
             VkCommandPool commandPool;
-            VkCommandBuffer commandBuffer;
+            VkCommandBuffer graphicsCmdBuffer;
+            VkCommandBuffer logicCmdBuffer;
+            VkCommandBuffer newPathCmdBuffer;
+            VkCommandBuffer materialCmdBuffer;
+            VkCommandBuffer extensionCmdBuffer;
+            VkFence computeReady;
             VkFence frameReady;
-            VkSemaphore swapImageAvailable, renderFinish;
+            VkSemaphore swapImageAvailable, renderFinish, computeFinish;
         };
 
         struct PathState {

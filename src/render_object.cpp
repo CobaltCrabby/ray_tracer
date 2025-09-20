@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
-void TLAS::readObj(const char* filePath) {
+void BLAS::readObj(const char* filePath) {
     std::ifstream fileStream;
     fileStream.open(filePath);
     if (!fileStream.is_open()) {
@@ -61,28 +61,31 @@ void TLAS::readObj(const char* filePath) {
 				int secondSlash = vertex.find('/', firstSlash + 1);
 
 				std::string vIndexStr = vertex.substr(0, firstSlash);
+				glm::vec3 pos;
                 uint vertexInd = 0;
 				if (!vIndexStr.empty()) {
 					vertexInd = stoi(vIndexStr) - 1;
+					pos = positions[vertexInd];
 				}
 
 				std::string uvIndexStr = vertex.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+				glm::vec2 uv;
                 uint textureInd = 0;
 				if (!uvIndexStr.empty()) {
 					textureInd = stoi(uvIndexStr) - 1;
+					uv = uvs[textureInd];
 				}
 
 				std::string nIndexStr = vertex.substr(secondSlash + 1, vertex.size() - secondSlash - 1);
+				glm::vec3 normal;
                 uint normalInd = 0;
 				if (!nIndexStr.empty()) {
 					normalInd = stoi(nIndexStr) - 1;
+					normal = normals[normalInd];
 				}
                 
                 pointIndex[i] = vertices.size();
 
-                glm::vec3 pos = positions[vertexInd];
-                glm::vec2 uv = uvs[textureInd];
-                glm::vec3 normal = normals[normalInd];
                 centroid += pos;
                 vertices.push_back({glm::vec4(pos, uv.x), glm::vec4(normal, uv.y)});
 
@@ -96,7 +99,7 @@ void TLAS::readObj(const char* filePath) {
     buildBVH(start);
 }
 
-void TLAS::updateBVHBounds(uint index) {
+void BLAS::updateBVHBounds(uint index) {
 	BVHNode& node = bvhNodes[index];
 	BoundingBox box;
 
@@ -112,7 +115,7 @@ void TLAS::updateBVHBounds(uint index) {
 	node.boundsZ = glm::vec2(box.bounds[0].z, box.bounds[1].z);
 }
 
-void TLAS::buildBVH(uint start) {
+void BLAS::buildBVH(uint start) {
 	auto begin = std::chrono::system_clock::now();
     uint size = triangles.size() - start;
 
@@ -140,7 +143,7 @@ void TLAS::buildBVH(uint start) {
 	std::cout << "Max Tris: " << stats.maxTri << std::endl;
 }
 
-void TLAS::subdivideBVH(uint index, uint depth, BVHStats& stats) {
+void BLAS::subdivideBVH(uint index, uint depth, BVHStats& stats) {
 	BVHNode& node = bvhNodes[index];
 	
 	if (node.triCount <= 2 || depth >= 64) {
@@ -209,7 +212,7 @@ void TLAS::subdivideBVH(uint index, uint depth, BVHStats& stats) {
 	subdivideBVH(node.index + 1, depth + 1, stats);
 }
 
-float TLAS::findBVHSplitPlane(BVHNode& node, int& axis, float& splitPos) {
+float BLAS::findBVHSplitPlane(BVHNode& node, int& axis, float& splitPos) {
 	float bestCost = 1e30f;
 	for (int a = 0; a < 3; a++) {
 		float min = 1e30f;
@@ -221,7 +224,7 @@ float TLAS::findBVHSplitPlane(BVHNode& node, int& axis, float& splitPos) {
 
 		if (min == max) continue;
 
-		//populate bins
+		// populate bins
 		BVHBin bins[BINS];
 		float scale = BINS / (max - min);
 		for (int i = 0; i < node.triCount; i++) {

@@ -33,7 +33,7 @@ void main() {
     if (threadIndex >= poolSize || pathQueue.size == poolSize) return;
 
     // write requests to the path queue
-    bool predicate = true;
+    bool predicate = pathPool.throughput[threadIndex].xyz == vec3(0.f);
     uvec4 newPathBallot = subgroupBallot(predicate);
     uint oldSize = 0;
     if (subgroupElect()) {
@@ -54,5 +54,5 @@ void main() {
         pathQueue.requests[offset + threadBitCount - 1] = threadIndex;
     }
 
-    //imageStore(outImage, uv, vec4(vec2(uv) / dim, 0.f, 1.f));
+    imageStore(outImage, uv, vec4(1.f));
 }
