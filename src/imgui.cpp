@@ -11,8 +11,12 @@ void ImGuiContext::displayImGui(ImGuiStats* stats) {
 
 	if (ImGui::CollapsingHeader("Timings")) {
 		ImGui::Indent(16.f);
-		ImGui::Text("compute dispatches: %.3fms", stats->computeTime);
-		ImGui::Text("total: %.1ffps", 1.f / (stats->totalTime / 1000.f));
+		ImGui::Text("logic stage: %.3fms", stats->logicTime);
+		ImGui::Text("new path and material stages: %.3fms", stats->materialNewPathTime);
+		ImGui::Text("extension stage: %.3fms", stats->extensionTime);
+		ImGui::Text("graphics pipeline: %.3fms", stats->graphicsTime);
+		ImGui::Text("total: %.3fms", stats->totalTime);
+		ImGui::Text("total fps: %.1ffps", 1.f / (stats->totalTime / 1000.f));
 		ImGui::Unindent(16.f);
 	}
 

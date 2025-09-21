@@ -59,7 +59,7 @@ void main() {
     ivec2 uv = ivec2(gl_GlobalInvocationID.x % dim.x, gl_GlobalInvocationID.x / dim.x);
 
     uint threadIndex = gl_GlobalInvocationID.x;
-    if (threadIndex >= poolSize) return; // if too many threads dispatched
+    if (threadIndex >= materialQueue.size) return; // if too many threads dispatched
 
     uint state = threadIndex;
     uint poolIndex = materialQueue.requests[threadIndex];

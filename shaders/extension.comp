@@ -204,7 +204,7 @@ void main() {
     pathPool.hitNormal[index] = vec4(hitInfo.normal, hitInfo.dst);
     pathPool.throughput[index] = pathPool.hitNormal[index];
 
-    imageStore(outImage, uv, pathPool.hitNormal[index]);
+   //imageStore(outImage, uv, pathPool.hitNormal[index]);
 
     // not running twice ??
     extensionQueue.size = 0;

@@ -17,8 +17,7 @@ class Renderer {
             VkCommandPool commandPool;
             VkCommandBuffer graphicsCmdBuffer;
             VkCommandBuffer logicCmdBuffer;
-            VkCommandBuffer newPathCmdBuffer;
-            VkCommandBuffer materialCmdBuffer;
+            VkCommandBuffer materialNewPathCmdBuffer;
             VkCommandBuffer extensionCmdBuffer;
             VkFence computeReady;
             VkFence frameReady;

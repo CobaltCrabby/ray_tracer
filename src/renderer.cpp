@@ -34,20 +34,19 @@ Renderer::Renderer(RenderContext* context) {
         poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // needed to rerecord commands
         VK_CHECK(vkCreateCommandPool(context->device, &poolCreateInfo, nullptr, &frames[i].commandPool));
 
-        VkCommandBuffer allocatedCmdBuffers[] = {frames[i].logicCmdBuffer, frames[i].newPathCmdBuffer, frames[i].materialCmdBuffer, frames[i].extensionCmdBuffer, frames[i].graphicsCmdBuffer};
+        VkCommandBuffer allocatedCmdBuffers[] = {frames[i].logicCmdBuffer, frames[i].materialNewPathCmdBuffer, frames[i].extensionCmdBuffer, frames[i].graphicsCmdBuffer};
         VkCommandBufferAllocateInfo bufferAllocateInfo{};
         bufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         bufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        bufferAllocateInfo.commandBufferCount = 5;
+        bufferAllocateInfo.commandBufferCount = 4;
         bufferAllocateInfo.commandPool = frames[i].commandPool;
         VK_CHECK(vkAllocateCommandBuffers(context->device, &bufferAllocateInfo, allocatedCmdBuffers));
 
         // ??? idk pointer stuff
         frames[i].logicCmdBuffer = allocatedCmdBuffers[0];
-        frames[i].newPathCmdBuffer = allocatedCmdBuffers[1];
-        frames[i].materialCmdBuffer = allocatedCmdBuffers[2];
-        frames[i].extensionCmdBuffer = allocatedCmdBuffers[3];
-        frames[i].graphicsCmdBuffer = allocatedCmdBuffers[4];
+        frames[i].materialNewPathCmdBuffer = allocatedCmdBuffers[1];
+        frames[i].extensionCmdBuffer = allocatedCmdBuffers[2];
+        frames[i].graphicsCmdBuffer = allocatedCmdBuffers[3];
 
         VkFenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -331,11 +330,15 @@ void Renderer::render() {
     for (int i = 0; i < 1; i++) {    
         // logic
         VK_CHECK(vkBeginCommandBuffer(frame.logicCmdBuffer, &computeBeginInfo));
+
+        vkCmdResetQueryPool(frame.logicCmdBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
+        vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
         
         vkCmdBindPipeline(frame.logicCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.logicCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipelineLayout, 0, 1, &logicPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.logicCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
         
+        vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
         vkEndCommandBuffer(frame.logicCmdBuffer);
 
         VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT};
@@ -344,7 +347,7 @@ void Renderer::render() {
         logicSubmitInfo.commandBufferCount = 1;
         logicSubmitInfo.pCommandBuffers = &frame.logicCmdBuffer;
         logicSubmitInfo.waitSemaphoreCount = i == 0 ? 0 : 1;
-        logicSubmitInfo.pWaitSemaphores = i == 0 ? nullptr : &frame.swapImageAvailable;
+        logicSubmitInfo.pWaitSemaphores = i == 0 ? nullptr : &frame.computeFinish;
         logicSubmitInfo.signalSemaphoreCount = 1;
         logicSubmitInfo.pSignalSemaphores = &frame.computeFinish;
         logicSubmitInfo.pWaitDstStageMask = waitStage;
@@ -353,48 +356,61 @@ void Renderer::render() {
         VK_CHECK(vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 999999999));
         VK_CHECK(vkResetFences(renderContext->device, 1, &frame.frameReady));
 
-        /*
-        // new path and material run
-        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
-        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
-        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
-
-        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipeline);
-        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
-        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
-
-        // pipeline barrier the buffer (EXTENSION REQUEST)
-        VkBufferMemoryBarrier extensionMemoryBarrier{};
-        extensionMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        extensionMemoryBarrier.buffer = extensionRayQueue->buffer;
-        extensionMemoryBarrier.size = sizeof(IndexQueue);
-        extensionMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        extensionMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        extensionMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        extensionMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        extensionMemoryBarrier.offset = 0;
-        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &extensionMemoryBarrier, 0, nullptr);
-
-        // extension pipeline run
-        vkCmdBindPipeline(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
-        vkCmdBindDescriptorSets(frame.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
-        vkCmdDispatch(frame.commandBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+        // new path and material
+        VK_CHECK(vkBeginCommandBuffer(frame.materialNewPathCmdBuffer, &computeBeginInfo));
         
-        // pipeline barrier the buffer (PATH STATE WRITES FROM EXTENSION)
-        VkBufferMemoryBarrier pathStateMemoryBarrier{};
-        pathStateMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        pathStateMemoryBarrier.buffer = pathStateBuffer->buffer;
-        pathStateMemoryBarrier.size = sizeof(PathState);
-        pathStateMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        pathStateMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        pathStateMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        pathStateMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        pathStateMemoryBarrier.offset = 0;
-        vkCmdPipelineBarrier(frame.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &pathStateMemoryBarrier, 0, nullptr);
+        vkCmdWriteTimestamp(frame.materialNewPathCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 2);
+
+        vkCmdBindPipeline(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.materialNewPathCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+
+        vkCmdBindPipeline(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.materialNewPathCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+
+        vkCmdWriteTimestamp(frame.materialNewPathCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 3);
+        vkEndCommandBuffer(frame.materialNewPathCmdBuffer);
+
+        VkSubmitInfo materialNewPathSubmitInfo{};
+        materialNewPathSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        materialNewPathSubmitInfo.commandBufferCount = 1;
+        materialNewPathSubmitInfo.pCommandBuffers = &frame.materialNewPathCmdBuffer;
+        materialNewPathSubmitInfo.waitSemaphoreCount = 1;
+        materialNewPathSubmitInfo.pWaitSemaphores = &frame.computeFinish;
+        materialNewPathSubmitInfo.signalSemaphoreCount = 1;
+        materialNewPathSubmitInfo.pSignalSemaphores = &frame.computeFinish;
+        materialNewPathSubmitInfo.pWaitDstStageMask = waitStage;
+
+        VK_CHECK(vkQueueSubmit(renderContext->graphicsQueue, 1, &materialNewPathSubmitInfo, frame.frameReady));
+        VK_CHECK(vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 999999999));
+        VK_CHECK(vkResetFences(renderContext->device, 1, &frame.frameReady));
+
+        // extension
+        VK_CHECK(vkBeginCommandBuffer(frame.extensionCmdBuffer, &computeBeginInfo));
+
+        vkCmdWriteTimestamp(frame.extensionCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 4);
+       
+        vkCmdBindPipeline(frame.extensionCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
+        vkCmdBindDescriptorSets(frame.extensionCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
+        vkCmdDispatch(frame.extensionCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
+
+        vkCmdWriteTimestamp(frame.extensionCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 5);
+        vkEndCommandBuffer(frame.extensionCmdBuffer);
+
+        VkSubmitInfo extensionSubmitInfo{};
+        extensionSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        extensionSubmitInfo.commandBufferCount = 1;
+        extensionSubmitInfo.pCommandBuffers = &frame.extensionCmdBuffer;
+        extensionSubmitInfo.waitSemaphoreCount = 1;
+        extensionSubmitInfo.pWaitSemaphores = &frame.computeFinish;
+        extensionSubmitInfo.signalSemaphoreCount = 1;
+        extensionSubmitInfo.pSignalSemaphores = &frame.computeFinish;
+        extensionSubmitInfo.pWaitDstStageMask = waitStage;
         
-        // REMOVE LATER
-        vkCmdResetQueryPool(frame.commandBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
-        */
+        VK_CHECK(vkQueueSubmit(renderContext->graphicsQueue, 1, &extensionSubmitInfo, frame.frameReady));
+        VK_CHECK(vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 999999999));
+        VK_CHECK(vkResetFences(renderContext->device, 1, &frame.frameReady));
     }
 
     // GRAPHICS
@@ -418,7 +434,7 @@ void Renderer::render() {
 
     VK_CHECK(vkBeginCommandBuffer(frame.graphicsCmdBuffer, &graphicsBeginInfo));
 
-    // graphics pipeline run
+    vkCmdWriteTimestamp(frame.graphicsCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 6);
     vkCmdBeginRenderPass(frame.graphicsCmdBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     VkDeviceSize offset = 0;
@@ -432,6 +448,7 @@ void Renderer::render() {
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.graphicsCmdBuffer);
     vkCmdEndRenderPass(frame.graphicsCmdBuffer);
 
+    vkCmdWriteTimestamp(frame.graphicsCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, renderContext->queryPool, 7);
 	vkEndCommandBuffer(frame.graphicsCmdBuffer);
 
     // submit and present to queue
@@ -471,7 +488,7 @@ void Renderer::render() {
     }
 
     // timing
-    /*uint64_t times[RenderContext::QUERY_SIZE * 2];
+    uint64_t times[RenderContext::QUERY_SIZE * 2];
     vkGetQueryPoolResults(
         renderContext->device, 
         renderContext->queryPool, 
@@ -483,9 +500,12 @@ void Renderer::render() {
         VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
     );
 
-    renderStats.computeTime = float(times[2] - times[0]) / 1000000.0f;
-    renderStats.totalTime = float(times[4] - times[0]) / 1000000.0f;
-    */
+    renderStats.logicTime = float(times[2] - times[0]) / 1000000.0f;
+    renderStats.materialNewPathTime = float(times[6] - times[4]) / 1000000.0f;
+    renderStats.extensionTime = float(times[10] - times[8]) / 1000000.0f;
+    renderStats.graphicsTime = float(times[14] - times[12]) / 1000000.0f;
+    renderStats.totalTime = float(times[14] - times[0]) / 1000000.0f;
+
     /// rACHIT WAs HERE
     frameNumber++;
 }

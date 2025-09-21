@@ -54,5 +54,5 @@ void main() {
         pathQueue.requests[offset + threadBitCount - 1] = threadIndex;
     }
 
-    imageStore(outImage, uv, vec4(1.f));
+    imageStore(outImage, uv, vec4(pathPool.throughput[threadIndex].xyz, 1.f));
 }

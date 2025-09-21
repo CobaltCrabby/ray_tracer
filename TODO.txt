@@ -1,8 +1,11 @@
 Current
-- seperate stages into different command buffers
+- seperate stages into different command buffers (DONE)
     - queue submit each one, grab the size somehow
-    - also query timestamps for timing each stage
-    - this will fix the double run not working ?
+    - also query timestamps for timing each stage (DONE)
+    - this will fix the double run not working ? (DONE)
+- redo buffers so theyre all in one allocation
+    - probably can seperate model data and wavefront queues 
+    into different allocations ?
 
 Future
 - Disney BSDF
