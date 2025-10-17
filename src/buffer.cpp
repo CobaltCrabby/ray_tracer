@@ -86,7 +86,61 @@ Buffer::Buffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBu
 	vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
 }
 
+void Buffer::copyBuffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBuffer, VkFence* fence, VkQueue queue, VmaAllocator alloc, size_t blockSize, size_t subBufferSize, VkBufferUsageFlags flags, void* bufferData, uint offset) {
+	VkBufferCreateInfo stagingInfo{};
+	stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	stagingInfo.size = subBufferSize;
+	stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VmaAllocationCreateInfo vmaAllocInfo{};
+	vmaAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+
+	// create staging buffer
+	VkBuffer stagingBuffer;
+	VmaAllocation stagingAllocation;
+	allocator = alloc;
+
+	VK_CHECK(vmaCreateBuffer(allocator, &stagingInfo, &vmaAllocInfo, &stagingBuffer, &stagingAllocation, nullptr));
+
+	// copy data to staging buffer
+	void* data;
+	vmaMapMemory(allocator, stagingAllocation, &data);
+	memcpy(data, bufferData, subBufferSize);
+	vmaUnmapMemory(allocator, stagingAllocation);
+
+	// copy buffer
+    VkCommandBuffer cmd = cmdBuffer;
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	VK_CHECK(vkBeginCommandBuffer(cmd, &beginInfo));
+
+	VkBufferCopy copy;
+	copy.size = blockSize;
+	copy.srcOffset = 0;
+	copy.dstOffset = offset;
+	vkCmdCopyBuffer(cmd, stagingBuffer, buffer, 1, &copy);
+	VK_CHECK(vkEndCommandBuffer(cmd));
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 0;
+	submitInfo.pWaitSemaphores = nullptr;
+	submitInfo.pWaitDstStageMask = nullptr;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmd;
+	submitInfo.signalSemaphoreCount = 0;
+	submitInfo.pSignalSemaphores = nullptr;
+
+	VK_CHECK(vkQueueSubmit(queue, 1, &submitInfo, *fence));
+	vkWaitForFences(device, 1, fence, VK_TRUE, 9999999999);
+	vkResetFences(device, 1, fence);
+
+	vkResetCommandPool(device, commandPool, 0);
+	vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+}
+
 Buffer::~Buffer() {
-	// seg faulting here, changed when i made the pipelines pointers, check memory adresses	
 	vmaDestroyBuffer(allocator, buffer, allocation);
 }

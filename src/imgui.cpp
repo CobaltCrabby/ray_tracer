@@ -11,12 +11,14 @@ void ImGuiContext::displayImGui(ImGuiStats* stats) {
 
 	if (ImGui::CollapsingHeader("Timings")) {
 		ImGui::Indent(16.f);
+		ImGui::TextColored(ImVec4(50.f/255.f, 68.f/255.f, 168.f/255.f, 1.f), "----COMPUTE PASSES----");
 		ImGui::Text("logic stage: %.3fms", stats->logicTime);
 		ImGui::Text("new path and material stages: %.3fms", stats->materialNewPathTime);
 		ImGui::Text("extension stage: %.3fms", stats->extensionTime);
 		ImGui::Text("graphics pipeline: %.3fms", stats->graphicsTime);
-		ImGui::Text("total: %.3fms", stats->totalTime);
-		ImGui::Text("total fps: %.1ffps", 1.f / (stats->totalTime / 1000.f));
+
+		ImGui::TextColored(ImVec4(120.f/255.f, 14.f/255.f, 34.f/255.f, 1.f), "----TOTAL (INCLUDING LOOP)----");
+		ImGui::Text("%.3fms / %.1ffps", stats->totalTime, 1.f / (stats->totalTime / 1000.f));
 		ImGui::Unindent(16.f);
 	}
 

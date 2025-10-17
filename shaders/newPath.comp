@@ -83,7 +83,7 @@ void main() {
     }
 
     // bit shift the ballot and count the number of 1 bits left, this is the index for the request
-    uvec4 shifted = ballot >> (127 - gl_SubgroupInvocationID);
+    uvec4 shifted = ballot << (127 - gl_SubgroupInvocationID);
     uint threadBitCount =  subgroupBallotBitCount(shifted);
 
     // synchronize value for all subgroup threads

@@ -8,6 +8,7 @@
 #include "descriptor_pool.hpp"
 #include "imgui.hpp"
 #include "render_object.hpp"
+#include "buffer_block.hpp"
 #include <vulkan/vulkan_core.h>
 #include <glm/glm.hpp>
 
@@ -42,13 +43,16 @@ class Renderer {
         ImGuiContext* imguiContext;
         Image* renderImages[RenderContext::RenderContext::FRAMES_IN_FLIGHT];
 
-        Buffer* pathStateBuffer;
-        Buffer* newPathQueue;
-        Buffer* extensionRayQueue;
-        Buffer* materialRequestQueue;
-        Buffer* vertexBuffer;
-        Buffer* triangleBuffer;
-        Buffer* BVHBuffer;
+        BufferBlock* wavefrontBlock;
+        BufferBlock::SubBuffer pathStateBuffer;
+        BufferBlock::SubBuffer newPathQueue;
+        BufferBlock::SubBuffer extensionRayQueue;
+        BufferBlock::SubBuffer materialRequestQueue;
+        
+        BufferBlock* geometryBlock;
+        BufferBlock::SubBuffer vertexBuffer;
+        BufferBlock::SubBuffer triangleBuffer;
+        BufferBlock::SubBuffer bvhBuffer;
 
         GraphicsPipeline* graphicsPipeline;
         ComputePipeline* computePipeline;

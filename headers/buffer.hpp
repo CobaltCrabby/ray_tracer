@@ -15,5 +15,6 @@ class Buffer {
         Buffer() = default;
         Buffer(VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags);
         Buffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBuffer, VkFence* fence, VkQueue queue, VmaAllocator alloc, size_t bufferSize, VkBufferUsageFlags flags, void* bufferData);
+        void copyBuffer(VkDevice device, VkCommandPool commandPool, VkCommandBuffer cmdBuffer, VkFence* fence, VkQueue queue, VmaAllocator alloc, size_t blockSize, size_t subBufferSize, VkBufferUsageFlags flags, void* bufferData, uint offset);
         ~Buffer();
 };

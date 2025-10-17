@@ -45,7 +45,7 @@ void main() {
     // MAKE SURE LEAST SIGNIFICANT BIT MATCHES THE DIRECTION OF THE BITSHIFT !!!
 
     // bit shift the ballot and count the number of 1 bits left, this is the index for the request
-    uvec4 shifted = newPathBallot >> (127 - gl_SubgroupInvocationID);
+    uvec4 shifted = newPathBallot << (127 - gl_SubgroupInvocationID);
     uint threadBitCount = subgroupBallotBitCount(shifted);
 
     // synchronize value for all subgroup threads
@@ -54,5 +54,6 @@ void main() {
         pathQueue.requests[offset + threadBitCount - 1] = threadIndex;
     }
 
-    imageStore(outImage, uv, vec4(pathPool.throughput[threadIndex].xyz, 1.f));
+    vec3 finalColor = vec3(dot(pathPool.throughput[threadIndex].xyz, -normalize(vec3(-0.4f, 1.f, 0.6f))));
+    imageStore(outImage, uv, vec4(finalColor, 1.f));
 }

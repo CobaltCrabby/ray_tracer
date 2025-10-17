@@ -144,7 +144,7 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
             stats[1] += currentNode.triCount;
             for (uint j = currentNode.index; j < currentNode.index + currentNode.triCount; j++) {
                 Triangle tri = triangleBuffer.triangles[j];
-                HitInfo hitInfo = triangleIntersection(transformRay, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], false, false);
+                HitInfo hitInfo = triangleIntersection(transformRay, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], true, false);
 
                 if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
                     closestHit = hitInfo;

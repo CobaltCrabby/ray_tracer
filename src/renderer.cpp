@@ -42,7 +42,7 @@ Renderer::Renderer(RenderContext* context) {
         bufferAllocateInfo.commandPool = frames[i].commandPool;
         VK_CHECK(vkAllocateCommandBuffers(context->device, &bufferAllocateInfo, allocatedCmdBuffers));
 
-        // ??? idk pointer stuff
+        // ??? idk pointer reference stuff
         frames[i].logicCmdBuffer = allocatedCmdBuffers[0];
         frames[i].materialNewPathCmdBuffer = allocatedCmdBuffers[1];
         frames[i].extensionCmdBuffer = allocatedCmdBuffers[2];
@@ -78,21 +78,36 @@ Renderer::Renderer(RenderContext* context) {
 
     // make read_obj part of BLAS so you can directly write to tri buffer
     BLAS blas;
-    blas.readObj("assets/klein_bottle.obj");
+    blas.readObj("assets/rb.obj");
 
     // for (int i = 0; i < BLAS.vertices.size(); i++) {
         // std::cout << i << " " << glm::to_string(BLAS.vertices[i].position) << std::endl;
     // }
 
     descriptorPool = new DescriptorPool(renderContext);
-    vertexBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(BLAS::Vertex) * blas.vertices.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) blas.vertices.data());
-    triangleBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(BLAS::Triangle) * blas.triangles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) blas.triangles.data());
-    BVHBuffer = new Buffer(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, sizeof(BLAS::BVHNode) * blas.bvhNodes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (void*) blas.bvhNodes.data());
-    pathStateBuffer = new Buffer(renderContext->allocator, sizeof(PathState), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    newPathQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    extensionRayQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    materialRequestQueue = new Buffer(renderContext->allocator, sizeof(IndexQueue), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    
+
+    geometryBlock = new BufferBlock(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    geometryBlock->addSubBuffer(sizeof(BLAS::Vertex) * blas.vertices.size(), (void*) blas.vertices.data());
+    geometryBlock->addSubBuffer(sizeof(BLAS::Triangle) * blas.triangles.size(), (void*) blas.triangles.data());
+    geometryBlock->addSubBuffer(sizeof(BLAS::BVHNode) * blas.bvhNodes.size(), (void*) blas.bvhNodes.data());
+    std::vector<BufferBlock::SubBuffer> geometryBuffers = geometryBlock->allocateBlock();
+
+    vertexBuffer = geometryBuffers[0];
+    triangleBuffer = geometryBuffers[1];
+    bvhBuffer = geometryBuffers[2];
+
+    wavefrontBlock = new BufferBlock(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    wavefrontBlock->addSubBuffer(sizeof(PathState));
+    wavefrontBlock->addSubBuffer(sizeof(IndexQueue));
+    wavefrontBlock->addSubBuffer(sizeof(IndexQueue));
+    wavefrontBlock->addSubBuffer(sizeof(IndexQueue));
+    std::vector<BufferBlock::SubBuffer> wavefrontBuffers = wavefrontBlock->allocateBlock();
+
+    pathStateBuffer = wavefrontBuffers[0];
+    newPathQueue = wavefrontBuffers[1];
+    extensionRayQueue = wavefrontBuffers[2];
+    materialRequestQueue = wavefrontBuffers[3];
+
     for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         renderImages[i] = new Image(renderContext, &renderContext->allocator, {renderContext->windowExtent.width, renderContext->windowExtent.height, 1}, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         renderImages[i]->transitionLayout(VK_IMAGE_LAYOUT_GENERAL, submitInfo);
@@ -113,39 +128,39 @@ Renderer::Renderer(RenderContext* context) {
 	renderImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkDescriptorBufferInfo pathStateBufferInfo{};
-    pathStateBufferInfo.buffer = pathStateBuffer->buffer;
-    pathStateBufferInfo.offset = 0;
-    pathStateBufferInfo.range = sizeof(PathState);
+    pathStateBufferInfo.buffer = pathStateBuffer.block->buffer;
+    pathStateBufferInfo.offset = pathStateBuffer.offset;
+    pathStateBufferInfo.range = pathStateBuffer.size;
 
     VkDescriptorBufferInfo newPathQueueInfo{};
-    newPathQueueInfo.buffer = newPathQueue->buffer;
-    newPathQueueInfo.offset = 0;
-    newPathQueueInfo.range = sizeof(IndexQueue);
+    newPathQueueInfo.buffer = newPathQueue.block->buffer;
+    newPathQueueInfo.offset = newPathQueue.offset;
+    newPathQueueInfo.range = newPathQueue.size;
 
     VkDescriptorBufferInfo extensionQueueInfo{};
-    extensionQueueInfo.buffer = extensionRayQueue->buffer;
-    extensionQueueInfo.offset = 0;
-    extensionQueueInfo.range = sizeof(IndexQueue);
+    extensionQueueInfo.buffer = extensionRayQueue.block->buffer;
+    extensionQueueInfo.offset = extensionRayQueue.offset;
+    extensionQueueInfo.range = extensionRayQueue.size;
 
     VkDescriptorBufferInfo materialRequestQueueInfo{};
-    materialRequestQueueInfo.buffer = materialRequestQueue->buffer;
-    materialRequestQueueInfo.offset = 0;
-    materialRequestQueueInfo.range = sizeof(IndexQueue);
+    materialRequestQueueInfo.buffer = materialRequestQueue.block->buffer;
+    materialRequestQueueInfo.offset = materialRequestQueue.offset;
+    materialRequestQueueInfo.range = materialRequestQueue.size;
 
     VkDescriptorBufferInfo vertexBufferInfo{};
-    vertexBufferInfo.buffer = vertexBuffer->buffer;
-    vertexBufferInfo.offset = 0;
-    vertexBufferInfo.range = sizeof(BLAS::Vertex) * blas.vertices.size();
+    vertexBufferInfo.buffer = vertexBuffer.block->buffer;
+    vertexBufferInfo.offset = vertexBuffer.offset;
+    vertexBufferInfo.range = vertexBuffer.size;
 
     VkDescriptorBufferInfo triangleBufferInfo{};
-    triangleBufferInfo.buffer = triangleBuffer->buffer;
-    triangleBufferInfo.offset = 0;
-    triangleBufferInfo.range = sizeof(BLAS::Triangle) * blas.triangles.size();
+    triangleBufferInfo.buffer = triangleBuffer.block->buffer;
+    triangleBufferInfo.offset = triangleBuffer.offset;
+    triangleBufferInfo.range = triangleBuffer.size;
 
-    VkDescriptorBufferInfo BVHBufferInfo{};
-    BVHBufferInfo.buffer = BVHBuffer->buffer;
-    BVHBufferInfo.offset = 0;
-    BVHBufferInfo.range = sizeof(BLAS::BVHNode) * blas.bvhNodes.size();
+    VkDescriptorBufferInfo bvhBufferInfo{};
+    bvhBufferInfo.buffer = bvhBuffer.block->buffer;
+    bvhBufferInfo.offset = bvhBuffer.offset;
+    bvhBufferInfo.range = bvhBuffer.size;
 
     VkWriteDescriptorSet graphicsTextureWrite{};
     graphicsTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -195,11 +210,11 @@ Renderer::Renderer(RenderContext* context) {
 	triangleBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     triangleBufferWrite.pBufferInfo = &triangleBufferInfo;
 
-    VkWriteDescriptorSet BVHBufferWrite{};
-    BVHBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	BVHBufferWrite.descriptorCount = 1;
-	BVHBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    BVHBufferWrite.pBufferInfo = &BVHBufferInfo;
+    VkWriteDescriptorSet bvhBufferWrite{};
+    bvhBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	bvhBufferWrite.descriptorCount = 1;
+	bvhBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    bvhBufferWrite.pBufferInfo = &bvhBufferInfo;
     
     std::vector<VkWriteDescriptorSet> graphicsWrites;
     std::vector<VkWriteDescriptorSet> computeWrites;
@@ -234,7 +249,7 @@ Renderer::Renderer(RenderContext* context) {
     addWrite(extensionWrites, extensionQueueWrite, 2);
     addWrite(extensionWrites, vertexBufferWrite, 3);
     addWrite(extensionWrites, triangleBufferWrite, 4);
-    addWrite(extensionWrites, BVHBufferWrite, 5);
+    addWrite(extensionWrites, bvhBufferWrite, 5);
 
     // test compute
     addWrite(computeWrites, computeTextureWrite, 0);
@@ -278,13 +293,8 @@ Renderer::~Renderer() {
 
     delete descriptorPool;
     delete renderPass;
-    delete vertexBuffer;
-    delete triangleBuffer;
-    delete BVHBuffer;
-    delete pathStateBuffer;
-    delete newPathQueue;
-    delete extensionRayQueue;
-    delete materialRequestQueue;
+    delete wavefrontBlock;
+    delete geometryBlock;
     delete imguiContext;
 }
 
@@ -299,13 +309,6 @@ void Renderer::render() {
     ImGui::Render();
 
     FrameData frame = frames[frameNumber % RenderContext::FRAMES_IN_FLIGHT];
-
-    if (frameNumber == 0) {
-        VmaAllocationInfo allocInfo{};
-        vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
-        IndexQueue* readback = (IndexQueue*) allocInfo.pMappedData;
-        std::cout << "before - size: " << readback->size << " pool size: " << renderContext->windowExtent.width * renderContext->windowExtent.height << std::endl;
-    }
 
     vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 10000000);
 	vkResetFences(renderContext->device, 1, &frame.frameReady);
@@ -323,22 +326,27 @@ void Renderer::render() {
     // TODO:
     // somehow get size of path queue and material
     // somehow get size of extension queue
-    // i need to seperate the kernels into different command buffers to i can get the size after dispatch
-    // this will also make timing the individual kernels possible which is nice ig but slower overall
 
     // max bounces
-    for (int i = 0; i < 1; i++) {    
+    for (int i = 0; i < 10; i++) {    
         // logic
         VK_CHECK(vkBeginCommandBuffer(frame.logicCmdBuffer, &computeBeginInfo));
 
-        vkCmdResetQueryPool(frame.logicCmdBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
-        vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
-        
+        vkCmdResetQueryPool(frame.logicCmdBuffer, renderContext->queryPool, 1, RenderContext::QUERY_SIZE - 1);
+
+        // only record first so the total is accurate
+        if (i == 0) {
+            vkCmdResetQueryPool(frame.logicCmdBuffer, renderContext->queryPool, 0, RenderContext::QUERY_SIZE);
+            vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 0);
+        }
+        vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 1);
+
         vkCmdBindPipeline(frame.logicCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.logicCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, logicPipeline->pipelineLayout, 0, 1, &logicPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.logicCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
         
-        vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 1);
+        vkCmdWriteTimestamp(frame.logicCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 2);
+
         vkEndCommandBuffer(frame.logicCmdBuffer);
 
         VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT};
@@ -359,7 +367,7 @@ void Renderer::render() {
         // new path and material
         VK_CHECK(vkBeginCommandBuffer(frame.materialNewPathCmdBuffer, &computeBeginInfo));
         
-        vkCmdWriteTimestamp(frame.materialNewPathCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 2);
+        vkCmdWriteTimestamp(frame.materialNewPathCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 3);
 
         vkCmdBindPipeline(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
@@ -369,7 +377,7 @@ void Renderer::render() {
         vkCmdBindDescriptorSets(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.materialNewPathCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
 
-        vkCmdWriteTimestamp(frame.materialNewPathCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 3);
+        vkCmdWriteTimestamp(frame.materialNewPathCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 4);
         vkEndCommandBuffer(frame.materialNewPathCmdBuffer);
 
         VkSubmitInfo materialNewPathSubmitInfo{};
@@ -389,13 +397,13 @@ void Renderer::render() {
         // extension
         VK_CHECK(vkBeginCommandBuffer(frame.extensionCmdBuffer, &computeBeginInfo));
 
-        vkCmdWriteTimestamp(frame.extensionCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 4);
+        vkCmdWriteTimestamp(frame.extensionCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 5);
        
         vkCmdBindPipeline(frame.extensionCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.extensionCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, extensionPipeline->pipelineLayout, 0, 1, &extensionPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.extensionCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
 
-        vkCmdWriteTimestamp(frame.extensionCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 5);
+        vkCmdWriteTimestamp(frame.extensionCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, renderContext->queryPool, 6);
         vkEndCommandBuffer(frame.extensionCmdBuffer);
 
         VkSubmitInfo extensionSubmitInfo{};
@@ -434,7 +442,7 @@ void Renderer::render() {
 
     VK_CHECK(vkBeginCommandBuffer(frame.graphicsCmdBuffer, &graphicsBeginInfo));
 
-    vkCmdWriteTimestamp(frame.graphicsCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 6);
+    vkCmdWriteTimestamp(frame.graphicsCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, renderContext->queryPool, 7);
     vkCmdBeginRenderPass(frame.graphicsCmdBuffer, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     VkDeviceSize offset = 0;
@@ -448,7 +456,7 @@ void Renderer::render() {
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.graphicsCmdBuffer);
     vkCmdEndRenderPass(frame.graphicsCmdBuffer);
 
-    vkCmdWriteTimestamp(frame.graphicsCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, renderContext->queryPool, 7);
+    vkCmdWriteTimestamp(frame.graphicsCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, renderContext->queryPool, 8);
 	vkEndCommandBuffer(frame.graphicsCmdBuffer);
 
     // submit and present to queue
@@ -476,16 +484,10 @@ void Renderer::render() {
 	VK_CHECK(vkQueuePresentKHR(renderContext->graphicsQueue, &presentInfo));
 	vkQueueWaitIdle(renderContext->graphicsQueue);
     
-    // THIS IS HOW YOU GET READBACK, is there a way to only get the size and not the indices which would slow down readback ?
+    // readback: is there a way to only get the size and not the indices which would slow down readback ?
     // use subregions to copy into a seperate buffer ?
     // also combine all buffers into one memory allocation and use offsets for more optimal reads ?
     // can do in one copy command using multiple VkBufferCopy structs, but needs to be in one buffer !
-    if (frameNumber == 0) {
-        VmaAllocationInfo allocInfo{};
-        vmaGetAllocationInfo(extensionRayQueue->allocator, extensionRayQueue->allocation, &allocInfo);
-        IndexQueue* readback = (IndexQueue*) allocInfo.pMappedData;
-        std::cout << "after - size: " << readback->size << " pool size: " << renderContext->windowExtent.width * renderContext->windowExtent.height << std::endl;
-    }
 
     // timing
     uint64_t times[RenderContext::QUERY_SIZE * 2];
@@ -500,11 +502,11 @@ void Renderer::render() {
         VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT
     );
 
-    renderStats.logicTime = float(times[2] - times[0]) / 1000000.0f;
-    renderStats.materialNewPathTime = float(times[6] - times[4]) / 1000000.0f;
-    renderStats.extensionTime = float(times[10] - times[8]) / 1000000.0f;
-    renderStats.graphicsTime = float(times[14] - times[12]) / 1000000.0f;
-    renderStats.totalTime = float(times[14] - times[0]) / 1000000.0f;
+    renderStats.logicTime = float(times[4] - times[2]) / 1000000.0f;
+    renderStats.materialNewPathTime = float(times[8] - times[6]) / 1000000.0f;
+    renderStats.extensionTime = float(times[12] - times[10]) / 1000000.0f;
+    renderStats.graphicsTime = float(times[16] - times[14]) / 1000000.0f;
+    renderStats.totalTime = float(times[16] - times[0]) / 1000000.0f;
 
     /// rACHIT WAs HERE
     frameNumber++;

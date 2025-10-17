@@ -6,10 +6,13 @@ Current
 - redo buffers so theyre all in one allocation
     - probably can seperate model data and wavefront queues 
     into different allocations ?
+- finish wavefront implementation
 
 Future
 - Disney BSDF
+- TLAS for many render objects
 - Resizable (will be hard bc queue size hard coded)
 - Camera System
     - be able to save renders directly
     - render videos (ffmpeg?)
+- Scene Editing through ImGui
