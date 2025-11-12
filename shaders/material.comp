@@ -7,6 +7,12 @@ layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 const uint poolSize = 1930176;
 const float PI = 3.1415926f;
+const float INV_PI = 0.3183098862f;
+
+struct Material {
+    vec4 albedo; // w is unused
+    vec4 emission; // xyz is color, w is strength
+};
 
 layout (binding = 1) restrict buffer pathStatePool { 
     vec4 origin[poolSize]; // only one array can be of variable length, hardcode the length unfort
@@ -24,6 +30,14 @@ layout (binding = 3) restrict buffer materialRequestQueue {
     uint size; // atomic number representing the size of the queue
     uint requests[poolSize]; // each entry is the path index needed to be extended
 } materialQueue;
+
+layout (binding = 4) restrict buffer renderMaterialBuffer {
+    Material materials[];
+} materialBuffer;
+
+layout (push_constant) uniform constants {
+    uint dispatchCount;
+} PushConstants;
 
 float random(inout uint state) {
     state = state * 747796405 + 2891336453;
@@ -53,6 +67,10 @@ vec3 cosineHemisphereDir(vec3 rayNormal, inout uint state) {
     return changeOfBasis * zAlignedDir;
 }
 
+float cosineHemispherePDF(vec3 rayNormal, vec3 direction) {
+    return max(0, dot(direction, rayNormal) * INV_PI);
+}
+
 void main() {
     //ivec2 dim = imageSize(outImage);  // hard coded for now, maybe push the dimensions to give the size
     ivec2 dim = {1728, 1117};
@@ -61,12 +79,17 @@ void main() {
     uint threadIndex = gl_GlobalInvocationID.x;
     if (threadIndex >= materialQueue.size) return; // if too many threads dispatched
 
-    uint state = threadIndex;
+    uint state = threadIndex + PushConstants.dispatchCount;
     uint poolIndex = materialQueue.requests[threadIndex];
     vec4 normal = pathPool.hitNormal[poolIndex];
     vec3 newDir = cosineHemisphereDir(normal.xyz, state);
+    float cosPDF = cosineHemispherePDF(normal.xyz, newDir);
+
+    Material hitMaterial = materialBuffer.materials[uint(normal.w)];
+
     pathPool.origin[poolIndex] = vec4(pathPool.direction[poolIndex].xyz + normal.xyz * normal.w, 0.f);
     pathPool.direction[poolIndex] = vec4(newDir, 0.f);
+    pathPool.throughput[poolIndex].xyz *= hitMaterial.albedo.xyz;
 
     // write requests to the extension queue
     bool predicate = true;

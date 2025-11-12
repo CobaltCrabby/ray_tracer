@@ -55,6 +55,7 @@ std::vector<BufferBlock::SubBuffer> BufferBlock::allocateBlock() {
 
         subBuffers.push_back({buffer, alloc, offset, allocInfo.size});
         if (data != nullptr) { // unoptimal but whateverrrrr
+            // it crashes here LOL
             buffer->copyBuffer(device, cmdPool, cmdBuffer, fence, queue, allocator, allocInfo.size, totalSize, usageFlags, data, offset);
         }
     }

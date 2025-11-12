@@ -37,6 +37,15 @@ class Renderer {
             uint requests[1930176];
         };
 
+        struct Material {
+            glm::vec4 albedo; // w is unused
+            glm::vec4 emission; // xyz is color, w is strength
+        };
+
+        struct MaterialPushConstants {
+            uint dispatchCount = 0;
+        };
+
         RenderContext* renderContext;
         DescriptorPool* descriptorPool;
         RenderPass* renderPass;
@@ -53,6 +62,8 @@ class Renderer {
         BufferBlock::SubBuffer vertexBuffer;
         BufferBlock::SubBuffer triangleBuffer;
         BufferBlock::SubBuffer bvhBuffer;
+        BufferBlock::SubBuffer objectBuffer;
+        BufferBlock::SubBuffer materialBuffer;
 
         GraphicsPipeline* graphicsPipeline;
         ComputePipeline* computePipeline;
@@ -68,8 +79,10 @@ class Renderer {
         VkSampler defaultSampler;
 
         std::vector<Framebuffer*> framebuffers;
+        std::vector<Material> materials;
         ImGuiStats renderStats{};
         uint frameNumber;
+        uint dispatchCount = 0;
 
         explicit Renderer(RenderContext* context);
         ~Renderer();

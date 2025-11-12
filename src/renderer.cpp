@@ -77,24 +77,39 @@ Renderer::Renderer(RenderContext* context) {
     submitInfo.allocator = renderContext->allocator;
 
     // make read_obj part of BLAS so you can directly write to tri buffer
+    Material red{};
+    red.albedo = glm::vec4(1.f, 0.f, 0.f, 0.f);
+    red.emission = glm::vec4(0.f);
+
+    Material whiteLight{};
+    whiteLight.albedo = glm::vec4(0.f, 1.f, 0.f, 1.f);
+    whiteLight.emission = glm::vec4(1.f, 1.f, 1.f, 5.f);
+
+    materials.push_back(red);
+    materials.push_back(whiteLight);
+
     BLAS blas;
     blas.readObj("assets/rb.obj");
+    blas.createRenderObject("assets/rb.obj", 0, glm::vec3(-0.5f, 0.f, 0.f), glm::vec3(0.f, 135.f, 0.f), glm::vec3(1.f));
+    blas.createRenderObject("assets/rb.obj", 1, glm::vec3(0.5f, 0.f, 0.f), glm::vec3(0.f, 45.f, 0.f), glm::vec3(1.f));
 
-    // for (int i = 0; i < BLAS.vertices.size(); i++) {
-        // std::cout << i << " " << glm::to_string(BLAS.vertices[i].position) << std::endl;
-    // }
-
+    // create suballocated buffers
     descriptorPool = new DescriptorPool(renderContext);
 
     geometryBlock = new BufferBlock(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     geometryBlock->addSubBuffer(sizeof(BLAS::Vertex) * blas.vertices.size(), (void*) blas.vertices.data());
     geometryBlock->addSubBuffer(sizeof(BLAS::Triangle) * blas.triangles.size(), (void*) blas.triangles.data());
     geometryBlock->addSubBuffer(sizeof(BLAS::BVHNode) * blas.bvhNodes.size(), (void*) blas.bvhNodes.data());
+    geometryBlock->addSubBuffer(sizeof(BLAS::RenderObject) * blas.renderObjects.size(), (void*) blas.renderObjects.data());
+    geometryBlock->addSubBuffer(sizeof(Material) * materials.size(), (void*) materials.data());
     std::vector<BufferBlock::SubBuffer> geometryBuffers = geometryBlock->allocateBlock();
+
 
     vertexBuffer = geometryBuffers[0];
     triangleBuffer = geometryBuffers[1];
     bvhBuffer = geometryBuffers[2];
+    objectBuffer = geometryBuffers[3];
+    materialBuffer = geometryBuffers[4];
 
     wavefrontBlock = new BufferBlock(renderContext->device, copyCommandPool, copyCommandBuffer, &copyFence, renderContext->graphicsQueue, renderContext->allocator, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     wavefrontBlock->addSubBuffer(sizeof(PathState));
@@ -107,6 +122,7 @@ Renderer::Renderer(RenderContext* context) {
     newPathQueue = wavefrontBuffers[1];
     extensionRayQueue = wavefrontBuffers[2];
     materialRequestQueue = wavefrontBuffers[3];
+
 
     for (int i = 0; i < RenderContext::FRAMES_IN_FLIGHT; i++) {
         renderImages[i] = new Image(renderContext, &renderContext->allocator, {renderContext->windowExtent.width, renderContext->windowExtent.height, 1}, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -162,6 +178,16 @@ Renderer::Renderer(RenderContext* context) {
     bvhBufferInfo.offset = bvhBuffer.offset;
     bvhBufferInfo.range = bvhBuffer.size;
 
+    VkDescriptorBufferInfo objectBufferInfo{};
+    objectBufferInfo.buffer = objectBuffer.block->buffer;
+    objectBufferInfo.offset = objectBuffer.offset;
+    objectBufferInfo.range = objectBuffer.size;
+
+    VkDescriptorBufferInfo materialBufferInfo{};
+    materialBufferInfo.buffer = materialBuffer.block->buffer;
+    materialBufferInfo.offset = materialBuffer.offset;
+    materialBufferInfo.range = materialBuffer.size;
+
     VkWriteDescriptorSet graphicsTextureWrite{};
     graphicsTextureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	graphicsTextureWrite.descriptorCount = 1;
@@ -215,6 +241,18 @@ Renderer::Renderer(RenderContext* context) {
 	bvhBufferWrite.descriptorCount = 1;
 	bvhBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     bvhBufferWrite.pBufferInfo = &bvhBufferInfo;
+
+    VkWriteDescriptorSet objectBufferWrite{};
+    objectBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	objectBufferWrite.descriptorCount = 1;
+	objectBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    objectBufferWrite.pBufferInfo = &objectBufferInfo;
+
+    VkWriteDescriptorSet materialBufferWrite{};
+    materialBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	materialBufferWrite.descriptorCount = 1;
+	materialBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    materialBufferWrite.pBufferInfo = &materialBufferInfo;
     
     std::vector<VkWriteDescriptorSet> graphicsWrites;
     std::vector<VkWriteDescriptorSet> computeWrites;
@@ -230,7 +268,7 @@ Renderer::Renderer(RenderContext* context) {
     addWrite(logicWrites, computeTextureWrite, 0);
     addWrite(logicWrites, pathStateBufferWrite, 1);
     addWrite(logicWrites, newPathQueueWrite, 2);
-    //addWrite(logicWrites, materialRequestWrite, 3);
+    addWrite(logicWrites, materialRequestWrite, 3);
 
     // new path compute
     addWrite(newPathWrites, computeTextureWrite, 0);
@@ -242,6 +280,7 @@ Renderer::Renderer(RenderContext* context) {
     addWrite(materialWrites, pathStateBufferWrite, 1);
     addWrite(materialWrites, newPathQueueWrite, 2);
     addWrite(materialWrites, materialRequestWrite, 3);
+    addWrite(materialWrites, materialBufferWrite, 4);
 
     // extensions compute
     addWrite(extensionWrites, computeTextureWrite, 0);
@@ -250,6 +289,7 @@ Renderer::Renderer(RenderContext* context) {
     addWrite(extensionWrites, vertexBufferWrite, 3);
     addWrite(extensionWrites, triangleBufferWrite, 4);
     addWrite(extensionWrites, bvhBufferWrite, 5);
+    addWrite(extensionWrites, objectBufferWrite, 6);
 
     // test compute
     addWrite(computeWrites, computeTextureWrite, 0);
@@ -258,11 +298,11 @@ Renderer::Renderer(RenderContext* context) {
 
     std::string bin = std::filesystem::current_path().generic_string() + "/shaders/bin/";
     graphicsPipeline = new GraphicsPipeline(renderContext, descriptorPool, renderPass, graphicsWrites, &submitInfo, (bin + "raytrace.vert.spv").c_str(), (bin + "raytrace.frag.spv").c_str());
-    computePipeline = new ComputePipeline(renderContext, descriptorPool, computeWrites, (bin + "test.comp.spv").c_str());
-    logicPipeline = new ComputePipeline(renderContext, descriptorPool, logicWrites, (bin + "logic.comp.spv").c_str());
-    newPathPipeline = new ComputePipeline(renderContext, descriptorPool, newPathWrites, (bin + "newPath.comp.spv").c_str());
-    materialPipeline = new ComputePipeline(renderContext, descriptorPool, materialWrites, (bin + "material.comp.spv").c_str());
-    extensionPipeline = new ComputePipeline(renderContext, descriptorPool, extensionWrites, (bin + "extension.comp.spv").c_str());
+    computePipeline = new ComputePipeline(renderContext, descriptorPool, computeWrites, (bin + "test.comp.spv").c_str(), 0);
+    logicPipeline = new ComputePipeline(renderContext, descriptorPool, logicWrites, (bin + "logic.comp.spv").c_str(), 0);
+    newPathPipeline = new ComputePipeline(renderContext, descriptorPool, newPathWrites, (bin + "newPath.comp.spv").c_str(), 0);
+    materialPipeline = new ComputePipeline(renderContext, descriptorPool, materialWrites, (bin + "material.comp.spv").c_str(), sizeof(MaterialPushConstants));
+    extensionPipeline = new ComputePipeline(renderContext, descriptorPool, extensionWrites, (bin + "extension.comp.spv").c_str(), 0);
 
     // ImGui init
     imguiContext = new ImGuiContext(renderContext->window, renderContext, renderPass, submitInfo);
@@ -328,7 +368,7 @@ void Renderer::render() {
     // somehow get size of extension queue
 
     // max bounces
-    for (int i = 0; i < 10; i++) {    
+    for (int i = 0; i < 5; i++) {    
         // logic
         VK_CHECK(vkBeginCommandBuffer(frame.logicCmdBuffer, &computeBeginInfo));
 
@@ -373,6 +413,9 @@ void Renderer::render() {
         vkCmdBindDescriptorSets(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, newPathPipeline->pipelineLayout, 0, 1, &newPathPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.materialNewPathCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
 
+        MaterialPushConstants constants = {dispatchCount};
+
+        vkCmdPushConstants(frame.materialNewPathCmdBuffer, materialPipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(MaterialPushConstants), &constants);
         vkCmdBindPipeline(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipeline);
         vkCmdBindDescriptorSets(frame.materialNewPathCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, materialPipeline->pipelineLayout, 0, 1, &materialPipeline->descriptorSet, 0, nullptr);
         vkCmdDispatch(frame.materialNewPathCmdBuffer, ceil(renderContext->windowExtent.width * renderContext->windowExtent.height / 64.f), 1, 1);
@@ -419,6 +462,8 @@ void Renderer::render() {
         VK_CHECK(vkQueueSubmit(renderContext->graphicsQueue, 1, &extensionSubmitInfo, frame.frameReady));
         VK_CHECK(vkWaitForFences(renderContext->device, 1, &frame.frameReady, VK_TRUE, 999999999));
         VK_CHECK(vkResetFences(renderContext->device, 1, &frame.frameReady));
+
+        dispatchCount++;
     }
 
     // GRAPHICS

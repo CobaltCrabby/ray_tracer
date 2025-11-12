@@ -26,6 +26,12 @@ struct BVHNode {
 	//if triCount == 0: index is a node index, else: index is a triangle index
 };
 
+struct RenderObject {
+    mat4 transformMatrix;
+    uint bvhIndex;
+    uint materialIndex;
+};
+
 struct HitInfo {
     vec3 hitPoint;
     vec3 normal;
@@ -68,9 +74,13 @@ layout (binding = 4) restrict buffer triangleIndexBuffer {
     Triangle triangles[];
 } triangleBuffer;
 
-layout (binding = 5) restrict buffer BVHNodeBuffer {
+layout (binding = 5) restrict buffer bvhNodeBuffer {
     BVHNode nodes[];
-} BVHBuffer;
+} bvhBuffer;
+
+layout (binding = 6) restrict buffer renderObjectBuffer {
+    RenderObject objects[];
+} objectBuffer;
 
 float boxIntersection(BoundingBox box, Ray ray) {
     vec3 tMin = (box.bounds[0].xyz - ray.origin) / ray.dir;
@@ -127,56 +137,63 @@ HitInfo calculateIntersections(Ray ray, inout float stats[2]) {
     closestHit.didHit = false;
     closestHit.dst = 99999999;
 
-    Ray transformRay;
-    transformRay.dir = vec4(ray.dir, 0.f).xyz;
-    transformRay.origin = vec4(ray.origin, 1.f).xyz;
+    // for each render object
+    for (int i = 0; i < 2; i++) { // should be push constants
+        RenderObject object = objectBuffer.objects[i];
+        mat4 inverseTransform = inverse(object.transformMatrix); // probably pre-calculate?
 
-    //bvh traversal
-    BVHNode root = BVHBuffer.nodes[0];
-    uint stack[64];
-    uint stackIndex = 1;
-    stack[0] = 0;
-    while (stackIndex > 0) {
-        BVHNode currentNode = BVHBuffer.nodes[stack[--stackIndex]];
+        Ray transformRay;
+        transformRay.dir = (inverseTransform * vec4(ray.dir, 0.f)).xyz;
+        transformRay.origin = (inverseTransform * vec4(ray.origin, 1.f)).xyz;
 
-        if (currentNode.triCount != 0) {
-            //check for triangles
-            stats[1] += currentNode.triCount;
-            for (uint j = currentNode.index; j < currentNode.index + currentNode.triCount; j++) {
-                Triangle tri = triangleBuffer.triangles[j];
-                HitInfo hitInfo = triangleIntersection(transformRay, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], true, false);
+        //bvh traversal
+        BVHNode root = bvhBuffer.nodes[object.bvhIndex];
+        uint stack[64];
+        uint stackIndex = 1;
+        stack[0] = 0;
+        while (stackIndex > 0) {
+            BVHNode currentNode = bvhBuffer.nodes[stack[--stackIndex]];
 
-                if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
-                    closestHit = hitInfo;
-                    closestHit.normal = normalize(vec4(closestHit.normal, 0.f)).xyz;
-                    closestHit.hitPoint = vec4(closestHit.hitPoint, 1.f).xyz;
-                    closestHit.triHitIndex = j;
+            if (currentNode.triCount != 0) {
+                //check for triangles
+                stats[1] += currentNode.triCount;
+                for (uint j = currentNode.index; j < currentNode.index + currentNode.triCount; j++) {
+                    Triangle tri = triangleBuffer.triangles[j];
+                    HitInfo hitInfo = triangleIntersection(transformRay, vertexBuffer.vertices[tri.v1], vertexBuffer.vertices[tri.v2], vertexBuffer.vertices[tri.v3], true, false);
+
+                    if (hitInfo.didHit && hitInfo.dst < closestHit.dst) {
+                        closestHit = hitInfo;
+                        closestHit.normal = (object.transformMatrix * normalize(vec4(closestHit.normal, 0.f))).xyz;
+                        closestHit.hitPoint = (object.transformMatrix * vec4(closestHit.hitPoint, 1.f)).xyz;
+                        closestHit.triHitIndex = j;
+                        closestHit.materialIndex = object.materialIndex;
+                    }
                 }
+            } else {
+                //push nodes based on which one is closer
+                BVHNode child1 = bvhBuffer.nodes[currentNode.index];
+                BVHNode child2 = bvhBuffer.nodes[currentNode.index + 1];
+
+                BoundingBox box1;
+                box1.bounds[0].xyz = vec3(child1.boundsX[0], child1.boundsY[0], child1.boundsZ[0]);
+                box1.bounds[1].xyz = vec3(child1.boundsX[1], child1.boundsY[1], child1.boundsZ[1]);
+                BoundingBox box2;
+                box2.bounds[0].xyz = vec3(child2.boundsX[0], child2.boundsY[0], child2.boundsZ[0]);
+                box2.bounds[1].xyz = vec3(child2.boundsX[1], child2.boundsY[1], child2.boundsZ[1]);
+
+                float dst1 = boxIntersection(box1, transformRay);
+                float dst2 = boxIntersection(box2, transformRay);
+                stats[0] += 2;
+
+                bool isNearestA = dst1 <= dst2;
+                float dstNear = isNearestA ? dst1 : dst2;
+                float dstFar = isNearestA ? dst2 : dst1;
+                uint childIndexNear = isNearestA ? currentNode.index : currentNode.index + 1;
+                uint childIndexFar = isNearestA ? currentNode.index + 1 : currentNode.index;
+
+                if (dstFar < closestHit.dst) stack[stackIndex++] = childIndexFar;
+                if (dstNear < closestHit.dst) stack[stackIndex++] = childIndexNear;
             }
-        } else {
-            //push nodes based on which one is closer
-            BVHNode child1 = BVHBuffer.nodes[currentNode.index];
-            BVHNode child2 = BVHBuffer.nodes[currentNode.index + 1];
-
-            BoundingBox box1;
-            box1.bounds[0].xyz = vec3(child1.boundsX[0], child1.boundsY[0], child1.boundsZ[0]);
-            box1.bounds[1].xyz = vec3(child1.boundsX[1], child1.boundsY[1], child1.boundsZ[1]);
-            BoundingBox box2;
-            box2.bounds[0].xyz = vec3(child2.boundsX[0], child2.boundsY[0], child2.boundsZ[0]);
-            box2.bounds[1].xyz = vec3(child2.boundsX[1], child2.boundsY[1], child2.boundsZ[1]);
-
-            float dst1 = boxIntersection(box1, transformRay);
-            float dst2 = boxIntersection(box2, transformRay);
-            stats[0] += 2;
-
-            bool isNearestA = dst1 <= dst2;
-            float dstNear = isNearestA ? dst1 : dst2;
-            float dstFar = isNearestA ? dst2 : dst1;
-            uint childIndexNear = isNearestA ? currentNode.index : currentNode.index + 1;
-            uint childIndexFar = isNearestA ? currentNode.index + 1 : currentNode.index;
-
-            if (dstFar < closestHit.dst) stack[stackIndex++] = childIndexFar;
-            if (dstNear < closestHit.dst) stack[stackIndex++] = childIndexNear;
         }
     }
 
@@ -200,12 +217,14 @@ void main() {
     ivec2 uv = ivec2(index % dim.x, index / dim.x);
 
     HitInfo hitInfo = calculateIntersections(ray, stats);
+    pathPool.origin[index].w = hitInfo.dst;
     pathPool.direction[index].w = float(hitInfo.didHit);
-    pathPool.hitNormal[index] = vec4(hitInfo.normal, hitInfo.dst);
-    pathPool.throughput[index] = pathPool.hitNormal[index];
+    pathPool.hitNormal[index] = vec4(hitInfo.normal, hitInfo.materialIndex);
 
-   //imageStore(outImage, uv, pathPool.hitNormal[index]);
+    if (!hitInfo.didHit) {
+        pathPool.throughput[index].xyz *= 0.f;
+        pathPool.throughput[index].w = 0.f;
+    }
 
-    // not running twice ??
     extensionQueue.size = 0;
 }

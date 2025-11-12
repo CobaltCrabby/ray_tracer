@@ -1,11 +1,8 @@
 Current
 - seperate stages into different command buffers (DONE)
-    - queue submit each one, grab the size somehow
+    - queue submit each one, grab the size somehow (28ms original)
     - also query timestamps for timing each stage (DONE)
     - this will fix the double run not working ? (DONE)
-- redo buffers so theyre all in one allocation
-    - probably can seperate model data and wavefront queues 
-    into different allocations ?
 - finish wavefront implementation
 
 Future

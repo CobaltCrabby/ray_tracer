@@ -1,3 +1,4 @@
+#include <string>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -87,14 +88,22 @@ class BLAS {
             uint maxTri = 0;
         };
 
+        struct RenderObject {
+            alignas(16) glm::mat4 transformMatrix;
+            uint bvhIndex;
+            uint materialIndex;
+        };
+
         std::vector<BVHNode> bvhNodes;
         std::vector<Triangle> triangles;
         std::vector<Vertex> vertices;
         std::vector<glm::vec3> centroids;
-        std::unordered_map<const char*, uint> createdObjects;
+        std::vector<RenderObject> renderObjects;
+        std::unordered_map<std::string, uint> createdObjects;
         uint nodesUsed = 0;
 
         void readObj(const char* filePath);
+        void createRenderObject(const char* fileName, uint material, glm::vec3 pos, glm::vec3 rot, glm::vec3 scale); // rework required when adding TLAS
 
         void buildBVH(uint start);
         void updateBVHBounds(uint index);

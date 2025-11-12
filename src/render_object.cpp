@@ -16,6 +16,12 @@ void BLAS::readObj(const char* filePath) {
     std::vector<glm::vec3> normals;
 
     uint start = triangles.size();
+	uint bvhStart = bvhNodes.size();
+
+	if (createdObjects.count(filePath) != 0) {
+		std::cout << "Already read file: " << filePath << std::endl;
+		return;
+	}
 
     while (fileStream) {
         std::string fileLine;
@@ -96,7 +102,25 @@ void BLAS::readObj(const char* filePath) {
             triangles.push_back({pointIndex[0], pointIndex[1], pointIndex[2]});
 		} 
     }
+
     buildBVH(start);
+	createdObjects.insert({filePath, bvhStart});
+}
+
+void BLAS::createRenderObject(const char* fileName, uint material, glm::vec3 pos, glm::vec3 rot, glm::vec3 scale) {
+	if (createdObjects.count(fileName) == 0) {
+		std::cout << "load " << fileName << " before trying to make object" << std::endl;
+		return;
+	}
+
+	uint bvhIndex = createdObjects[fileName];
+	glm::mat4 transform = glm::translate(glm::mat4(1.f), pos);
+	transform = glm::rotate(transform, glm::radians(rot.x), glm::vec3(1.f, 0.f, 0.f)); 
+	transform = glm::rotate(transform, glm::radians(rot.y), glm::vec3(0.f, 1.f, 0.f)); 
+	transform = glm::rotate(transform, glm::radians(rot.z), glm::vec3(0.f, 0.f, 1.f));
+	transform = glm::scale(transform, scale);
+	
+	renderObjects.push_back({transform, bvhIndex, material});
 }
 
 void BLAS::updateBVHBounds(uint index) {

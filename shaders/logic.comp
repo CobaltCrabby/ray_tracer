@@ -10,9 +10,9 @@ const uint poolSize = 1930176;
 layout (binding = 0) uniform image2D outImage;
 
 layout (binding = 1) restrict buffer pathStatePool { 
-    vec4 origin[poolSize]; // only one array can be of variable length, hardcode the length unfort
-    vec4 direction[poolSize];
-    vec4 hitNormal[poolSize];
+    vec4 origin[poolSize]; // w = hit distance
+    vec4 direction[poolSize]; // w = didHit
+    vec4 hitNormal[poolSize]; // w = material index
     vec4 throughput[poolSize];
 } pathPool;
 
@@ -27,33 +27,58 @@ layout (binding = 3) restrict buffer materialRequestQueue {
 } materialQueue;
 
 void main() {
+    vec3 finalColor;
     ivec2 dim = {1728, 1117};
     ivec2 uv = ivec2(gl_GlobalInvocationID.x % dim.x, gl_GlobalInvocationID.x / dim.x);
     uint threadIndex = gl_GlobalInvocationID.x;
     if (threadIndex >= poolSize || pathQueue.size == poolSize) return;
 
-    // write requests to the path queue
-    bool predicate = pathPool.throughput[threadIndex].xyz == vec3(0.f);
-    uvec4 newPathBallot = subgroupBallot(predicate);
-    uint oldSize = 0;
-    if (subgroupElect()) {
-        uint activeThreads = subgroupBallotBitCount(newPathBallot);
-        oldSize = atomicAdd(pathQueue.size, activeThreads); // returns the number before the atomic add
+    // NEW PATH REQUESTS
+    {
+        bool predicate = pathPool.throughput[threadIndex].xyz == vec3(0.f);
+
+        // write requests to the path queue
+        uvec4 newPathBallot = subgroupBallot(predicate);
+        uint oldSize = 0;
+        if (subgroupElect()) {
+            uint activeThreads = subgroupBallotBitCount(newPathBallot);
+            oldSize = atomicAdd(pathQueue.size, activeThreads); // returns the number before the atomic add
+        }
+
+        // bit shift the ballot and count the number of 1 bits left, this is the index for the request
+        uvec4 shifted = newPathBallot << (127 - gl_SubgroupInvocationID);
+        uint threadBitCount = subgroupBallotBitCount(shifted);
+
+        // synchronize value for all subgroup threads
+        uint offset = subgroupBroadcast(oldSize, 0);
+        if (predicate) {
+            pathQueue.requests[offset + threadBitCount - 1] = threadIndex;
+        }
     }
 
-    // TODO:
-    // MAKE SURE LEAST SIGNIFICANT BIT MATCHES THE DIRECTION OF THE BITSHIFT !!!
+    // MATERIAL REQUESTS
+    {
+        bool predicate = pathPool.throughput[threadIndex].w == 1.f;
 
-    // bit shift the ballot and count the number of 1 bits left, this is the index for the request
-    uvec4 shifted = newPathBallot << (127 - gl_SubgroupInvocationID);
-    uint threadBitCount = subgroupBallotBitCount(shifted);
+        // write requests to the material queue
+        uvec4 materialBallot = subgroupBallot(predicate);
+        uint oldSize = 0;
+        if (subgroupElect()) {
+            uint activeThreads = subgroupBallotBitCount(materialBallot);
+            oldSize = atomicAdd(materialQueue.size, activeThreads); // returns the number before the atomic add
+        }
 
-    // synchronize value for all subgroup threads
-    uint offset = subgroupBroadcast(oldSize, 0);
-    if (predicate) {
-        pathQueue.requests[offset + threadBitCount - 1] = threadIndex;
+        // bit shift the ballot and count the number of 1 bits left, this is the index for the request
+        uvec4 shifted = materialBallot << (127 - gl_SubgroupInvocationID);
+        uint threadBitCount = subgroupBallotBitCount(shifted);
+
+        // synchronize value for all subgroup threads
+        uint offset = subgroupBroadcast(oldSize, 0);
+        if (predicate) {
+            materialQueue.requests[offset + threadBitCount - 1] = threadIndex;
+        }
     }
 
-    vec3 finalColor = vec3(dot(pathPool.throughput[threadIndex].xyz, -normalize(vec3(-0.4f, 1.f, 0.6f))));
+    finalColor = pathPool.throughput[threadIndex].xyz;
     imageStore(outImage, uv, vec4(finalColor, 1.f));
 }

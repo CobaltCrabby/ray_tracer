@@ -243,7 +243,7 @@ void ComputePipeline::updateDescriptors(std::vector<VkWriteDescriptorSet> writes
     vkUpdateDescriptorSets(renderContext->device, writes.size(), writes.data(), 0, nullptr);
 }
 
-ComputePipeline::ComputePipeline(RenderContext* context, DescriptorPool* pool, std::vector<VkWriteDescriptorSet> writes, const char* shaderFilePath) {
+ComputePipeline::ComputePipeline(RenderContext* context, DescriptorPool* pool, std::vector<VkWriteDescriptorSet> writes, const char* shaderFilePath, uint pushConstantSize) {
     renderContext = context;
     descriptorPool = pool;
 
@@ -271,7 +271,16 @@ ComputePipeline::ComputePipeline(RenderContext* context, DescriptorPool* pool, s
     layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	layoutInfo.pSetLayouts = &setLayout;
 	layoutInfo.setLayoutCount = 1;
+
     // push constants in the future
+    // THE FUTURE IS NOW!
+    VkPushConstantRange pushConstant{};
+    pushConstant.offset = 0;
+    pushConstant.size = pushConstantSize;
+    pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    layoutInfo.pPushConstantRanges = pushConstantSize == 0 ? nullptr : &pushConstant;
+    layoutInfo.pushConstantRangeCount = pushConstantSize == 0 ? 0 : 1;
 
     VK_CHECK(vkCreatePipelineLayout(context->device, &layoutInfo, nullptr, &pipelineLayout));
 

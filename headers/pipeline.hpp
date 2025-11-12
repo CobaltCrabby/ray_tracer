@@ -79,6 +79,6 @@ class ComputePipeline {
         
         void updateDescriptors(std::vector<VkWriteDescriptorSet> writes, VkDescriptorSet set);
 
-        ComputePipeline(RenderContext* context, DescriptorPool* pool, std::vector<VkWriteDescriptorSet> writes, const char* shaderFilePath);
+        ComputePipeline(RenderContext* context, DescriptorPool* pool, std::vector<VkWriteDescriptorSet> writes, const char* shaderFilePath, uint pushConstantSize);
         ~ComputePipeline();
 };
